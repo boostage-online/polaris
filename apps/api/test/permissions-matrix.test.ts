@@ -28,6 +28,7 @@ const matrix = (
 const T = () => seed.tenants.univ;
 const params: Record<string, () => string> = {
   id: () => T().roleIds.TEACHER,
+  tenantId: () => T().id,
   membershipId: () => T().users.TEACHER.membershipId,
   familyId: () => '00000000-0000-0000-0000-000000000000',
 };
@@ -87,16 +88,17 @@ describe('Matrice de permissions', () => {
       const key = `${r.method.toUpperCase()} ${r.path}`;
       const entry = matrix[key]!;
       const path = r.path.replace(/:([A-Za-z0-9_]+)/g, (_m, n: string) => {
-        const f = params[n];
+        const f =
+          params[n === 'id' && r.path.startsWith('/api/v1/platform/tenants') ? 'tenantId' : n];
         if (!f) throw new Error(`fixture manquante pour :${n}`);
         return f();
       });
-      // Routes de déconnexion : on ne les joue qu'avec un rôle (elles invalident la session).
-      const roles = key.includes('logout-all')
-        ? (['DIRECTION'] as SystemRoleCode[])
-        : SYSTEM_ROLE_CODES;
+      // logout-all invalide la session utilisée : on la joue avec une session dédiée, une seule fois.
+      const isLogoutAll = key.includes('logout-all');
+      const roles = isLogoutAll ? (['DIRECTION'] as SystemRoleCode[]) : SYSTEM_ROLE_CODES;
       for (const role of roles) {
-        const req = ctx.http[r.method](path).set(bearer(sessions[role]));
+        const session = isLogoutAll ? await loginAs(ctx, 'univ', role) : sessions[role];
+        const req = ctx.http[r.method](path).set(bearer(session));
         const res = bodies[key] ? await req.send(bodies[key]!() as object) : await req.send();
         const expectedDeny =
           entry.scope === 'platform'

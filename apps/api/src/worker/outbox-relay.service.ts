@@ -70,8 +70,12 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** Publie jusqu'à 100 événements non publiés. Renvoie le nombre relayé. */
-  async drain(): Promise<number> {
-    if (this.draining || this.stopped) return 0;
+  async drain(throwOnError = false): Promise<number> {
+    if (this.stopped) return 0;
+    if (this.draining) {
+      await this.waitIdle();
+      if (!throwOnError) return 0;
+    }
     this.draining = true;
     try {
       let total = 0;
@@ -114,9 +118,14 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
       }
     } catch (e) {
       this.logger.error({ msg: 'outbox drain failed', err: (e as Error).message });
+      if (throwOnError) throw e;
       return 0;
     } finally {
       this.draining = false;
     }
+  }
+
+  private async waitIdle() {
+    for (let i = 0; i < 100 && this.draining; i++) await new Promise((r) => setTimeout(r, 50));
   }
 }

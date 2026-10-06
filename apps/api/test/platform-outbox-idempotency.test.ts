@@ -133,7 +133,7 @@ describe('Plateforme, outbox, idempotence', () => {
       const redis = worker.get(RedisService);
 
       // Le relais a déjà drainé à son démarrage (onModuleInit) : on vérifie l'état final, pas le compteur.
-      await relay.drain();
+      await relay.drain(true);
       const total = await ctx.owner.query(
         `select count(*)::int as n from outbox_events where published_at is not null`,
       );

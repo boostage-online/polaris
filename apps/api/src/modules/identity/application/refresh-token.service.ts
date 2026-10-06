@@ -86,15 +86,18 @@ export class RefreshTokenService {
     if (!row) throw AppError.unauthenticated('Session invalide', ErrorCodes.TOKEN_REVOKED);
 
     if (row.revokedAt || row.replacedBy) {
-      // Réutilisation : vol présumé → révocation de toute la famille.
-      await this.revokeFamily(tx, row.familyId, 'reuse_detected');
-      await this.outbox.publish(
-        refreshTokenReuseDetected({
-          userId: row.userId,
-          familyId: row.familyId,
-          ip: RequestContextStore.get()?.ip ?? null,
-        }),
-      );
+      // Réutilisation : vol présumé → révocation de toute la famille, dans une transaction INDÉPENDANTE
+      // (la requête courante se termine en 401, donc sa propre transaction sera annulée).
+      await this.db.withIdentityTx(async (own) => {
+        await this.revokeFamily(own, row.familyId, 'reuse_detected');
+        await this.outbox.publish(
+          refreshTokenReuseDetected({
+            userId: row.userId,
+            familyId: row.familyId,
+            ip: RequestContextStore.get()?.ip ?? null,
+          }),
+        );
+      });
       throw AppError.unauthenticated(
         'Session révoquée par mesure de sécurité',
         ErrorCodes.TOKEN_REVOKED,

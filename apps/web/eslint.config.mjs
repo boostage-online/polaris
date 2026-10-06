@@ -1,2 +1,8 @@
-import nextVitals from 'eslint-config-next/core-web-vitals';
-export default [...nextVitals, { ignores: ['.next/**'] }];
+import nextPlugin from '@next/eslint-plugin-next';
+import base from '@polaris/config/eslint/base.mjs';
+
+export default [
+  ...base,
+  nextPlugin.flatConfig.coreWebVitals,
+  { ignores: ['.next/**', 'next.config.ts', 'postcss.config.mjs'] },
+];
