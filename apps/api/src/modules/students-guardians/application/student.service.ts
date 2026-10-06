@@ -54,13 +54,13 @@ export class StudentService {
           )
         : undefined,
       query.groupId
-        ? sql`exists (select 1 from enrollments e where e.student_id = ${students.id} and e.group_id = ${query.groupId} and e.left_at is null)`
+        ? sql`exists (select 1 from enrollments e where e.student_id = students.id and e.group_id = ${query.groupId} and e.left_at is null)`
         : undefined,
       query.incomplete
         ? or(
             isNull(students.birthDate),
-            sql`not exists (select 1 from student_guardians sg where sg.student_id = ${students.id} and sg.unlinked_at is null)`,
-            sql`not exists (select 1 from enrollments e where e.student_id = ${students.id} and e.academic_year_id = ${yearId} and e.is_primary and e.left_at is null)`,
+            sql`not exists (select 1 from student_guardians sg where sg.student_id = students.id and sg.unlinked_at is null)`,
+            sql`not exists (select 1 from enrollments e where e.student_id = students.id and e.academic_year_id = ${yearId} and e.is_primary and e.left_at is null)`,
           )
         : undefined,
       cur
@@ -68,16 +68,18 @@ export class StudentService {
         : undefined,
     ].filter((c): c is NonNullable<typeof c> => c !== undefined);
 
+    // Requête mono-table : Drizzle rend les colonnes sans préfixe de table dans les fragments `sql`,
+    // d'où les références qualifiées en clair (`students.id`) dans les sous-requêtes corrélées.
     const rows = await tx
       .select({
         s: students,
         currentGroupId: sql<
           string | null
-        >`(select e.group_id from enrollments e where e.student_id = ${students.id} and e.academic_year_id = ${yearId} and e.is_primary and e.left_at is null limit 1)`,
+        >`(select e.group_id from enrollments e where e.student_id = students.id and e.academic_year_id = ${yearId} and e.is_primary and e.left_at is null limit 1)`,
         currentGroupName: sql<
           string | null
-        >`(select g.name from enrollments e join groups g on g.id = e.group_id where e.student_id = ${students.id} and e.academic_year_id = ${yearId} and e.is_primary and e.left_at is null limit 1)`,
-        guardianCount: sql<number>`(select count(*)::int from student_guardians sg where sg.student_id = ${students.id} and sg.unlinked_at is null)`,
+        >`(select g.name from enrollments e join groups g on g.id = e.group_id where e.student_id = students.id and e.academic_year_id = ${yearId} and e.is_primary and e.left_at is null limit 1)`,
+        guardianCount: sql<number>`(select count(*)::int from student_guardians sg where sg.student_id = students.id and sg.unlinked_at is null)`,
       })
       .from(students)
       .where(and(...conds))
