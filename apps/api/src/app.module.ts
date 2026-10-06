@@ -1,5 +1,5 @@
 import { type MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, DiscoveryModule } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { ENV, type Env } from './config/env';
 import { ConfigModule } from './config/config.module';
@@ -38,6 +38,7 @@ const REDACT_PATHS = [
 @Module({
   imports: [
     ConfigModule,
+    DiscoveryModule,
     LoggerModule.forRootAsync({
       inject: [ENV],
       useFactory: (env: Env) => ({

@@ -115,8 +115,13 @@ describe('Authentification (ADR-0008)', () => {
     expect(tenant.status).toBe(200);
     expect(tenant.body.data.code).toBe('univ-demo');
 
-    await ctx.owner.query('delete from membership_roles where membership_id = $1', [rows[0]!.id]);
+    // Nettoyage : les refresh tokens se référencent (replaced_by) → on casse le lien avant de supprimer.
+    await ctx.owner.query(
+      'update refresh_tokens set replaced_by = null where replaced_by in (select id from refresh_tokens where membership_id = $1)',
+      [rows[0]!.id],
+    );
     await ctx.owner.query('delete from refresh_tokens where membership_id = $1', [rows[0]!.id]);
+    await ctx.owner.query('delete from membership_roles where membership_id = $1', [rows[0]!.id]);
     await ctx.owner.query('delete from memberships where id = $1', [rows[0]!.id]);
   });
 

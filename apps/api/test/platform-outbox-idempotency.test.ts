@@ -132,8 +132,12 @@ describe('Plateforme, outbox, idempotence', () => {
       const email = worker.get(LogEmailGateway);
       const redis = worker.get(RedisService);
 
-      const published = await relay.drain();
-      expect(published).toBeGreaterThan(0);
+      // Le relais a déjà drainé à son démarrage (onModuleInit) : on vérifie l'état final, pas le compteur.
+      await relay.drain();
+      const total = await ctx.owner.query(
+        `select count(*)::int as n from outbox_events where published_at is not null`,
+      );
+      expect(total.rows[0]!.n).toBeGreaterThan(0);
       const { rows } = await ctx.owner.query(
         `select count(*)::int as n from outbox_events where published_at is null`,
       );

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../../../database/database.service';
 import { RequestContextStore } from '../../../database/request-context';
 import type { DomainEvent } from '../domain/events';
@@ -25,10 +26,11 @@ export class OutboxService {
         actorMembershipId: ctx.actor?.membershipId ?? null,
       },
     };
-    const res = await tx.execute<{ id: string }>(sql`
-      insert into outbox_events (tenant_id, event_type, aggregate_type, aggregate_id, payload)
-      values (${tenantId}, ${event.type}, ${event.aggregateType}, ${event.aggregateId ?? null}, ${JSON.stringify(payload)}::jsonb)
-      returning id`);
-    return res.rows[0]!.id;
+    // Pas de RETURNING : la policy RLS de lecture ne verrait pas la ligne depuis le contexte identité.
+    const id = randomUUID();
+    await tx.execute(sql`
+      insert into outbox_events (id, tenant_id, event_type, aggregate_type, aggregate_id, payload)
+      values (${id}, ${tenantId}, ${event.type}, ${event.aggregateType}, ${event.aggregateId ?? null}, ${JSON.stringify(payload)}::jsonb)`);
+    return id;
   }
 }

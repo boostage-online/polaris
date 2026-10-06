@@ -12,7 +12,7 @@ echo "::endgroup::"
 if [ "$status" -ne 0 ]; then
   echo "::error title=$name::échec (code $status) — extrait publié en commentaire de PR"
   if [ -n "${PR_NUMBER:-}" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
-    excerpt="$(grep -v -E '^\s*$' "$log" | tail -n 160 | cut -c1-400)"
+    excerpt="$(grep -v -E '^\s*$' "$log" | tail -n 520 | cut -c1-300)"
     body="$(printf '### ❌ %s — job `%s`\n\nRun : %s/%s/actions/runs/%s\n\n<details><summary>Dernières lignes</summary>\n\n```text\n%s\n```\n\n</details>' \
       "$name" "${GITHUB_JOB:-?}" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$excerpt")"
     jq -n --arg body "$body" '{body: $body}' > "$log.json"
