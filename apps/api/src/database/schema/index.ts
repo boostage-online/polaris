@@ -3,3 +3,5 @@ export * from './identity';
 export * from './rbac';
 export * from './audit';
 export * from './technical';
+export * from './academic';
+export * from './students';

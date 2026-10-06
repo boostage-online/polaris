@@ -8,7 +8,9 @@ async function main() {
   app.useLogger(app.get(Logger));
   app.enableShutdownHooks();
   await app.init();
-  console.warn('Polaris worker démarré (outbox relay, domain-events, maintenance)');
+  console.warn(
+    'Polaris worker démarré (outbox relay, domain-events, maintenance, génération des séances)',
+  );
 }
 main().catch((e: unknown) => {
   console.error(e);

@@ -30,8 +30,9 @@ export class PermissionGuard implements CanActivate {
     const ctx = RequestContextStore.require();
     const actor = ctx.actor;
     if (!actor) throw AppError.unauthenticated();
-    if (!required) return true;
 
+    // Résolues pour toute requête authentifiée (cache Redis versionné) : les policies de portée
+    // s'en servent même quand la route n'exige aucune permission (ex. GET /me/schedule).
     const permissions = await this.resolve(
       actor.membershipId,
       actor.kind,
@@ -39,7 +40,7 @@ export class PermissionGuard implements CanActivate {
       actor.permissionsVersion,
     );
     actor.permissions = permissions;
-    if (!permissions.includes(required))
+    if (required && !permissions.includes(required))
       throw AppError.forbidden(`Permission requise : ${required}`);
     return true;
   }

@@ -8,9 +8,11 @@ import { RequestContextMiddleware } from './common/http/request-context.middlewa
 import { ProblemDetailsFilter } from './common/errors/problem-details.filter';
 import { EnvelopeInterceptor } from './common/interceptors/envelope.interceptor';
 import { HealthModule } from './health/health.module';
+import { AcademicModule } from './modules/academic';
 import { AuditModule } from './modules/audit';
 import { AuthGuard, IdentityModule, PermissionGuard, ScopeGuard } from './modules/identity';
 import { PlatformModule } from './modules/platform';
+import { StudentsGuardiansModule } from './modules/students-guardians';
 import {
   IdempotencyInterceptor,
   MetricsInterceptor,
@@ -70,6 +72,8 @@ const REDACT_PATHS = [
     TenancyModule,
     IdentityModule,
     PlatformModule,
+    AcademicModule,
+    StudentsGuardiansModule,
     HealthModule,
   ],
   providers: [
