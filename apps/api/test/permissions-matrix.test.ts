@@ -97,7 +97,7 @@ describe('Matrice de permissions', () => {
         : SYSTEM_ROLE_CODES;
       for (const role of roles) {
         const req = ctx.http[r.method](path).set(bearer(sessions[role]));
-        const res = bodies[key] ? await req.send(bodies[key]!()) : await req.send();
+        const res = bodies[key] ? await req.send(bodies[key]!() as object) : await req.send();
         const expectedDeny =
           entry.scope === 'platform'
             ? 404
@@ -115,7 +115,7 @@ describe('Matrice de permissions', () => {
       }
       if (entry.scope === 'platform') {
         const req = ctx.http[r.method](path).set(bearer(platform));
-        const res = bodies[key] ? await req.send(bodies[key]!()) : await req.send();
+        const res = bodies[key] ? await req.send(bodies[key]!() as object) : await req.send();
         if (res.status === 401 || res.status === 403 || res.status === 404)
           failures.push(`${key} [PLATFORM] attendu autorisé, reçu ${res.status}`);
       }

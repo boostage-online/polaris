@@ -9,6 +9,7 @@ export const DOMAIN_EVENTS_QUEUE = 'domain-events';
 export const DOMAIN_EVENTS_DLQ = 'domain-events-dlq';
 
 interface OutboxRow {
+  [key: string]: unknown;
   id: string;
   tenant_id: string | null;
   event_type: string;

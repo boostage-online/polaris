@@ -103,7 +103,7 @@ describe('Row-Level Security', () => {
         [seed.tenants.lycee.id],
       );
     }
-    const id = (await owner.query<{ id: string }>('select id from audit_logs limit 1')).rows[0].id;
+    const id = (await owner.query<{ id: string }>('select id from audit_logs limit 1')).rows[0]!.id;
     await expect(
       owner.query(`update audit_logs set action = 'x' where id = $1`, [id]),
     ).rejects.toThrow(/append-only/);

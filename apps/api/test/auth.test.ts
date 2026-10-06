@@ -96,7 +96,7 @@ describe('Authentification (ADR-0008)', () => {
     );
     await ctx.owner.query(
       `insert into membership_roles (tenant_id, membership_id, role_id) values ($1, $2, $3)`,
-      [seed.tenants.univ.id, rows[0].id, seed.tenants.univ.roleIds.TEACHER],
+      [seed.tenants.univ.id, rows[0]!.id, seed.tenants.univ.roleIds.TEACHER],
     );
 
     const s = await login(ctx, seed.tenants.lycee.users.ADMIN.email);
@@ -107,7 +107,7 @@ describe('Authentification (ADR-0008)', () => {
     const sw = await ctx.http
       .post('/api/v1/auth/switch-membership')
       .set(bearer(s))
-      .send({ membershipId: rows[0].id, refreshToken: s.refreshToken });
+      .send({ membershipId: rows[0]!.id, refreshToken: s.refreshToken });
     expect(sw.status).toBe(200);
     const tenant = await ctx.http
       .get('/api/v1/tenant')
@@ -115,9 +115,9 @@ describe('Authentification (ADR-0008)', () => {
     expect(tenant.status).toBe(200);
     expect(tenant.body.data.code).toBe('univ-demo');
 
-    await ctx.owner.query('delete from membership_roles where membership_id = $1', [rows[0].id]);
-    await ctx.owner.query('delete from refresh_tokens where membership_id = $1', [rows[0].id]);
-    await ctx.owner.query('delete from memberships where id = $1', [rows[0].id]);
+    await ctx.owner.query('delete from membership_roles where membership_id = $1', [rows[0]!.id]);
+    await ctx.owner.query('delete from refresh_tokens where membership_id = $1', [rows[0]!.id]);
+    await ctx.owner.query('delete from memberships where id = $1', [rows[0]!.id]);
   });
 
   it('OTP : demande → SMS via la passerelle → connexion ; code faux refusé', async () => {
@@ -129,7 +129,7 @@ describe('Authentification (ADR-0008)', () => {
     const before = ctx.sms.sent.length;
     expect((await ctx.http.post('/api/v1/auth/otp/request').send({ phone })).status).toBe(202);
     expect(ctx.sms.sent.length).toBe(before + 1);
-    const code = /(\d{6})/.exec(ctx.sms.sent.at(-1)!.body)![1];
+    const code = /(\d{6})/.exec(ctx.sms.sent.at(-1)!.body)?.[1] ?? '';
 
     const bad = await ctx.http
       .post('/api/v1/auth/otp/verify')
