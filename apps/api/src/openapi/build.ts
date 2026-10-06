@@ -77,7 +77,12 @@ export function collectRoutes(app: INestApplication): RouteInfo[] {
  * La spec ne peut donc pas diverger des routes : une route sans @ApiDoc apparaît quand même,
  * marquée « non documentée », et le test de contrat la signale.
  */
-export async function buildOpenApiDocument(app: INestApplication) {
+export type OpenApiDocument = Record<string, unknown> & {
+  paths?: Record<string, unknown>;
+  'x-undocumented-routes': string[];
+};
+
+export async function buildOpenApiDocument(app: INestApplication): Promise<OpenApiDocument> {
   const registry = new OpenAPIRegistry();
   registry.register('ProblemDetails', ProblemDetailsSchema);
   const bearer = registry.registerComponent('securitySchemes', 'bearerAuth', {
@@ -154,8 +159,9 @@ export async function buildOpenApiDocument(app: INestApplication) {
     },
     servers: [{ url: '/' }],
   });
-  return { ...document, 'x-undocumented-routes': undocumented } as typeof document & {
-    'x-undocumented-routes': string[];
+  return {
+    ...(document as unknown as Record<string, unknown>),
+    'x-undocumented-routes': undocumented,
   };
 }
 

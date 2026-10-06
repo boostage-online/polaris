@@ -48,5 +48,9 @@ export async function mountDocs(app: INestApplication) {
   const { serve, setup } = await import('swagger-ui-express');
   const http = app.getHttpAdapter().getInstance() as import('express').Express;
   http.get('/api/openapi.json', (_req, res) => res.json(document));
-  http.use('/api/docs', serve, setup(document, { customSiteTitle: 'Polaris API' }));
+  http.use(
+    '/api/docs',
+    serve,
+    setup(document as Record<string, unknown>, { customSiteTitle: 'Polaris API' }),
+  );
 }
