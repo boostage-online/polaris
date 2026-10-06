@@ -282,6 +282,17 @@ export class GuardianService {
     return rows.map((r) => this.linkDto(r.l, r.s, r.g));
   }
 
+  /** Liens d'un élève ; 404 si l'élève n'existe pas (dans ce tenant). */
+  async linksOfStudent(studentId: string) {
+    const tx = this.db.current();
+    const student = await tx.query.students.findFirst({
+      where: and(eq(students.id, studentId), isNull(students.deletedAt)),
+      columns: { id: true },
+    });
+    if (!student) throw AppError.notFound('Élève');
+    return this.linksOf(tx, { studentId });
+  }
+
   async link(studentId: string, input: z.infer<typeof LinkGuardianSchema>) {
     const tx = this.db.current();
     const student = await tx.query.students.findFirst({

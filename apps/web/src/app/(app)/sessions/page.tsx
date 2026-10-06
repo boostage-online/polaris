@@ -134,7 +134,7 @@ export default function SessionsPage() {
                   <td>{s.subjectName}</td>
                   <td>{s.groupName}</td>
                   <td>
-                    {s.teachers.map((t) => t.displayName ?? '—').join(', ') || (
+                    {(s.teachers ?? []).map((t) => t.displayName ?? '—').join(', ') || (
                       <Badge tone="amber">Aucun</Badge>
                     )}
                   </td>

@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { CursorQuerySchema, E164PhoneSchema, EmailSchema, UuidSchema } from './common';
+import {
+  CursorQuerySchema,
+  E164PhoneSchema,
+  EmailSchema,
+  QueryBoolSchema,
+  UuidSchema,
+} from './common';
 
 const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date AAAA-MM-JJ attendue');
 
@@ -49,7 +55,7 @@ export const StudentsQuerySchema = CursorQuerySchema.extend({
   groupId: UuidSchema.optional(),
   academicYearId: UuidSchema.optional(),
   status: StudentStatusSchema.optional(),
-  incomplete: z.coerce.boolean().optional(),
+  incomplete: QueryBoolSchema.optional(),
 });
 export const EnrollStudentSchema = z.object({
   groupId: UuidSchema,
@@ -116,7 +122,7 @@ export const CreateGuardianSchema = z.object({
 export const UpdateGuardianSchema = CreateGuardianSchema.partial();
 export const GuardiansQuerySchema = CursorQuerySchema.extend({
   q: z.string().max(80).optional(),
-  activated: z.coerce.boolean().optional(),
+  activated: QueryBoolSchema.optional(),
 });
 
 const LinkFlags = {
@@ -189,7 +195,7 @@ export const ImportJobSchema = z.object({
   createdAt: z.string().datetime(),
 });
 export const ImportQuerySchema = z.object({
-  dryRun: z.coerce.boolean().default(true),
+  dryRun: QueryBoolSchema.default(true),
   academicYearId: UuidSchema.optional(),
 });
 export const ImportBodySchema = z.object({ csv: z.string().min(1).max(5_000_000) });

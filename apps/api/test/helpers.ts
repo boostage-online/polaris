@@ -31,7 +31,9 @@ export interface TestContext {
 
 export async function startApp(): Promise<TestContext> {
   const app = await createApp();
-  await app.init();
+  // Le serveur écoute réellement : supertest ne gère alors pas son cycle de vie (évite la course
+  // « address of null » quand il ferme/rouvre le serveur entre deux requêtes).
+  await app.listen(0, '127.0.0.1');
   const redis = app.get(RedisService);
   await redis.client.flushdb();
   const owner = new Pool({ connectionString: TEST_OWNER_URL, max: 3 });

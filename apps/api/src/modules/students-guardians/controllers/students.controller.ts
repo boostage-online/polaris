@@ -20,7 +20,6 @@ import {
   ZodParams,
   ZodQuery,
 } from '../../../common/decorators';
-import { DatabaseService } from '../../../database/database.service';
 import { GuardianService } from '../application/guardian.service';
 import { StudentService } from '../application/student.service';
 
@@ -31,7 +30,6 @@ const T = ['students'];
 @Controller('students')
 export class StudentsController {
   constructor(
-    private readonly db: DatabaseService,
     private readonly students: StudentService,
     private readonly guardians: GuardianService,
   ) {}
@@ -147,7 +145,7 @@ export class StudentsController {
     response: z.array(GuardianLinkSchema),
   })
   guardiansOf(@ZodParams(Id) p: IdP) {
-    return this.guardians.linksOf(this.db.current(), { studentId: p.id });
+    return this.guardians.linksOfStudent(p.id);
   }
 
   @Post(':id/guardians')

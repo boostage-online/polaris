@@ -87,7 +87,7 @@ export default function SchedulePage() {
                   </td>
                   <td>{s.subjectName}</td>
                   <td>{s.groupName}</td>
-                  <td>{s.teachers.map((t) => t.displayName ?? '—').join(', ') || '—'}</td>
+                  <td>{(s.teachers ?? []).map((t) => t.displayName ?? '—').join(', ') || '—'}</td>
                   <td>{s.room ?? '—'}</td>
                   <td>
                     <Badge

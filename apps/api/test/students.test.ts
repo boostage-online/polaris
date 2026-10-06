@@ -15,7 +15,7 @@ describe('Élèves et inscriptions', () => {
 
   it('liste, recherche et filtres (classe, statut, fiches incomplètes)', async () => {
     const all = await ctx.http.get('/api/v1/students?limit=100').set(bearer(registrar));
-    expect(all.status).toBe(200);
+    expect(all.status, JSON.stringify(all.body)).toBe(200);
     expect((all.body.data as unknown[]).length).toBeGreaterThanOrEqual(5);
 
     const byName = await ctx.http.get('/api/v1/students?q=adjovi').set(bearer(registrar));

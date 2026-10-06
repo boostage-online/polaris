@@ -137,6 +137,11 @@ export class StructureService {
   }
 
   async listTerms(yearId: string) {
+    const year = await this.db.current().query.academicYears.findFirst({
+      where: eq(academicYears.id, yearId),
+      columns: { id: true },
+    });
+    if (!year) throw AppError.notFound('Année académique');
     const rows = await this.db.current().query.terms.findMany({
       where: eq(terms.academicYearId, yearId),
       orderBy: [asc(terms.startDate)],

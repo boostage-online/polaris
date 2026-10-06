@@ -65,11 +65,11 @@ export interface PageMeta {
 }
 
 /** Construit une query string en ignorant les valeurs vides. */
-export function qs(params: Record<string, string | number | boolean | undefined | null>): string {
+export function qs(params: object): string {
   const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) {
-    if (v === undefined || v === null || v === '') continue;
-    sp.set(k, String(v));
+  for (const [k, v] of Object.entries(params) as [string, unknown][]) {
+    if (typeof v === 'string' && v !== '') sp.set(k, v);
+    else if (typeof v === 'number' || typeof v === 'boolean') sp.set(k, String(v));
   }
   const s = sp.toString();
   return s ? `?${s}` : '';

@@ -16,6 +16,12 @@ export const SlugSchema = z
   .regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/, 'Lettres minuscules, chiffres et tirets');
 
 /** Pagination par curseur (ADR-0009). */
+/** Booléen en query string : `z.coerce.boolean()` prendrait "false" pour vrai. */
+export const QueryBoolSchema = z.union([
+  z.boolean(),
+  z.enum(['true', 'false', '1', '0']).transform((v) => v === 'true' || v === '1'),
+]);
+
 export const CursorQuerySchema = z.object({
   cursor: z.string().min(1).max(512).optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
