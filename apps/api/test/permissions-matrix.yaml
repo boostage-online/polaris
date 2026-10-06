@@ -1,0 +1,28 @@
+# Matrice de permissions (ADR-0007, backlog P1-E5-S06).
+# Pour chaque route non publique : les rôles système autorisés (`allow`). Tout autre rôle doit recevoir 403
+# (routes tenant) ou 404 (routes plateforme vues par un rôle tenant). `scope: identity` = tout utilisateur
+# authentifié. Le test échoue si une route enregistrée n'a pas d'entrée ici : documenter = décider.
+routes:
+  "GET /api/v1/me": { scope: identity }
+  "GET /api/v1/me/sessions": { scope: identity }
+  "DELETE /api/v1/me/sessions/:familyId": { scope: identity }
+  "POST /api/v1/auth/switch-membership": { scope: identity }
+  "POST /api/v1/auth/logout-all": { scope: identity }
+
+  "GET /api/v1/tenant": { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  "PATCH /api/v1/tenant/settings": { allow: [ADMIN] }
+
+  "GET /api/v1/roles": { allow: [ADMIN] }
+  "GET /api/v1/roles/:id": { allow: [ADMIN] }
+  "PATCH /api/v1/roles/:id/permissions": { allow: [ADMIN] }
+  "POST /api/v1/roles/:id/duplicate": { allow: [ADMIN] }
+  "GET /api/v1/members": { allow: [ADMIN] }
+  "PUT /api/v1/members/:membershipId/roles": { allow: [ADMIN] }
+  "POST /api/v1/members/invitations": { allow: [ADMIN] }
+
+  "GET /api/v1/audit-logs": { allow: [ADMIN, DIRECTION] }
+
+  "GET /api/v1/platform/tenants": { scope: platform }
+  "POST /api/v1/platform/tenants": { scope: platform }
+  "PATCH /api/v1/platform/tenants/:id/status": { scope: platform }
+  "POST /api/v1/platform/tenants/:id/admin-invitations": { scope: platform }

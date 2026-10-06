@@ -16,18 +16,18 @@ Cibles : **2 à 3 établissements** — un lycée (ou collège-lycée), une univ
 
 Valide : ADR-0004, Phase 2.
 
-| Question | Ce qu'on cherche à décider | Où ça atterrit |
-| --- | --- | --- |
-| Dessinez votre organisation : cycles/filières, niveaux, classes ou groupes, sous-groupes (TD, options, langues) | Le modèle Programme → Niveau → Groupe (CLASS/SUBGROUP) couvre-t-il tout ? Cas limites : options individuelles, redoublants, classes multi-niveaux | Test de modélisation sur l'export réel pendant l'atelier ; exceptions → ADR |
-| Combien de campus ? Des élèves ou enseignants circulent-ils entre eux ? | Besoin réel de `campuses` et de portée de rôle par campus | Phase 2 E1-S06 |
-| Année et périodes : dates, trimestres/semestres, sessions de rattrapage | `academic_years`, `terms` | Phase 2 E1-S02 |
-| Comment un élève entre, change de classe, part en cours d'année ? Qui le saisit, avec quel document ? | Workflow `enrollments`, proratisation éventuelle des frais | Phase 2 E3 ; Phase 4 |
-| Matricule : généré par vous, par le ministère, réutilisé d'une année sur l'autre ? | Règle d'unicité et de génération | Phase 2 E3-S02 |
-| Emploi du temps : existe-t-il ? stable ? qui le maintient ? séances hors emploi du temps (rattrapages, sorties) ? | Faisabilité de la génération de séances ; besoin d'une « séance générique par jour » | Phase 2 E2 |
-| Co-enseignement, intervenants extérieurs, enseignants sur plusieurs établissements | `course_teachers`, memberships multiples | Phase 2 E2-S03 |
-| Qualité des données : format des téléphones, homonymes, parents multiples, familles recomposées | Règles d'import et de détection de doublons | Phase 2 E5 |
-| Qui a le droit de créer un lien parent-enfant ? Quelle preuve demandez-vous ? Un parent peut-il demander l'accès lui-même ? | Processus de rattachement (décision « avant production ») | ADR-0007 ; Partie 11 |
-| Logiciel actuel (le cas échéant) : export possible ? double saisie acceptable pendant le pilote ? | Scope des imports | Phase 2 E5 |
+| Question                                                                                                                    | Ce qu'on cherche à décider                                                                                                                        | Où ça atterrit                                                              |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Dessinez votre organisation : cycles/filières, niveaux, classes ou groupes, sous-groupes (TD, options, langues)             | Le modèle Programme → Niveau → Groupe (CLASS/SUBGROUP) couvre-t-il tout ? Cas limites : options individuelles, redoublants, classes multi-niveaux | Test de modélisation sur l'export réel pendant l'atelier ; exceptions → ADR |
+| Combien de campus ? Des élèves ou enseignants circulent-ils entre eux ?                                                     | Besoin réel de `campuses` et de portée de rôle par campus                                                                                         | Phase 2 E1-S06                                                              |
+| Année et périodes : dates, trimestres/semestres, sessions de rattrapage                                                     | `academic_years`, `terms`                                                                                                                         | Phase 2 E1-S02                                                              |
+| Comment un élève entre, change de classe, part en cours d'année ? Qui le saisit, avec quel document ?                       | Workflow `enrollments`, proratisation éventuelle des frais                                                                                        | Phase 2 E3 ; Phase 4                                                        |
+| Matricule : généré par vous, par le ministère, réutilisé d'une année sur l'autre ?                                          | Règle d'unicité et de génération                                                                                                                  | Phase 2 E3-S02                                                              |
+| Emploi du temps : existe-t-il ? stable ? qui le maintient ? séances hors emploi du temps (rattrapages, sorties) ?           | Faisabilité de la génération de séances ; besoin d'une « séance générique par jour »                                                              | Phase 2 E2                                                                  |
+| Co-enseignement, intervenants extérieurs, enseignants sur plusieurs établissements                                          | `course_teachers`, memberships multiples                                                                                                          | Phase 2 E2-S03                                                              |
+| Qualité des données : format des téléphones, homonymes, parents multiples, familles recomposées                             | Règles d'import et de détection de doublons                                                                                                       | Phase 2 E5                                                                  |
+| Qui a le droit de créer un lien parent-enfant ? Quelle preuve demandez-vous ? Un parent peut-il demander l'accès lui-même ? | Processus de rattachement (décision « avant production »)                                                                                         | ADR-0007 ; Partie 11                                                        |
+| Logiciel actuel (le cas échéant) : export possible ? double saisie acceptable pendant le pilote ?                           | Scope des imports                                                                                                                                 | Phase 2 E5                                                                  |
 
 Critère de sortie A1 : 100 % des groupes et des élèves de l'export se placent dans le modèle sans champ libre ; liste écrite des exceptions.
 
@@ -35,19 +35,19 @@ Critère de sortie A1 : 100 % des groupes et des élèves de l'export se placent
 
 Valide : ADR-0006, Phase 3, maquette d'appel.
 
-| Question | Ce qu'on cherche à décider | Où ça atterrit |
-| --- | --- | --- |
-| Comment se fait l'appel aujourd'hui (papier, cahier, rien) ? À quel moment du cours ? Qui le fait quand l'enseignant est absent ? | Qui porte `TAKE_ATTENDANCE` / `TAKE_ATTENDANCE_ANY` par défaut | Phase 3 E1 |
-| Test de la maquette : chronométrer un appel de 40 élèves sur téléphone | < 60 s ? gestes compris ? | Maquette ; Phase 3 E1-S05 |
-| Retard : à partir de combien de minutes ? au-delà de combien devient-il une absence ? | `late_to_absent_minutes` par défaut | Règles tenant |
-| Sortie anticipée : un statut à part entière ou une mention ? Compte-t-elle comme absence ? | Confirmer le choix « attribut » d'ADR-0006 | ADR-0006 |
-| Absence justifiée : compte-t-elle dans le taux d'assiduité ? dans les sanctions ? | Deux lectures des rapports | Phase 3 E4 |
-| Justificatifs : qui les reçoit (papier, WhatsApp, parent en personne) ? Délai ? Motifs acceptés ? Les parents peuvent-ils soumettre en ligne ? | Activation des justificatifs côté parent ; liste de motifs | Règles tenant ; Phase 3 E3 |
-| Erreurs d'appel : combien, comment corrigées, par qui, jusqu'à quand ? | Fenêtre de correction (48 h ?), `EDIT_ATTENDANCE_LOCKED` | Règles tenant ; Phase 3 E2 |
-| Seuils : à partir de quand une absence devient-elle « répétée » ? qui est alerté ? que fait-on ? | Seuils par défaut et destinataires | Phase 3 E4 |
-| Notification aux parents : quel délai est utile (immédiat / fin de matinée) ? quel canal ? que doit dire le message ? | Règles de notification, formulation (prénom + initiale) | Phase 3 E5 |
-| Réseau dans les salles : couverture mobile, Wi-Fi ? téléphones des enseignants (Android ? âge ?) | Priorité du mode hors ligne, cible de performance | Phase 3 E1-S06 |
-| Quels rapports regardez-vous aujourd'hui ? lesquels vous manquent ? | Les 8 rapports MVP | Phase 6 |
+| Question                                                                                                                                       | Ce qu'on cherche à décider                                     | Où ça atterrit             |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------- |
+| Comment se fait l'appel aujourd'hui (papier, cahier, rien) ? À quel moment du cours ? Qui le fait quand l'enseignant est absent ?              | Qui porte `TAKE_ATTENDANCE` / `TAKE_ATTENDANCE_ANY` par défaut | Phase 3 E1                 |
+| Test de la maquette : chronométrer un appel de 40 élèves sur téléphone                                                                         | < 60 s ? gestes compris ?                                      | Maquette ; Phase 3 E1-S05  |
+| Retard : à partir de combien de minutes ? au-delà de combien devient-il une absence ?                                                          | `late_to_absent_minutes` par défaut                            | Règles tenant              |
+| Sortie anticipée : un statut à part entière ou une mention ? Compte-t-elle comme absence ?                                                     | Confirmer le choix « attribut » d'ADR-0006                     | ADR-0006                   |
+| Absence justifiée : compte-t-elle dans le taux d'assiduité ? dans les sanctions ?                                                              | Deux lectures des rapports                                     | Phase 3 E4                 |
+| Justificatifs : qui les reçoit (papier, WhatsApp, parent en personne) ? Délai ? Motifs acceptés ? Les parents peuvent-ils soumettre en ligne ? | Activation des justificatifs côté parent ; liste de motifs     | Règles tenant ; Phase 3 E3 |
+| Erreurs d'appel : combien, comment corrigées, par qui, jusqu'à quand ?                                                                         | Fenêtre de correction (48 h ?), `EDIT_ATTENDANCE_LOCKED`       | Règles tenant ; Phase 3 E2 |
+| Seuils : à partir de quand une absence devient-elle « répétée » ? qui est alerté ? que fait-on ?                                               | Seuils par défaut et destinataires                             | Phase 3 E4                 |
+| Notification aux parents : quel délai est utile (immédiat / fin de matinée) ? quel canal ? que doit dire le message ?                          | Règles de notification, formulation (prénom + initiale)        | Phase 3 E5                 |
+| Réseau dans les salles : couverture mobile, Wi-Fi ? téléphones des enseignants (Android ? âge ?)                                               | Priorité du mode hors ligne, cible de performance              | Phase 3 E1-S06             |
+| Quels rapports regardez-vous aujourd'hui ? lesquels vous manquent ?                                                                            | Les 8 rapports MVP                                             | Phase 6                    |
 
 Critère de sortie A2 : règles d'assiduité par défaut remplies pour ce tenant ; appel chronométré < 90 s sur maquette (cible 60 s après polissage) ; au moins deux enseignants volontaires pour le pilote.
 
@@ -55,20 +55,20 @@ Critère de sortie A2 : règles d'assiduité par défaut remplies pour ce tenant
 
 Valide : ADR-0005, ADR-0010, Phases 4–5.
 
-| Question | Ce qu'on cherche à décider | Où ça atterrit |
-| --- | --- | --- |
-| Listez tous vos frais, par niveau/programme, avec montants et échéances | `fee_categories`, `fee_structures`, échéanciers types ; cas de remises, bourses, fratries | Phase 4 |
-| Un même frais varie-t-il selon la classe, l'option, la nationalité, la date d'inscription ? | Granularité des grilles ; ajustements | Phase 4 |
-| Que se passe-t-il pour un élève arrivé en janvier ? parti en mars ? | Proratisation, annulation de créance | Phase 4 ; ADR-0005 |
-| Comment encaissez-vous aujourd'hui ? espèces, dépôt bancaire, Mobile Money sur le numéro de l'école, chèque ? Qui saisit ? Quel reçu ? | Moyens de paiement manuels, format de reçu, numérotation actuelle | Phase 4 paiements manuels, reçus |
-| Montrez un mois de registre de caisse : rapprochez-vous les dépôts avec les élèves ? | Besoin réel de rapprochement (V1/V2) | Backlog V1 |
-| Paiements partiels : acceptés ? minimum ? ordre d'imputation (plus ancienne échéance d'abord ?) | Montant minimum, règle d'allocation | Phase 4 ; ADR-0005 |
-| Trop-perçu, erreurs de caisse, remboursements : fréquence, procédure, qui autorise ? | Crédit automatique, annulation compensatoire, refund V1 | ADR-0005 |
-| Avez-vous déjà un compte FedaPay ou KKiaPay ? Au nom de qui ? Qui peut faire le KYC ? Quel délai ? | Faisabilité Option A pour ce pilote | ADR-0010 |
-| Qui doit supporter la commission du provider : l'établissement, le parent, partagé ? | Décision « avant production » | Partie 2 |
-| Relances d'impayés : quand, par qui, par quel canal, quel ton ? Exclusion des cours pour impayé ? | Rappels par défaut, événements | Phase 4 |
-| Numéro de reçu : exigences du commissaire aux comptes / de l'administration ? mentions obligatoires ? | Convention `{CODE}-{ANNEE}-{SEQ}` et gabarit | Partie 2 ; Phase 4 |
-| Quels états financiers voulez-vous exporter vers votre comptable ? dans quel outil ? | Exports CSV MVP | Phase 4 |
+| Question                                                                                                                               | Ce qu'on cherche à décider                                                                | Où ça atterrit                   |
+| -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------- |
+| Listez tous vos frais, par niveau/programme, avec montants et échéances                                                                | `fee_categories`, `fee_structures`, échéanciers types ; cas de remises, bourses, fratries | Phase 4                          |
+| Un même frais varie-t-il selon la classe, l'option, la nationalité, la date d'inscription ?                                            | Granularité des grilles ; ajustements                                                     | Phase 4                          |
+| Que se passe-t-il pour un élève arrivé en janvier ? parti en mars ?                                                                    | Proratisation, annulation de créance                                                      | Phase 4 ; ADR-0005               |
+| Comment encaissez-vous aujourd'hui ? espèces, dépôt bancaire, Mobile Money sur le numéro de l'école, chèque ? Qui saisit ? Quel reçu ? | Moyens de paiement manuels, format de reçu, numérotation actuelle                         | Phase 4 paiements manuels, reçus |
+| Montrez un mois de registre de caisse : rapprochez-vous les dépôts avec les élèves ?                                                   | Besoin réel de rapprochement (V1/V2)                                                      | Backlog V1                       |
+| Paiements partiels : acceptés ? minimum ? ordre d'imputation (plus ancienne échéance d'abord ?)                                        | Montant minimum, règle d'allocation                                                       | Phase 4 ; ADR-0005               |
+| Trop-perçu, erreurs de caisse, remboursements : fréquence, procédure, qui autorise ?                                                   | Crédit automatique, annulation compensatoire, refund V1                                   | ADR-0005                         |
+| Avez-vous déjà un compte FedaPay ou KKiaPay ? Au nom de qui ? Qui peut faire le KYC ? Quel délai ?                                     | Faisabilité Option A pour ce pilote                                                       | ADR-0010                         |
+| Qui doit supporter la commission du provider : l'établissement, le parent, partagé ?                                                   | Décision « avant production »                                                             | Partie 2                         |
+| Relances d'impayés : quand, par qui, par quel canal, quel ton ? Exclusion des cours pour impayé ?                                      | Rappels par défaut, événements                                                            | Phase 4                          |
+| Numéro de reçu : exigences du commissaire aux comptes / de l'administration ? mentions obligatoires ?                                  | Convention `{CODE}-{ANNEE}-{SEQ}` et gabarit                                              | Partie 2 ; Phase 4               |
+| Quels états financiers voulez-vous exporter vers votre comptable ? dans quel outil ?                                                   | Exports CSV MVP                                                                           | Phase 4                          |
 
 Critère de sortie A3 : la grille et l'échéancier réels de l'établissement se modélisent sans exception ; compte provider existant ou démarche KYC lancée ; porteur des commissions proposé par la direction.
 

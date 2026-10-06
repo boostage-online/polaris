@@ -21,7 +21,7 @@ Chaque établissement est un tenant dont les données ne doivent **jamais** êtr
 Nous retenons l'option 4, **base partagée + `tenant_id` + RLS**, avec les règles suivantes :
 
 - `tenant_id UUID NOT NULL` sur toute table métier. Exceptions explicites : `tenants`, `users` (compte global), `permissions`, tables techniques globales.
-- L'appartenance d'un utilisateur à un tenant est une ligne `memberships` ; le token porte le *membership actif* et donc un seul `tenant_id` à la fois.
+- L'appartenance d'un utilisateur à un tenant est une ligne `memberships` ; le token porte le _membership actif_ et donc un seul `tenant_id` à la fois.
 - Clés primaires `UUID` v7 ; **clés étrangères composites `(tenant_id, id)`** sur les relations sensibles (`student_guardians`, `payment_allocations`, `attendance_records`, `payment_attempts`) pour qu'une FK ne puisse pas traverser deux tenants.
 - Toute unicité est scopée : `UNIQUE (tenant_id, …)`. Tout index de table métier commence par `tenant_id`.
 - **RLS activée** sur chaque table métier avec la policy `tenant_id = current_setting('app.tenant_id')::uuid`. Le rôle applicatif n'a pas `BYPASSRLS`. Chaque transaction applicative commence par `SET LOCAL app.tenant_id = …`. Une requête sans contexte renvoie zéro ligne.

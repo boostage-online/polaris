@@ -1,0 +1,34 @@
+{
+  "name": "polaris",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Plateforme SaaS multi-tenant d'assiduité et de frais scolaires",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22.0.0 <23"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
+    "depcruise": "turbo run depcruise",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
+    "db:migrate": "pnpm --filter @polaris/api db:migrate",
+    "db:rollback": "pnpm --filter @polaris/api db:rollback",
+    "db:seed": "pnpm --filter @polaris/api db:seed",
+    "openapi": "pnpm --filter @polaris/api openapi:generate && pnpm --filter @polaris/contracts sdk:generate",
+    "prepare": "husky || true"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.5.3",
+    "turbo": "^2.5.0",
+    "typescript": "^5.8.3"
+  }
+}

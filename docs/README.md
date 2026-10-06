@@ -2,11 +2,11 @@
 
 Plateforme SaaS multi-tenant d'assiduité et de frais scolaires (établissements scolaires et universitaires, parents/tuteurs).
 
-| Dossier | Contenu | Quand le lire |
-| --- | --- | --- |
-| [`adr/`](./adr/README.md) | Architecture Decision Records 0001–0010 : les décisions structurantes figées avant développement | Avant d'écrire la première ligne de code d'un module ; à chaque fois qu'on veut « faire autrement » |
-| [`backlog/`](./backlog/README.md) | Backlog détaillé des phases 1 à 3 (socle, académique, assiduité) : epics, user stories, critères d'acceptation, estimations | Planification des sprints ; revue avec le product owner |
-| [`cadrage/`](./cadrage/ateliers-pilotes.md) | Checklist des ateliers avec les établissements pilotes et le questionnaire de collecte | Phase 0, semaines 1–3 |
+| Dossier                                     | Contenu                                                                                                                     | Quand le lire                                                                                       |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| [`adr/`](./adr/README.md)                   | Architecture Decision Records 0001–0010 : les décisions structurantes figées avant développement                            | Avant d'écrire la première ligne de code d'un module ; à chaque fois qu'on veut « faire autrement » |
+| [`backlog/`](./backlog/README.md)           | Backlog détaillé des phases 1 à 3 (socle, académique, assiduité) : epics, user stories, critères d'acceptation, estimations | Planification des sprints ; revue avec le product owner                                             |
+| [`cadrage/`](./cadrage/ateliers-pilotes.md) | Checklist des ateliers avec les établissements pilotes et le questionnaire de collecte                                      | Phase 0, semaines 1–3                                                                               |
 
 Le **document directeur** (architecture, stack, modèle de données, roadmap, risques, décisions) est maintenu dans Claude Docs : <https://claude.ai/code/artifact/21da5528-b9d1-4354-a925-56e8fe542012>. Une copie Markdown sera versionnée ici (`docs/architecture/document-directeur.md`) à la clôture de la Phase 0, une fois les décisions signées.
 

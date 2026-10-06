@@ -24,8 +24,8 @@ Nous retenons le **modular monolith TypeScript** :
 
 - **Backend NestJS** (Node LTS pair), un module NestJS par domaine métier, structure interne `controllers/ · application/ · domain/ · infrastructure/ · events/ · index.ts`.
 - **Frontend Next.js** (App Router) qui consomme l'API via un SDK TypeScript généré depuis OpenAPI ; aucune server action ne touche la base.
-- **Deux processus** à partir du même code : `apps/api` (HTTP) et `apps/worker` (BullMQ, crons).
-- **Monorepo pnpm + Turborepo** : `apps/api`, `apps/web`, `apps/worker`, `packages/contracts` (schémas zod, types, SDK), `packages/ui`, `packages/config`.
+- **Deux processus** à partir du même code : `apps/api` (HTTP, `src/main.ts`) et le worker (BullMQ, crons, `apps/api/src/worker/main.ts`), même package, deux images Docker (`infra/docker/api.Dockerfile`, `worker.Dockerfile`).
+- **Monorepo pnpm + Turborepo** : `apps/api` (API + worker), `apps/web`, `packages/contracts` (schémas zod, catalogue de permissions, SDK généré), `packages/config` (tsconfig, eslint, dependency-cruiser) ; `packages/ui` sera extrait du web quand un second client en aura besoin.
 - **Règle de couches** vérifiée en CI (dependency-cruiser) : Socle (Tenancy, Identity, Platform, Audit, Shared) ← Référentiels (Academic, StudentsGuardians) ← Métier cœur (Attendance, Billing, Payments) ← Transverse (Notifications, Reporting). Un module n'importe que des modules des couches inférieures et ne communique vers le haut que par événements.
 - Dépendances explicitement interdites : Payments → Academic/Attendance ; Billing → Payments ; tout module → Notifications/Reporting ; `domain/` → NestJS, Drizzle, HTTP.
 

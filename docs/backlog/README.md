@@ -2,16 +2,16 @@
 
 Trois fichiers, un par phase, découpés en **epics** puis **user stories** avec critères d'acceptation. Les phases 4+ (billing, payments, reporting, durcissement) seront détaillées à la fin de la Phase 2, une fois les retours du socle intégrés.
 
-| Phase | Fichier | Fenêtre cible | Porte de sortie |
-| --- | --- | --- | --- |
-| 1 — Socle technique | [phase-1-socle.md](./phase-1-socle.md) | 2 nov → 4 déc 2026 | G1 : isolation tenant prouvée, auth complète, CI/CD et observabilité en place |
-| 2 — Académique, élèves, parents | [phase-2-academique.md](./phase-2-academique.md) | 7 déc 2026 → 15 jan 2027 | G2 : données des pilotes importées, parents invités |
-| 3 — Assiduité et notifications | [phase-3-assiduite.md](./phase-3-assiduite.md) | 18 jan → 19 fév 2027 | G3 : appel < 60 s, notification < 2 min, pilote en production restreinte |
+| Phase                           | Fichier                                          | Fenêtre cible            | Porte de sortie                                                               |
+| ------------------------------- | ------------------------------------------------ | ------------------------ | ----------------------------------------------------------------------------- |
+| 1 — Socle technique             | [phase-1-socle.md](./phase-1-socle.md)           | 2 nov → 4 déc 2026       | G1 : isolation tenant prouvée, auth complète, CI/CD et observabilité en place |
+| 2 — Académique, élèves, parents | [phase-2-academique.md](./phase-2-academique.md) | 7 déc 2026 → 15 jan 2027 | G2 : données des pilotes importées, parents invités                           |
+| 3 — Assiduité et notifications  | [phase-3-assiduite.md](./phase-3-assiduite.md)   | 18 jan → 19 fév 2027     | G3 : appel < 60 s, notification < 2 min, pilote en production restreinte      |
 
 ## Conventions
 
 - **Identifiant** : `P<phase>-E<epic>-S<story>` (ex. `P1-E3-S02`). Stable ; repris dans le titre du ticket et de la branche.
-- **Format de story** : *En tant que* ‹rôle›, *je veux* ‹action› *afin de* ‹bénéfice›. Les stories techniques (sans rôle utilisateur) sont préfixées `[Tech]`.
+- **Format de story** : _En tant que_ ‹rôle›, _je veux_ ‹action› _afin de_ ‹bénéfice›. Les stories techniques (sans rôle utilisateur) sont préfixées `[Tech]`.
 - **Critères d'acceptation** : liste vérifiable ; une story est terminée quand tous ses critères sont couverts par un test automatisé ou une vérification manuelle documentée dans la PR.
 - **Estimation** : points de complexité (1, 2, 3, 5, 8, 13). Au-delà de 8, découper. Les totaux par epic servent à vérifier la capacité (hypothèse : 3,5 devs × ~25 points/semaine/équipe).
 - **Priorité** : `M` must (sans elle la porte ne passe pas), `S` should (attendue dans la phase, reportable d'un sprint), `C` could (si capacité).

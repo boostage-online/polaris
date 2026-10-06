@@ -14,7 +14,7 @@ Les établissements ont des organisations différentes : ici seul l'enseignant f
 1. **Rôles codés en dur** (`if (user.role === 'TEACHER')`) — rapide, rigide, impossible à adapter sans release.
 2. **ACL par objet** (droits par ressource) — trop fin pour l'administration quotidienne d'un établissement.
 3. **ABAC complet** (moteur de règles sur attributs) — puissant, mais opaque et difficile à tester pour une petite équipe.
-4. **RBAC à deux étages + portée** : rôles (données, par tenant) → permissions (catalogue en code) ; les permissions qui dépendent d'une ressource sont évaluées par des *policies* explicites.
+4. **RBAC à deux étages + portée** : rôles (données, par tenant) → permissions (catalogue en code) ; les permissions qui dépendent d'une ressource sont évaluées par des _policies_ explicites.
 
 ## Décision
 

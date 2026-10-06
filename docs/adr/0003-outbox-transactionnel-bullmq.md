@@ -7,7 +7,7 @@
 
 ## Contexte et problème
 
-Plusieurs effets métier doivent se produire **après** une transaction validée, sans ralentir la requête et sans jamais être perdus : notifications aux parents après un appel, génération du reçu et notification après un paiement, recalcul des statistiques, rappels d'échéances. Publier un message dans une file *depuis* le code applicatif crée une fenêtre entre le `COMMIT` et le `publish` où un crash perd l'événement (ou, dans l'autre ordre, publie un événement pour une transaction annulée).
+Plusieurs effets métier doivent se produire **après** une transaction validée, sans ralentir la requête et sans jamais être perdus : notifications aux parents après un appel, génération du reçu et notification après un paiement, recalcul des statistiques, rappels d'échéances. Publier un message dans une file _depuis_ le code applicatif crée une fenêtre entre le `COMMIT` et le `publish` où un crash perd l'événement (ou, dans l'autre ordre, publie un événement pour une transaction annulée).
 
 Il faut aussi des jobs planifiés (réconciliation des paiements toutes les 5 minutes, génération des séances, rappels quotidiens) et des retries avec backoff.
 

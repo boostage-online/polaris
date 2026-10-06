@@ -1,0 +1,14 @@
+{
+  "name": "@polaris/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Configurations partagées : tsconfig, eslint, dependency-cruiser",
+  "files": ["tsconfig", "eslint", "depcruise"],
+  "devDependencies": {
+    "@eslint/js": "^9.25.0",
+    "eslint": "^9.25.0",
+    "eslint-config-prettier": "^10.1.2",
+    "eslint-plugin-import": "^2.31.0",
+    "typescript-eslint": "^8.31.0"
+  }
+}

@@ -11,16 +11,16 @@ L'argent des parents doit arriver aux établissements. Trois montages sont possi
 
 ## Options envisagées
 
-| Critère | A — compte par établissement | B — compte central + reversement | C — hybride |
-| --- | --- | --- | --- |
-| Flux | provider → établissement | provider → plateforme → établissement | selon tenant |
-| Réglementation | plateforme = prestataire technique | plateforme détient des fonds de tiers : agrément ou adossement à un établissement agréé (BCEAO) | B pour une partie du parc |
-| Commissions | négociées par établissement ; marge = abonnement SaaS | marge prélevée au passage | mixte |
-| Onboarding | KYC provider par établissement, saisie de clés | un clic | friction pour A |
-| Rapprochement | par établissement, avec ses clés | centralisé + ventilation par tenant | double |
-| Reversements | aucun | module payouts, calendrier, litiges, fonds en transit | pour B |
-| Sécurité | N jeux de clés chiffrés | un compte qui concentre tout | les deux |
-| Complexité comptable | faible | élevée | élevée |
+| Critère              | A — compte par établissement                          | B — compte central + reversement                                                                | C — hybride               |
+| -------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------- |
+| Flux                 | provider → établissement                              | provider → plateforme → établissement                                                           | selon tenant              |
+| Réglementation       | plateforme = prestataire technique                    | plateforme détient des fonds de tiers : agrément ou adossement à un établissement agréé (BCEAO) | B pour une partie du parc |
+| Commissions          | négociées par établissement ; marge = abonnement SaaS | marge prélevée au passage                                                                       | mixte                     |
+| Onboarding           | KYC provider par établissement, saisie de clés        | un clic                                                                                         | friction pour A           |
+| Rapprochement        | par établissement, avec ses clés                      | centralisé + ventilation par tenant                                                             | double                    |
+| Reversements         | aucun                                                 | module payouts, calendrier, litiges, fonds en transit                                           | pour B                    |
+| Sécurité             | N jeux de clés chiffrés                               | un compte qui concentre tout                                                                    | les deux                  |
+| Complexité comptable | faible                                                | élevée                                                                                          | élevée                    |
 
 ## Décision
 
