@@ -51,15 +51,12 @@ describe('Tuteurs et liens parent-enfant', () => {
 
   let guardianId: string;
   it('créer un tuteur ; le téléphone est unique par établissement', async () => {
-    const res = await ctx.http
-      .post('/api/v1/guardians')
-      .set(bearer(registrar))
-      .send({
-        firstName: 'Clarisse',
-        lastName: 'HOUNKPATIN',
-        phone: '+22997000010',
-        email: 'Clarisse@Example.com',
-      });
+    const res = await ctx.http.post('/api/v1/guardians').set(bearer(registrar)).send({
+      firstName: 'Clarisse',
+      lastName: 'HOUNKPATIN',
+      phone: '+22997000010',
+      email: 'Clarisse@Example.com',
+    });
     expect(res.status).toBe(201);
     guardianId = res.body.data.id as string;
     expect(res.body.data.activated).toBe(false);

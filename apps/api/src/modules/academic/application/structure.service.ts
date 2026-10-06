@@ -69,18 +69,16 @@ export class StructureService {
         .set({ isCurrent: false })
         .where(eq(academicYears.isCurrent, true));
     try {
-      await tx
-        .insert(academicYears)
-        .values({
-          id,
-          tenantId: this.tenantId,
-          label: input.label,
-          startDate: input.startDate,
-          endDate: input.endDate,
-          isCurrent: input.isCurrent,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+      await tx.insert(academicYears).values({
+        id,
+        tenantId: this.tenantId,
+        label: input.label,
+        startDate: input.startDate,
+        endDate: input.endDate,
+        isCurrent: input.isCurrent,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
     } catch (e) {
       if (uniqueViolation(e)) throw AppError.conflict(`L'année « ${input.label} » existe déjà`);
       throw e;
@@ -139,12 +137,10 @@ export class StructureService {
   }
 
   async listTerms(yearId: string) {
-    const rows = await this.db
-      .current()
-      .query.terms.findMany({
-        where: eq(terms.academicYearId, yearId),
-        orderBy: [asc(terms.startDate)],
-      });
+    const rows = await this.db.current().query.terms.findMany({
+      where: eq(terms.academicYearId, yearId),
+      orderBy: [asc(terms.startDate)],
+    });
     return rows.map((t) => ({
       id: t.id,
       academicYearId: t.academicYearId,
@@ -165,17 +161,15 @@ export class StructureService {
     }
     const id = randomUUID();
     try {
-      await tx
-        .insert(terms)
-        .values({
-          id,
-          tenantId: this.tenantId,
-          academicYearId: yearId,
-          label: input.label,
-          startDate: input.startDate,
-          endDate: input.endDate,
-          createdAt: new Date(),
-        });
+      await tx.insert(terms).values({
+        id,
+        tenantId: this.tenantId,
+        academicYearId: yearId,
+        label: input.label,
+        startDate: input.startDate,
+        endDate: input.endDate,
+        createdAt: new Date(),
+      });
     } catch (e) {
       if (uniqueViolation(e)) throw AppError.conflict(`La période « ${input.label} » existe déjà`);
       throw e;
@@ -215,17 +209,15 @@ export class StructureService {
     const tx = this.db.current();
     const id = randomUUID();
     try {
-      await tx
-        .insert(programs)
-        .values({
-          id,
-          tenantId: this.tenantId,
-          code: input.code,
-          name: input.name,
-          isDefault: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+      await tx.insert(programs).values({
+        id,
+        tenantId: this.tenantId,
+        code: input.code,
+        name: input.name,
+        isDefault: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
     } catch (e) {
       if (uniqueViolation(e)) throw AppError.conflict(`Le code « ${input.code} » existe déjà`);
       throw e;
@@ -246,17 +238,15 @@ export class StructureService {
     });
     if (existing) return existing;
     const id = randomUUID();
-    await tx
-      .insert(programs)
-      .values({
-        id,
-        tenantId: this.tenantId,
-        code: 'GENERAL',
-        name: 'Enseignement général',
-        isDefault: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+    await tx.insert(programs).values({
+      id,
+      tenantId: this.tenantId,
+      code: 'GENERAL',
+      name: 'Enseignement général',
+      isDefault: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
     return (await tx.query.programs.findFirst({ where: eq(programs.id, id) }))!;
   }
 
@@ -313,17 +303,15 @@ export class StructureService {
     if (!program) throw AppError.notFound('Programme');
     const id = randomUUID();
     try {
-      await tx
-        .insert(levels)
-        .values({
-          id,
-          tenantId: this.tenantId,
-          programId,
-          name: input.name,
-          rank: input.rank,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+      await tx.insert(levels).values({
+        id,
+        tenantId: this.tenantId,
+        programId,
+        name: input.name,
+        rank: input.rank,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
     } catch (e) {
       if (uniqueViolation(e))
         throw AppError.conflict(`Le niveau « ${input.name} » existe déjà dans ce programme`);
@@ -431,21 +419,19 @@ export class StructureService {
     }
     const id = randomUUID();
     try {
-      await tx
-        .insert(groups)
-        .values({
-          id,
-          tenantId: this.tenantId,
-          academicYearId: input.academicYearId,
-          levelId: input.levelId,
-          campusId: input.campusId ?? null,
-          parentGroupId: input.parentGroupId ?? null,
-          name: input.name,
-          kind: input.kind,
-          capacity: input.capacity ?? null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+      await tx.insert(groups).values({
+        id,
+        tenantId: this.tenantId,
+        academicYearId: input.academicYearId,
+        levelId: input.levelId,
+        campusId: input.campusId ?? null,
+        parentGroupId: input.parentGroupId ?? null,
+        name: input.name,
+        kind: input.kind,
+        capacity: input.capacity ?? null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
     } catch (e) {
       if (uniqueViolation(e))
         throw AppError.conflict(`Le groupe « ${input.name} » existe déjà pour cette année`);
@@ -502,12 +488,10 @@ export class StructureService {
 
   // ---------------------------------------------------------------- matières
   async listSubjects() {
-    const rows = await this.db
-      .current()
-      .query.subjects.findMany({
-        where: isNull(subjects.deletedAt),
-        orderBy: [asc(subjects.name)],
-      });
+    const rows = await this.db.current().query.subjects.findMany({
+      where: isNull(subjects.deletedAt),
+      orderBy: [asc(subjects.name)],
+    });
     return rows.map((s) => ({ id: s.id, code: s.code, name: s.name, levelId: s.levelId }));
   }
 
@@ -515,17 +499,15 @@ export class StructureService {
     const tx = this.db.current();
     const id = randomUUID();
     try {
-      await tx
-        .insert(subjects)
-        .values({
-          id,
-          tenantId: this.tenantId,
-          code: input.code,
-          name: input.name,
-          levelId: input.levelId ?? null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+      await tx.insert(subjects).values({
+        id,
+        tenantId: this.tenantId,
+        code: input.code,
+        name: input.name,
+        levelId: input.levelId ?? null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
     } catch (e) {
       if (uniqueViolation(e)) throw AppError.conflict(`Le code « ${input.code} » existe déjà`);
       throw e;

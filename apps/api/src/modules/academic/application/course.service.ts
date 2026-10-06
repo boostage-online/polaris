@@ -106,18 +106,16 @@ export class CourseService {
     });
     if (!m) throw AppError.notFound('Membre');
     const id = randomUUID();
-    await tx
-      .insert(staffProfiles)
-      .values({
-        id,
-        tenantId: this.tenantId,
-        membershipId,
-        employeeNumber: null,
-        title: null,
-        isTeacher: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+    await tx.insert(staffProfiles).values({
+      id,
+      tenantId: this.tenantId,
+      membershipId,
+      employeeNumber: null,
+      title: null,
+      isTeacher: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
     return (await tx.query.staffProfiles.findFirst({ where: eq(staffProfiles.id, id) }))!;
   }
 
@@ -233,19 +231,17 @@ export class CourseService {
     if (!subject) throw AppError.validation([{ path: 'subjectId', message: 'Matière inconnue' }]);
     const id = randomUUID();
     try {
-      await tx
-        .insert(courseOfferings)
-        .values({
-          id,
-          tenantId: this.tenantId,
-          subjectId: input.subjectId,
-          groupId: input.groupId,
-          academicYearId: group.academicYearId,
-          termId: input.termId ?? null,
-          label: input.label ?? null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+      await tx.insert(courseOfferings).values({
+        id,
+        tenantId: this.tenantId,
+        subjectId: input.subjectId,
+        groupId: input.groupId,
+        academicYearId: group.academicYearId,
+        termId: input.termId ?? null,
+        label: input.label ?? null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
     } catch (e) {
       if ((e as { code?: string }).code === '23505')
         throw AppError.conflict('Ce cours existe déjà pour ce groupe et cette période');
@@ -280,16 +276,14 @@ export class CourseService {
     const before = await this.teachersOf(tx, [courseId]);
     await tx.delete(courseTeachers).where(eq(courseTeachers.courseOfferingId, courseId));
     if (input.teachers.length) {
-      await tx
-        .insert(courseTeachers)
-        .values(
-          input.teachers.map((t) => ({
-            tenantId: this.tenantId,
-            courseOfferingId: courseId,
-            staffProfileId: t.staffProfileId,
-            role: t.role,
-          })),
-        );
+      await tx.insert(courseTeachers).values(
+        input.teachers.map((t) => ({
+          tenantId: this.tenantId,
+          courseOfferingId: courseId,
+          staffProfileId: t.staffProfileId,
+          role: t.role,
+        })),
+      );
       await tx.update(staffProfiles).set({ isTeacher: true }).where(inArray(staffProfiles.id, ids));
     }
     if (audit)
@@ -335,20 +329,18 @@ export class CourseService {
     // Chevauchements : avertissement (meta), pas blocage — les établissements ont des cas légitimes (dédoublements).
     const warnings = await this.overlapWarnings(tx, course, input);
     const id = randomUUID();
-    await tx
-      .insert(scheduleSlots)
-      .values({
-        id,
-        tenantId: this.tenantId,
-        courseOfferingId: courseId,
-        weekday: input.weekday,
-        startTime: input.startTime,
-        endTime: input.endTime,
-        room: input.room ?? null,
-        validFrom: input.validFrom ?? null,
-        validTo: input.validTo ?? null,
-        createdAt: new Date(),
-      });
+    await tx.insert(scheduleSlots).values({
+      id,
+      tenantId: this.tenantId,
+      courseOfferingId: courseId,
+      weekday: input.weekday,
+      startTime: input.startTime,
+      endTime: input.endTime,
+      room: input.room ?? null,
+      validFrom: input.validFrom ?? null,
+      validTo: input.validTo ?? null,
+      createdAt: new Date(),
+    });
     await this.audit.record({
       action: 'schedule_slot.created',
       entityType: 'ScheduleSlot',

@@ -63,16 +63,13 @@ describe('Élèves et inscriptions', () => {
 
   let created: string;
   it('créer un élève génère un matricule et peut inscrire immédiatement', async () => {
-    const res = await ctx.http
-      .post('/api/v1/students')
-      .set(bearer(registrar))
-      .send({
-        firstName: 'Bienvenu',
-        lastName: 'ZINSOU',
-        birthDate: '2014-02-02',
-        gender: 'M',
-        groupId: ac().groupIds.sixB,
-      });
+    const res = await ctx.http.post('/api/v1/students').set(bearer(registrar)).send({
+      firstName: 'Bienvenu',
+      lastName: 'ZINSOU',
+      birthDate: '2014-02-02',
+      gender: 'M',
+      groupId: ac().groupIds.sixB,
+    });
     expect(res.status).toBe(201);
     created = res.body.data.id as string;
     expect(res.body.data.matricule).toMatch(/^2026-\d{5}$/);
@@ -156,15 +153,12 @@ describe('Élèves et inscriptions', () => {
 
   it('la capacité de la classe est respectée', async () => {
     const admin = await loginAs(ctx, 'lycee', 'ADMIN');
-    const tiny = await ctx.http
-      .post('/api/v1/groups')
-      .set(bearer(admin))
-      .send({
-        academicYearId: ac().yearId,
-        levelId: ac().levelIds.cinquieme,
-        name: '5e Mini',
-        capacity: 1,
-      });
+    const tiny = await ctx.http.post('/api/v1/groups').set(bearer(admin)).send({
+      academicYearId: ac().yearId,
+      levelId: ac().levelIds.cinquieme,
+      name: '5e Mini',
+      capacity: 1,
+    });
     expect(tiny.status).toBe(201);
     const a = await ctx.http
       .post('/api/v1/students')

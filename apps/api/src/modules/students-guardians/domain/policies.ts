@@ -45,10 +45,13 @@ export function normalizePhone(raw: string, defaultCountryCode = '229'): string 
     return /^\+[1-9]\d{6,14}$/.test(digits) ? digits : null;
   }
   if (digits.startsWith('00')) return normalizePhone(`+${digits.slice(2)}`, defaultCountryCode);
+  // Bénin : numéros à 10 chiffres depuis 2024 (préfixe 01), 8 chiffres avant ; on ajoute 01 si 8 chiffres.
+  if (defaultCountryCode === '229') {
+    if (/^01\d{8}$/.test(digits)) return `+229${digits}`;
+    if (/^\d{8}$/.test(digits)) return `+22901${digits}`;
+  }
   const local = digits.replace(/^0+/, '');
   if (local.length < 7) return null;
-  // Bénin : numéros à 10 chiffres depuis 2024 (préfixe 01), 8 chiffres avant ; on ajoute 01 si 8 chiffres.
-  if (defaultCountryCode === '229' && local.length === 8) return `+229 01${local}`.replace(' ', '');
   return `+${defaultCountryCode}${local}`;
 }
 

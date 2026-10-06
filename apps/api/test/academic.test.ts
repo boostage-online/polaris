@@ -27,15 +27,12 @@ describe('Structure académique et séances', () => {
   });
 
   it('créer une nouvelle année courante bascule la précédente', async () => {
-    const created = await ctx.http
-      .post('/api/v1/academic-years')
-      .set(bearer(admin))
-      .send({
-        label: '2027-2028',
-        startDate: '2027-09-15',
-        endDate: '2028-07-15',
-        isCurrent: false,
-      });
+    const created = await ctx.http.post('/api/v1/academic-years').set(bearer(admin)).send({
+      label: '2027-2028',
+      startDate: '2027-09-15',
+      endDate: '2028-07-15',
+      isCurrent: false,
+    });
     expect(created.status).toBe(201);
     const id = created.body.data.id as string;
     expect(
@@ -68,15 +65,12 @@ describe('Structure académique et séances', () => {
   });
 
   it('un sous-groupe exige une classe parente ; un nom de groupe est unique par année', async () => {
-    const noParent = await ctx.http
-      .post('/api/v1/groups')
-      .set(bearer(admin))
-      .send({
-        academicYearId: ac().yearId,
-        levelId: ac().levelIds.sixieme,
-        name: 'Orphelin',
-        kind: 'SUBGROUP',
-      });
+    const noParent = await ctx.http.post('/api/v1/groups').set(bearer(admin)).send({
+      academicYearId: ac().yearId,
+      levelId: ac().levelIds.sixieme,
+      name: 'Orphelin',
+      kind: 'SUBGROUP',
+    });
     expect(noParent.status).toBe(422);
     const dup = await ctx.http
       .post('/api/v1/groups')

@@ -208,22 +208,20 @@ export class SessionService {
     if (!course) throw AppError.notFound('Cours');
     const id = randomUUID();
     try {
-      await tx
-        .insert(sessions)
-        .values({
-          id,
-          tenantId: this.tenantId,
-          courseOfferingId: courseId,
-          scheduleSlotId: null,
-          startsAt: new Date(input.startsAt),
-          endsAt: new Date(input.endsAt),
-          status: 'PLANNED',
-          room: input.room ?? null,
-          cancelReason: null,
-          createdBy: RequestContextStore.require().actor?.userId ?? null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+      await tx.insert(sessions).values({
+        id,
+        tenantId: this.tenantId,
+        courseOfferingId: courseId,
+        scheduleSlotId: null,
+        startsAt: new Date(input.startsAt),
+        endsAt: new Date(input.endsAt),
+        status: 'PLANNED',
+        room: input.room ?? null,
+        cancelReason: null,
+        createdBy: RequestContextStore.require().actor?.userId ?? null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
     } catch (e) {
       if ((e as { code?: string }).code === '23505')
         throw AppError.conflict('Une séance de ce cours commence déjà à cet instant');

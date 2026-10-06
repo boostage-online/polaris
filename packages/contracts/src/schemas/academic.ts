@@ -235,3 +235,16 @@ export const SessionsQuerySchema = CursorQuerySchema.extend({
 export const GenerateSessionsSchema = z.object({
   horizonDays: z.number().int().min(1).max(60).default(14),
 });
+
+export type AcademicYear = z.infer<typeof AcademicYearSchema>;
+export type Term = z.infer<typeof TermSchema>;
+export type Program = z.infer<typeof ProgramSchema>;
+export type Group = z.infer<typeof GroupSchema>;
+export type Subject = z.infer<typeof SubjectSchema>;
+export type Staff = z.infer<typeof StaffSchema>;
+export type Course = z.infer<typeof CourseSchema>;
+export type ClassSession = z.infer<typeof ClassSessionSchema>;
+export type CreateAcademicYearInput = z.input<typeof CreateAcademicYearSchema>;
+export type CreateGroupInput = z.input<typeof CreateGroupSchema>;
+export type CreateCourseInput = z.input<typeof CreateCourseSchema>;
+export type CreateScheduleSlotInput = z.input<typeof CreateScheduleSlotSchema>;

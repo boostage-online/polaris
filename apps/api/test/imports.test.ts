@@ -1,11 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { bearer, loginAs, seed, startApp, type Session, type TestContext } from './helpers';
+import { bearer, loginAs, startApp, type Session, type TestContext } from './helpers';
 
 /** Phase 2 — imports CSV élèves et tuteurs (simulation puis application). Tenant « lycée ». */
 describe('Imports CSV', () => {
   let ctx: TestContext;
   let registrar: Session;
-  const ac = () => seed.tenants.lycee.academic;
   const count = async () =>
     (
       (await ctx.http.get('/api/v1/students?limit=200').set(bearer(registrar))).body

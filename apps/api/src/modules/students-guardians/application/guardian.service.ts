@@ -124,22 +124,20 @@ export class GuardianService {
     });
     if (existing) return { guardian: existing, created: false };
     const id = randomUUID();
-    await tx
-      .insert(guardians)
-      .values({
-        id,
-        tenantId: this.tenantId,
-        userId: null,
-        firstName: input.firstName.trim(),
-        lastName: input.lastName.trim(),
-        phoneE164: input.phone,
-        email: input.email ?? null,
-        preferredChannel: input.preferredChannel,
-        locale: 'fr',
-        invitedAt: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+    await tx.insert(guardians).values({
+      id,
+      tenantId: this.tenantId,
+      userId: null,
+      firstName: input.firstName.trim(),
+      lastName: input.lastName.trim(),
+      phoneE164: input.phone,
+      email: input.email ?? null,
+      preferredChannel: input.preferredChannel,
+      locale: 'fr',
+      invitedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
     // Si un compte utilisateur porte déjà ce téléphone (parent dans un autre établissement), on le rattache.
     const user = await tx.query.users.findFirst({ where: eq(users.phoneE164, input.phone) });
     if (user) await tx.update(guardians).set({ userId: user.id }).where(eq(guardians.id, id));
@@ -216,21 +214,19 @@ export class GuardianService {
         if (existing) userId = existing.id;
         else {
           userId = randomUUID();
-          await tx
-            .insert(users)
-            .values({
-              id: userId,
-              email: null,
-              phoneE164: g.phoneE164,
-              passwordHash: null,
-              displayName: `${g.firstName} ${g.lastName}`,
-              status: 'ACTIVE',
-              mfaEnabled: false,
-              tokenVersion: 0,
-              locale: g.locale,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            });
+          await tx.insert(users).values({
+            id: userId,
+            email: null,
+            phoneE164: g.phoneE164,
+            passwordHash: null,
+            displayName: `${g.firstName} ${g.lastName}`,
+            status: 'ACTIVE',
+            mfaEnabled: false,
+            tokenVersion: 0,
+            locale: g.locale,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
         }
         await tx.update(guardians).set({ userId }).where(eq(guardians.id, g.id));
       }
@@ -238,20 +234,18 @@ export class GuardianService {
         where: and(eq(memberships.userId, userId), eq(memberships.tenantId, this.tenantId)),
       });
       if (!m) {
-        await tx
-          .insert(memberships)
-          .values({
-            id: randomUUID(),
-            userId,
-            tenantId: this.tenantId,
-            kind: 'GUARDIAN',
-            status: 'ACTIVE',
-            permissionsVersion: 1,
-            invitedBy: RequestContextStore.require().actor?.userId ?? null,
-            acceptedAt: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
+        await tx.insert(memberships).values({
+          id: randomUUID(),
+          userId,
+          tenantId: this.tenantId,
+          kind: 'GUARDIAN',
+          status: 'ACTIVE',
+          permissionsVersion: 1,
+          invitedBy: RequestContextStore.require().actor?.userId ?? null,
+          acceptedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
       }
       await tx.update(guardians).set({ invitedAt: new Date() }).where(eq(guardians.id, g.id));
       await this.audit.record({
@@ -311,25 +305,23 @@ export class GuardianService {
         .set({ isPrimary: false })
         .where(and(eq(studentGuardians.studentId, studentId), isNull(studentGuardians.unlinkedAt)));
     try {
-      await tx
-        .insert(studentGuardians)
-        .values({
-          id,
-          tenantId: this.tenantId,
-          studentId,
-          guardianId,
-          relationship: input.relationship,
-          isPrimary: input.isPrimary,
-          canViewAttendance: input.canViewAttendance,
-          canViewFinance: input.canViewFinance,
-          canPay: input.canPay,
-          canJustify: input.canJustify,
-          linkedBy: RequestContextStore.require().actor?.userId ?? null,
-          linkedAt: new Date(),
-          unlinkedAt: null,
-          unlinkedBy: null,
-          unlinkReason: null,
-        });
+      await tx.insert(studentGuardians).values({
+        id,
+        tenantId: this.tenantId,
+        studentId,
+        guardianId,
+        relationship: input.relationship,
+        isPrimary: input.isPrimary,
+        canViewAttendance: input.canViewAttendance,
+        canViewFinance: input.canViewFinance,
+        canPay: input.canPay,
+        canJustify: input.canJustify,
+        linkedBy: RequestContextStore.require().actor?.userId ?? null,
+        linkedAt: new Date(),
+        unlinkedAt: null,
+        unlinkedBy: null,
+        unlinkReason: null,
+      });
     } catch (e) {
       if ((e as { code?: string }).code === '23505')
         throw AppError.conflict('Ce tuteur est déjà lié à cet élève');

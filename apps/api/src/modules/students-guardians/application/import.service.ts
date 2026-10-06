@@ -29,7 +29,7 @@ export interface RowReport {
 
 /** Parseur CSV minimal (séparateur , ou ; détecté, guillemets doubles, BOM). Suffisant pour les exports scolaires. */
 export function parseCsv(text: string): { headers: string[]; rows: string[][] } {
-  const src = text.replace(/^﻿/, '');
+  const src = text.replace(/^\uFEFF/, '');
   const firstLine = src.split(/\r?\n/, 1)[0] ?? '';
   const sep =
     (firstLine.match(/;/g) ?? []).length > (firstLine.match(/,/g) ?? []).length ? ';' : ',';
@@ -89,13 +89,14 @@ function pick(headers: string[], row: string[], names: string[]): string | undef
   return undefined;
 }
 
-function parseDate(v: string | undefined): string | null | 'invalid' {
+const INVALID_DATE = Symbol('invalid-date');
+function parseDate(v: string | undefined): string | null | typeof INVALID_DATE {
   if (!v) return null;
   const m1 = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
   if (m1) return v;
   const m2 = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(v);
   if (m2) return `${m2[3]}-${m2[2]!.padStart(2, '0')}-${m2[1]!.padStart(2, '0')}`;
-  return 'invalid';
+  return INVALID_DATE;
 }
 
 /**
@@ -179,7 +180,7 @@ export class ImportService {
         report.push({ line, status: 'ERROR', message: 'Nom ou prénom manquant' });
         continue;
       }
-      if (birth === 'invalid') {
+      if (birth === INVALID_DATE) {
         report.push({
           line,
           status: 'ERROR',
@@ -220,23 +221,21 @@ export class ImportService {
           } else {
             studentId = randomUUID();
             const code = matricule ?? (await this.studentsSvc.nextMatricule(tx));
-            await tx
-              .insert(students)
-              .values({
-                id: studentId,
-                tenantId: this.tenantId,
-                matricule: code,
-                firstName,
-                lastName,
-                birthDate: birth,
-                gender,
-                photoKey: null,
-                status: 'ACTIVE',
-                leftAt: null,
-                notes: null,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              });
+            await tx.insert(students).values({
+              id: studentId,
+              tenantId: this.tenantId,
+              matricule: code,
+              firstName,
+              lastName,
+              birthDate: birth,
+              gender,
+              photoKey: null,
+              status: 'ACTIVE',
+              leftAt: null,
+              notes: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
             byMatricule.set(code, {
               id: studentId,
               matricule: code,
@@ -255,21 +254,19 @@ export class ImportService {
               ),
             });
             if (!current) {
-              await tx
-                .insert(enrollments)
-                .values({
-                  id: randomUUID(),
-                  tenantId: this.tenantId,
-                  studentId,
-                  groupId: group.id,
-                  academicYearId: yearId,
-                  isPrimary: group.kind === 'CLASS',
-                  enrolledAt: new Date().toISOString().slice(0, 10),
-                  leftAt: null,
-                  leftReason: null,
-                  createdBy: RequestContextStore.require().actor?.userId ?? null,
-                  createdAt: new Date(),
-                });
+              await tx.insert(enrollments).values({
+                id: randomUUID(),
+                tenantId: this.tenantId,
+                studentId,
+                groupId: group.id,
+                academicYearId: yearId,
+                isPrimary: group.kind === 'CLASS',
+                enrolledAt: new Date().toISOString().slice(0, 10),
+                leftAt: null,
+                leftReason: null,
+                createdBy: RequestContextStore.require().actor?.userId ?? null,
+                createdAt: new Date(),
+              });
             } else if (current.groupId !== group.id) {
               report.push({
                 line,
@@ -386,25 +383,23 @@ export class ImportService {
             ),
           });
           if (!linked) {
-            await tx
-              .insert(studentGuardians)
-              .values({
-                id: randomUUID(),
-                tenantId: this.tenantId,
-                studentId,
-                guardianId: guardian.id,
-                relationship,
-                isPrimary: false,
-                canViewAttendance: true,
-                canViewFinance: true,
-                canPay: true,
-                canJustify: true,
-                linkedBy: RequestContextStore.require().actor?.userId ?? null,
-                linkedAt: new Date(),
-                unlinkedAt: null,
-                unlinkedBy: null,
-                unlinkReason: null,
-              });
+            await tx.insert(studentGuardians).values({
+              id: randomUUID(),
+              tenantId: this.tenantId,
+              studentId,
+              guardianId: guardian.id,
+              relationship,
+              isPrimary: false,
+              canViewAttendance: true,
+              canViewFinance: true,
+              canPay: true,
+              canJustify: true,
+              linkedBy: RequestContextStore.require().actor?.userId ?? null,
+              linkedAt: new Date(),
+              unlinkedAt: null,
+              unlinkedBy: null,
+              unlinkReason: null,
+            });
           }
           report.push({
             line,
@@ -470,22 +465,20 @@ export class ImportService {
     const tx = this.db.current();
     const errors = report.filter((r) => r.status === 'ERROR').length;
     const id = randomUUID();
-    await tx
-      .insert(importJobs)
-      .values({
-        id,
-        tenantId: this.tenantId,
-        kind,
-        dryRun,
-        status: 'DONE',
-        rowsTotal: total,
-        rowsOk: ok,
-        rowsError: errors,
-        report: report as unknown[],
-        createdBy: RequestContextStore.require().actor?.userId ?? null,
-        createdAt: new Date(),
-        finishedAt: new Date(),
-      });
+    await tx.insert(importJobs).values({
+      id,
+      tenantId: this.tenantId,
+      kind,
+      dryRun,
+      status: 'DONE',
+      rowsTotal: total,
+      rowsOk: ok,
+      rowsError: errors,
+      report: report as unknown[],
+      createdBy: RequestContextStore.require().actor?.userId ?? null,
+      createdAt: new Date(),
+      finishedAt: new Date(),
+    });
     if (!dryRun)
       await this.audit.record({
         action: 'import.applied',

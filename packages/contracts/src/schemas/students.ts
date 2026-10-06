@@ -220,3 +220,15 @@ export const AdminDashboardSchema = z.object({
     z.object({ code: z.string(), message: z.string(), count: z.number().int() }),
   ),
 });
+
+export type Student = z.infer<typeof StudentSchema>;
+export type Enrollment = z.infer<typeof EnrollmentSchema>;
+export type Guardian = z.infer<typeof GuardianSchema>;
+export type GuardianLink = z.infer<typeof GuardianLinkSchema>;
+export type ChildSummary = z.infer<typeof ChildSummarySchema>;
+export type ImportJob = z.infer<typeof ImportJobSchema>;
+export type RegistrarDashboard = z.infer<typeof RegistrarDashboardSchema>;
+export type AdminDashboard = z.infer<typeof AdminDashboardSchema>;
+export type CreateStudentInput = z.input<typeof CreateStudentSchema>;
+export type CreateGuardianInput = z.input<typeof CreateGuardianSchema>;
+export type LinkGuardianInput = z.input<typeof LinkGuardianSchema>;

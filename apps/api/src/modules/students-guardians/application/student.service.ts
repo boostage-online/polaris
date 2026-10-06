@@ -144,23 +144,21 @@ export class StudentService {
     const id = randomUUID();
     const matricule = input.matricule ?? (await this.nextMatricule(tx));
     try {
-      await tx
-        .insert(students)
-        .values({
-          id,
-          tenantId: this.tenantId,
-          matricule,
-          firstName: input.firstName.trim(),
-          lastName: input.lastName.trim(),
-          birthDate: input.birthDate ?? null,
-          gender: input.gender ?? null,
-          photoKey: null,
-          status: 'ACTIVE',
-          leftAt: null,
-          notes: input.notes ?? null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+      await tx.insert(students).values({
+        id,
+        tenantId: this.tenantId,
+        matricule,
+        firstName: input.firstName.trim(),
+        lastName: input.lastName.trim(),
+        birthDate: input.birthDate ?? null,
+        gender: input.gender ?? null,
+        photoKey: null,
+        status: 'ACTIVE',
+        leftAt: null,
+        notes: input.notes ?? null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
     } catch (e) {
       if ((e as { code?: string }).code === '23505')
         throw AppError.conflict(`Le matricule « ${matricule} » existe déjà`);
@@ -222,21 +220,19 @@ export class StudentService {
     }
     const id = randomUUID();
     try {
-      await tx
-        .insert(enrollments)
-        .values({
-          id,
-          tenantId: this.tenantId,
-          studentId,
-          groupId: group.id,
-          academicYearId: group.academicYearId,
-          isPrimary: group.kind === 'CLASS',
-          enrolledAt: input.enrolledAt ?? today(),
-          leftAt: null,
-          leftReason: null,
-          createdBy: RequestContextStore.require().actor?.userId ?? null,
-          createdAt: new Date(),
-        });
+      await tx.insert(enrollments).values({
+        id,
+        tenantId: this.tenantId,
+        studentId,
+        groupId: group.id,
+        academicYearId: group.academicYearId,
+        isPrimary: group.kind === 'CLASS',
+        enrolledAt: input.enrolledAt ?? today(),
+        leftAt: null,
+        leftReason: null,
+        createdBy: RequestContextStore.require().actor?.userId ?? null,
+        createdAt: new Date(),
+      });
     } catch (e) {
       if ((e as { code?: string }).code === '23505') {
         throw AppError.conflict(
