@@ -35,7 +35,7 @@ export async function startApp(): Promise<TestContext> {
   const owner = new Pool({ connectionString: TEST_OWNER_URL, max: 3 });
   return {
     app,
-    http: request(app.getHttpServer() as Parameters<typeof request>[0]),
+    http: request(app.getHttpServer()),
     sms: app.get(LogSmsGateway),
     email: app.get(LogEmailGateway),
     owner,

@@ -32,7 +32,7 @@ const params: Record<string, () => string> = {
   membershipId: () => T().users.TEACHER.membershipId,
   familyId: () => '00000000-0000-0000-0000-000000000000',
 };
-const bodies: Record<string, () => unknown> = {
+const bodies: Record<string, () => object> = {
   'PATCH /api/v1/tenant/settings': () => ({ attendance: { lateToAbsentMinutes: 30 } }),
   'PATCH /api/v1/roles/:id/permissions': () => ({
     permissions: ['VIEW_ATTENDANCE', 'TAKE_ATTENDANCE', 'EDIT_ATTENDANCE', 'VIEW_STUDENTS'],
@@ -98,7 +98,7 @@ describe('Matrice de permissions', () => {
       });
       for (const role of SYSTEM_ROLE_CODES) {
         const req = ctx.http[r.method](path).set(bearer(sessions[role]));
-        const res = bodies[key] ? await req.send(bodies[key]!() as object) : await req.send();
+        const res = bodies[key] ? await req.send(bodies[key]!()) : await req.send();
         const expectedDeny =
           entry.scope === 'platform'
             ? 404
@@ -116,7 +116,7 @@ describe('Matrice de permissions', () => {
       }
       if (entry.scope === 'platform') {
         const req = ctx.http[r.method](path).set(bearer(platform));
-        const res = bodies[key] ? await req.send(bodies[key]!() as object) : await req.send();
+        const res = bodies[key] ? await req.send(bodies[key]!()) : await req.send();
         if (res.status === 401 || res.status === 403 || res.status === 404)
           failures.push(`${key} [PLATFORM] attendu autorisé, reçu ${res.status}`);
       }

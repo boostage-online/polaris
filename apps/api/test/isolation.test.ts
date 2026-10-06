@@ -23,7 +23,7 @@ describe('Isolation inter-tenant', () => {
     id: () => A().roleIds.TEACHER,
     membershipId: () => A().users.TEACHER.membershipId,
   };
-  const bodies: Record<string, () => unknown> = {
+  const bodies: Record<string, () => object> = {
     'PATCH /api/v1/roles/:id/permissions': () => ({ permissions: ['VIEW_STUDENTS'] }),
     'POST /api/v1/roles/:id/duplicate': () => ({ name: `Copie ${Date.now()}` }),
     'PUT /api/v1/members/:membershipId/roles': () => ({ roleIds: [A().roleIds.TEACHER] }),
@@ -43,7 +43,7 @@ describe('Isolation inter-tenant', () => {
         return f();
       });
       const req = ctx.http[r.method](path).set(bearer(admB));
-      const res = bodies[key] ? await req.send(bodies[key]!() as object) : await req.send();
+      const res = bodies[key] ? await req.send(bodies[key]!()) : await req.send();
       if (res.status !== 404) failures.push(`${key} → ${res.status}`);
     }
     expect(failures, failures.join('\n')).toEqual([]);

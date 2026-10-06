@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Patch, Post, Put } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Put } from '@nestjs/common';
 import { z } from 'zod';
 import {
   AssignRolesSchema,

@@ -18,7 +18,7 @@ export class RequestContextMiddleware implements NestMiddleware {
       requestId,
       traceId,
       ip: req.ip ?? null,
-      userAgent: (req.headers['user-agent'] ?? null) as string | null,
+      userAgent: req.headers['user-agent'] ?? null,
     });
     RequestContextStore.run(ctx, () => next());
   }

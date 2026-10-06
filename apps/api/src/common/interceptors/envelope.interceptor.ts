@@ -20,10 +20,8 @@ export class EnvelopeInterceptor implements NestInterceptor {
     return next.handle().pipe(
       map((value: unknown) => {
         if (value === undefined || value === null) return value;
-        if (typeof value === 'object' && RAW_RESPONSE in (value as object))
-          return (value as RawResponse).body;
-        if (typeof value === 'object' && 'data' in (value as object) && 'meta' in (value as object))
-          return value;
+        if (typeof value === 'object' && RAW_RESPONSE in value) return (value as RawResponse).body;
+        if (typeof value === 'object' && 'data' in value && 'meta' in value) return value;
         return { data: value };
       }),
     );

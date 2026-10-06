@@ -24,6 +24,6 @@ export function clearRefreshCookie(res: Response, env: Env) {
   res.clearCookie(REFRESH_COOKIE, { path: REFRESH_COOKIE_PATH, domain: env.COOKIE_DOMAIN });
 }
 export function readRefresh(req: Request, bodyToken?: string): string | null {
-  const cookies = (req as Request & { cookies?: Record<string, string> }).cookies;
+  const cookies = (req as { cookies?: unknown }).cookies as Record<string, string> | undefined;
   return bodyToken ?? cookies?.[REFRESH_COOKIE] ?? null;
 }

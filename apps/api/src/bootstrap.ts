@@ -2,6 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
+import type { Express } from 'express';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
@@ -46,7 +47,7 @@ export async function mountDocs(app: INestApplication) {
   if (env.NODE_ENV === 'production' && process.env['EXPOSE_DOCS'] !== 'true') return;
   const document = await buildOpenApiDocument(app);
   const { serve, setup } = await import('swagger-ui-express');
-  const http = app.getHttpAdapter().getInstance() as import('express').Express;
+  const http = app.getHttpAdapter().getInstance() as Express;
   http.get('/api/openapi.json', (_req, res) => res.json(document));
   http.use(
     '/api/docs',

@@ -29,7 +29,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     if (problem.status >= 500) {
       this.logger.error({ msg: 'unhandled error', err: exception, path: req.path, traceId });
     }
-    if (problem.status === HttpStatus.TOO_MANY_REQUESTS && exception instanceof AppError) {
+    if (problem.status === 429 && exception instanceof AppError) {
       const retry = exception.extra?.['retryAfterSeconds'];
       if (typeof retry === 'number') res.setHeader('Retry-After', String(retry));
     }

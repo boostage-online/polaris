@@ -8,6 +8,7 @@ import { OutboxRelayService, DOMAIN_EVENTS_QUEUE } from '../src/worker/outbox-re
 import { DomainEventsProcessor } from '../src/worker/domain-events.processor';
 import { LogEmailGateway, RedisService } from '../src/modules/shared';
 import type { Job } from 'bullmq';
+import type { QueuedEvent } from '../src/worker/event-handlers';
 
 describe('Plateforme, outbox, idempotence', () => {
   let ctx: TestContext;
@@ -145,14 +146,32 @@ describe('Plateforme, outbox, idempotence', () => {
 
       const q = new Queue(DOMAIN_EVENTS_QUEUE, { connection: redis.duplicate() });
       const jobs = await q.getJobs(['waiting', 'delayed', 'active', 'completed', 'failed']);
-      const invitation = jobs.find((j) => j.name === 'UserInvited');
-      expect(invitation).toBeDefined();
+      expect(jobs.some((j) => j.name === 'UserInvited')).toBe(true);
+      await q.close();
+
+      // Idempotence du processeur : un événement synthétique (jamais vu) traité deux fois → un seul e-mail.
+      const synthetic = {
+        data: {
+          id: randomUUID(),
+          type: 'UserInvited',
+          tenantId: seed.tenants.lycee.id,
+          aggregateType: 'Invitation',
+          aggregateId: null,
+          payload: {
+            tenantId: seed.tenants.lycee.id,
+            email: 'replay@lycee-demo.local',
+            displayName: 'Rejeu',
+            token: 'synthetic-token',
+            expiresAt: new Date(Date.now() + 3600_000).toISOString(),
+          },
+          occurredAt: new Date().toISOString(),
+        },
+      } as unknown as Job<QueuedEvent>;
       const sentBefore = email.sent.length;
-      await processor.process(invitation as Job);
-      await processor.process(invitation as Job); // rejeu
+      await processor.process(synthetic);
+      await processor.process(synthetic); // rejeu
       expect(email.sent.length).toBe(sentBefore + 1);
       expect(email.sent.at(-1)!.text).toContain('/invitation?token=');
-      await q.close();
     } finally {
       await worker.close();
     }
