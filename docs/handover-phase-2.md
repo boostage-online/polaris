@@ -47,9 +47,21 @@ Le test d'isolation inter-tenant utilise désormais des **identifiants réels du
 - E1-S06 campus (le champ existe, pas d'écran), E1-S07 reconduction d'une année, E2-S02 invitation du personnel depuis l'écran Personnel (passe par la gestion des accès Phase 1), E5-S01 upload par URL présignée et import asynchrone, E5-S05 fusion de doublons, E6-S03 assistant de première configuration, E7 (reliquat Phase 1 : Super Admin, MFA, sessions actives).
 - Photo d'élève (`photo_key` prévu, pas de stockage objet encore).
 
-## État de vérification
+## État de vérification (CI GitHub Actions, PR #2)
 
-Voir la PR #2 : la CI (lint type-checked, typecheck, frontières de modules, migrations up → down → up, tests unitaires, tests d'intégration sur PostgreSQL/Redis réels, OpenAPI) doit être verte avant revue. Les corrections apportées pendant la boucle sont consignées dans les commits `fix(phase-2): …`.
+**CI verte** au commit `8c2733a` (7 octobre 2026) : lint type-checked, typecheck (api, web, contrats), frontières de modules, garde-fou et migrations up → down → up, tests unitaires, **71 tests d'intégration** sur PostgreSQL/Redis réels (dont 31 nouveaux : académique, élèves, tuteurs, imports, matrice et isolation étendues), génération OpenAPI.
+
+Corrections apportées pendant la boucle (le code est écrit sans accès au registre npm, la première exécution a lieu en CI) :
+
+| Problème rencontré                                                                                        | Correction                                                                 |
+| --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Matrice de permissions (80 routes × 7 rôles) au-delà du plafond global de rate limiting → 429             | plafond configurable `RATE_LIMIT_GLOBAL_PER_MINUTE`, relevé dans les tests |
+| `z.coerce.boolean()` prend `"false"` pour vrai (`dryRun`, `incomplete`, `activated`)                      | `QueryBoolSchema` dans les contrats                                        |
+| Drizzle rend les colonnes sans préfixe dans une requête mono-table → `"id"` ambigu en sous-requête        | références qualifiées en clair (`students.id`) dans les corrélées          |
+| supertest ferme/rouvre le serveur entre deux requêtes → `address of null` sporadique                      | le serveur de test écoute (`app.listen(0)`)                                |
+| `GET /academic-years/:id/terms` et `GET /students/:id/guardians` répondaient 200 (liste vide) hors tenant | vérification d'existence du parent → 404                                   |
+| Numéros béninois à 10 chiffres (`01…`) mal normalisés                                                     | règle explicite 8 / 10 chiffres et ancien format `+229` + 8 chiffres       |
+| Deux `SessionSchema` exportés par les contrats (connexion vs séance)                                      | la séance devient `ClassSessionSchema`                                     |
 
 ## Prochaines étapes
 

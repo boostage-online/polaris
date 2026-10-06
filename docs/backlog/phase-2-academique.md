@@ -17,6 +17,8 @@
 
 Capacité ≈ 4 semaines utiles × 25 ≈ 100 pts : E6 et E7 sont les variables d'ajustement ; E5-S05 (fusion de doublons) peut glisser en V1 si la détection seule suffit aux pilotes.
 
+> **État (PR #2, octobre 2026)** : E1 (sauf S06 campus, S07 reconduction), E2 (sauf S02 invitation depuis l'écran Personnel), E3, E4, E5 (S02–S04 ; S01 en synchrone ≤ 5 000 lignes, S05 reportée) et E6 (S01–S02) sont livrés avec leurs écrans web et testés en CI. Détail et décisions : `docs/handover-phase-2.md`.
+
 ---
 
 ## E1 — Structure académique
