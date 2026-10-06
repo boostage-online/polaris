@@ -7,7 +7,6 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "isolatedModules": false,
-    "removeComments": true,
-    "ignoreDeprecations": "6.0"
+    "removeComments": true
   }
 }

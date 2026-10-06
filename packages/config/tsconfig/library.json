@@ -4,7 +4,6 @@
   "compilerOptions": {
     "module": "CommonJS",
     "moduleResolution": "Node10",
-    "isolatedModules": false,
-    "ignoreDeprecations": "6.0"
+    "isolatedModules": false
   }
 }
