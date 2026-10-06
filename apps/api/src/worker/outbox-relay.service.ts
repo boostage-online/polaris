@@ -1,6 +1,7 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { Queue } from 'bullmq';
-import { sql } from 'drizzle-orm';
+import { inArray, sql } from 'drizzle-orm';
+import { outboxEvents } from '../database/schema';
 import { Client } from 'pg';
 import { DatabaseService } from '../database/database.service';
 import { MetricsService, RedisService } from '../modules/shared';
@@ -107,9 +108,10 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
             })),
           );
           const ids = res.rows.map((r) => r.id);
-          await tx.execute(
-            sql`update outbox_events set published_at = now(), attempts = attempts + 1 where id = any(${ids}::uuid[])`,
-          );
+          await tx
+            .update(outboxEvents)
+            .set({ publishedAt: sql`now()`, attempts: sql`${outboxEvents.attempts} + 1` })
+            .where(inArray(outboxEvents.id, ids));
           for (const r of res.rows) this.metrics.outboxPublished.inc({ event_type: r.event_type });
           return res.rows.length;
         });

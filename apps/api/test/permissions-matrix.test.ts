@@ -82,7 +82,10 @@ describe('Matrice de permissions', () => {
   });
 
   it('les routes répondent conformément à la matrice pour chaque rôle système', async () => {
-    const routes = collectRoutes(ctx.app).filter((r) => !r.isPublic);
+    // logout-all invalide toutes les sessions de l'utilisateur (token_version) : joué en dernier, séparément.
+    const routes = collectRoutes(ctx.app).filter(
+      (r) => !r.isPublic && !r.path.includes('logout-all'),
+    );
     const failures: string[] = [];
     for (const r of routes) {
       const key = `${r.method.toUpperCase()} ${r.path}`;
@@ -93,12 +96,8 @@ describe('Matrice de permissions', () => {
         if (!f) throw new Error(`fixture manquante pour :${n}`);
         return f();
       });
-      // logout-all invalide la session utilisée : on la joue avec une session dédiée, une seule fois.
-      const isLogoutAll = key.includes('logout-all');
-      const roles = isLogoutAll ? (['DIRECTION'] as SystemRoleCode[]) : SYSTEM_ROLE_CODES;
-      for (const role of roles) {
-        const session = isLogoutAll ? await loginAs(ctx, 'univ', role) : sessions[role];
-        const req = ctx.http[r.method](path).set(bearer(session));
+      for (const role of SYSTEM_ROLE_CODES) {
+        const req = ctx.http[r.method](path).set(bearer(sessions[role]));
         const res = bodies[key] ? await req.send(bodies[key]!() as object) : await req.send();
         const expectedDeny =
           entry.scope === 'platform'
@@ -123,6 +122,8 @@ describe('Matrice de permissions', () => {
       }
     }
     expect(failures, failures.join('\n')).toEqual([]);
+    const fresh = await loginAs(ctx, 'univ', 'DIRECTION');
+    expect((await ctx.http.post('/api/v1/auth/logout-all').set(bearer(fresh))).status).toBe(204);
   });
 
   it('sans jeton, toute route non publique répond 401', async () => {
