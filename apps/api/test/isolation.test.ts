@@ -43,7 +43,8 @@ describe('Isolation inter-tenant', () => {
         return f();
       });
       const req = ctx.http[r.method](path).set(bearer(admB));
-      const res = bodies[key] ? await req.send(bodies[key]!()) : await req.send();
+      const body = bodies[key];
+      const res = body ? await req.send(body()) : await req.send();
       if (res.status !== 404) failures.push(`${key} → ${res.status}`);
     }
     expect(failures, failures.join('\n')).toEqual([]);
