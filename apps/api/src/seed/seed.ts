@@ -24,7 +24,7 @@ export interface SeedResult {
   tenants: Record<'lycee' | 'univ', SeededTenant>;
 }
 
-const ARGON = { type: argon2.argon2id, memoryCost: 8 * 1024, timeCost: 1, parallelism: 1 } as const; // léger : seed uniquement
+const ARGON = { type: argon2.argon2id, memoryCost: 8 * 1024, timeCost: 2, parallelism: 1 } as const; // léger : seed uniquement
 
 export async function seedDatabase(
   connectionString: string,

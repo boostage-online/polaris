@@ -18,7 +18,7 @@ export class PasswordService {
   async verify(hash: string | null, password: string): Promise<boolean> {
     if (!hash) {
       // Temps constant : on calcule quand même un hachage pour ne pas révéler l'absence de mot de passe.
-      await argon2.hash(password, { ...this.options, timeCost: 1, memoryCost: 8 * 1024 });
+      await argon2.hash(password, { ...this.options, timeCost: 2, memoryCost: 8 * 1024 });
       return false;
     }
     try {

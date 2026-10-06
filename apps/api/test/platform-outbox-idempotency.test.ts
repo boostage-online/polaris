@@ -23,15 +23,12 @@ describe('Plateforme, outbox, idempotence', () => {
 
   it('création de tenant : rôles système copiés, audit, événement outbox, invitation admin', async () => {
     const p = await loginPlatform(ctx);
-    const res = await ctx.http
-      .post('/api/v1/platform/tenants')
-      .set(bearer(p))
-      .send({
-        code: 'college-test',
-        name: 'Collège Test',
-        type: 'SCHOOL',
-        adminEmail: 'dir@college-test.local',
-      });
+    const res = await ctx.http.post('/api/v1/platform/tenants').set(bearer(p)).send({
+      code: 'college-test',
+      name: 'Collège Test',
+      type: 'SCHOOL',
+      adminEmail: 'dir@college-test.local',
+    });
     expect(res.status).toBe(201);
     const tenantId = res.body.data.id as string;
     expect(res.body.data.adminInvitation.email).toBe('dir@college-test.local');
