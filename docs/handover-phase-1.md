@@ -19,34 +19,26 @@ Branche : `feat/phase-1-socle` (au-dessus de `docs/phase-0-cadrage`). État au 6
 
 Non livré (reporté comme prévu dans le backlog) : MFA TOTP (`P1-E4-S09`), tableau de bord des files (Bull Board), écrans Super Admin, OpenTelemetry (hooks prévus, non câblés), Sentry (variable prévue, SDK non branché).
 
-## Ce qui n'a PAS pu être vérifié ici — à faire en premier
+## État de vérification (CI GitHub Actions, PR #1)
 
-La session de développement n'avait pas accès à `registry.npmjs.org` : **les dépendances n'ont jamais été installées**, donc ni `pnpm build`, ni `pnpm lint`, ni les tests n'ont tourné. Le code a été relu et passé au compilateur TypeScript sans ses dépendances (syntaxe et cohérence interne OK ; les erreurs restantes étaient toutes dues aux modules absents). La migration SQL, elle, a été exécutée (up puis down) sur PostgreSQL 16 avec succès.
+**CI verte** au commit `37bc6a4` (6 octobre 2026) : lint type-checked, typecheck, frontières de modules (dependency-cruiser), garde-fou de migrations, migrations up → down → up sur PostgreSQL 16, tests unitaires, **40 tests d'intégration sur PostgreSQL/Redis réels** (RLS, isolation inter-tenant générique, authentification, RBAC, matrice de permissions, outbox/idempotence, worker), génération OpenAPI.
 
-Ordre de vérification recommandé (une demi-journée) :
+Le code avait été écrit sans accès au registre npm ; la première compilation a eu lieu dans la CI. Corrections apportées lors de cette boucle (utiles pour comprendre certains choix) :
 
-```bash
-pnpm install
-pnpm build --filter=@polaris/contracts
-pnpm typecheck            # corriger les écarts de typage avec les versions réelles de drizzle/nest/jose
-pnpm lint                 # règles type-checked : attendre quelques `no-floating-promises` à traiter
-pnpm depcruise            # frontières de modules
-docker compose up -d && pnpm db:migrate && pnpm db:seed
-pnpm test && pnpm test:integration
-pnpm openapi              # génère openapi.json + SDK ; committer packages/contracts/src/sdk/schema.d.ts
-pnpm format && git commit -am "chore: format"   # puis retirer continue-on-error dans ci.yml
-pnpm dev                  # smoke manuel : login admin@lycee-demo.local, /api/docs
-```
+| Problème rencontré                                                                                       | Correction                                                                                          |
+| -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `jose` 6 est ESM-only sous CommonJS                                                                      | épinglé `jose@5` (double build)                                                                     |
+| `moduleResolution: Node16` faisait coexister deux jeux de types Drizzle (`.d.ts` / `.d.cts`)             | retour à `Node10` ; TypeScript 5.x épinglé (`ignoreDeprecations` non supporté par TS 5)             |
+| esbuild (vitest, tsx) n'émet pas `emitDecoratorMetadata` → injection NestJS impossible                   | SWC partout : `unplugin-swc` pour vitest, `@swc-node/register` pour les scripts et le mode dev      |
+| `INSERT … RETURNING` sur `outbox_events` refusé par la policy RLS de lecture depuis le contexte identité | identifiant généré côté application, plus de `RETURNING`                                            |
+| révocation de famille de refresh tokens annulée par le rollback de la requête en 401                     | révocation exécutée dans une transaction indépendante                                               |
+| `DiscoveryService` non disponible (`app.get`)                                                            | `DiscoveryModule` importé dans `AppModule`                                                          |
+| tableau JS dans `sql\`… = any(\${ids})\`` développé en tuple                                             | `inArray()` du query builder                                                                        |
+| argon2 exige `timeCost ≥ 2`                                                                              | paramètres corrigés (seed et vérification à temps constant)                                         |
+| `logout-all` dans la boucle de la matrice invalidait toutes les sessions de l'utilisateur                | joué séparément, en dernier                                                                         |
+| journaux GitHub Actions non lisibles depuis l'environnement de développement                             | `.github/scripts/run-step.sh` publie les dernières lignes d'une étape en échec en commentaire de PR |
 
-Points à surveiller lors de cette première compilation (hypothèses prises sans pouvoir les tester) :
-
-1. **Drizzle 0.43** : signatures de `db.execute(sql\`…\`)` (`rows`, `rowCount`), `selectDistinct`, sous-requête dans `inArray`, type `inet`. Ajuster si l'API a bougé.
-2. **NestJS 11 + Express 5** : `app.set('trust proxy')`, `rawBody: true`, ordre des guards globaux (`useExisting`), `@Res({ passthrough: true })` avec cookies.
-3. **BullMQ 5** : `upsertJobScheduler` (≥ 5.16), `addBulk` avec `jobId`.
-4. **jose 6** en CommonJS (`moduleResolution: Node16`) : si l'import échoue, passer `apps/api` en ESM ou épingler jose 5.
-5. **Vitest 3.2** : `test.projects` (sinon revenir à `vitest.workspace.ts`).
-6. **Tests d'intégration** : ils supposent `polaris_app` (sans BYPASSRLS) et `polaris_owner` sur `polaris_test` (voir `test/global-setup.ts`, variables `DATABASE_URL_TEST*`). Redis doit tourner ; la base de test est **recréée** à chaque run.
-7. **ESLint type-checked** : quelques `@typescript-eslint/no-floating-promises` ou `no-unsafe-*` probables dans les tests et le worker ; corriger plutôt que désactiver.
+Reste à faire côté CI : câbler `deploy-staging` / `deploy-production` sur le PaaS retenu (Phase 0, décision hébergement) ; committer `packages/contracts/src/sdk/schema.d.ts` régénéré quand la spec change (`pnpm openapi`).
 
 ## Décisions d'implémentation à connaître
 
@@ -60,7 +52,7 @@ Points à surveiller lors de cette première compilation (hypothèses prises san
 
 ## Prochaines étapes
 
-1. Vérification ci-dessus, puis PR `feat/phase-1-socle` → `main` avec la CI verte.
+1. Revue et fusion de la PR #1 (`feat/phase-1-socle` → `main`), CI verte.
 2. Choix de l'hébergement et câblage des jobs `deploy-staging` / `deploy-production` (secrets GitHub `environment`).
 3. Reliquat P1 (MFA TOTP, sessions actives UI, Bull Board) en début de Phase 2, comme prévu au backlog.
 4. Phase 2 : structure académique, élèves, tuteurs, imports (`docs/backlog/phase-2-academique.md`).

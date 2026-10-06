@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
-          package-manager-cache: false # réactiver (cache: pnpm) une fois pnpm-lock.yaml commité
+          cache: pnpm
       - name: Installer (génère et commite le lockfile s'il manque)
         run: |
           if [ -f pnpm-lock.yaml ]; then
@@ -89,8 +89,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
-          package-manager-cache: false # réactiver (cache: pnpm) une fois pnpm-lock.yaml commité
-      - run: .github/scripts/run-step.sh "pnpm install" pnpm install --no-frozen-lockfile
+          cache: pnpm
+      - run: .github/scripts/run-step.sh "pnpm install" pnpm install --frozen-lockfile
       - name: Rôles PostgreSQL (app sans BYPASSRLS, platform avec)
         run: |
           psql "$DATABASE_URL_TEST" -v ON_ERROR_STOP=1 \
