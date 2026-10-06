@@ -19,6 +19,8 @@ const EnvSchema = z.object({
   JWT_KID: z.string().default('dev-1'),
   JWT_ISSUER: z.string().default('polaris'),
   ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(60).max(900).default(600),
+  /** Plafond global par IP et par minute (les routes sensibles ont leurs propres limites). */
+  RATE_LIMIT_GLOBAL_PER_MINUTE: z.coerce.number().int().min(1).default(300),
   REFRESH_TOKEN_TTL_DAYS_STAFF: z.coerce.number().int().min(1).default(30),
   REFRESH_TOKEN_TTL_DAYS_GUARDIAN: z.coerce.number().int().min(1).default(90),
   REFRESH_TOKEN_TTL_HOURS_PLATFORM: z.coerce.number().int().min(1).default(8),

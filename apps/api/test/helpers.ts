@@ -15,6 +15,8 @@ process.env['DATABASE_URL_PLATFORM'] = TEST_OWNER_URL;
 process.env['REDIS_URL'] ??= 'redis://localhost:6379';
 process.env['LOG_LEVEL'] = 'silent';
 process.env['ACCESS_TOKEN_TTL_SECONDS'] = '600';
+// La matrice de permissions joue chaque route pour chaque rôle : bien au-delà du plafond de production.
+process.env['RATE_LIMIT_GLOBAL_PER_MINUTE'] = '100000';
 
 export const seed: SeedResult = JSON.parse(readFileSync(SEED_FILE, 'utf8')) as SeedResult;
 

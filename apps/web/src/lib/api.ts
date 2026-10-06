@@ -54,6 +54,75 @@ export async function refreshSession(): Promise<boolean> {
   return refreshing;
 }
 
+/** Réponse enveloppée `{ data, meta }` (listes paginées, avertissements). */
+export interface Envelope<T, M = Record<string, unknown>> {
+  data: T;
+  meta: M;
+}
+export interface PageMeta {
+  nextCursor: string | null;
+  limit: number;
+}
+
+/** Construit une query string en ignorant les valeurs vides. */
+export function qs(params: Record<string, string | number | boolean | undefined | null>): string {
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === null || v === '') continue;
+    sp.set(k, String(v));
+  }
+  const s = sp.toString();
+  return s ? `?${s}` : '';
+}
+
+export async function apiEnvelope<T, M = Record<string, unknown>>(
+  path: string,
+  init: RequestInit = {},
+  retry = true,
+): Promise<Envelope<T, M>> {
+  const res = await rawFetch(path, init);
+  if (res.status === 401 && retry) {
+    const problem = (await res
+      .clone()
+      .json()
+      .catch(() => null)) as ProblemDetails | null;
+    if (problem?.code === 'TOKEN_EXPIRED' || !accessToken) {
+      if (await refreshSession()) return apiEnvelope<T, M>(path, init, false);
+    }
+  }
+  const body = (await res.json().catch(() => null)) as Envelope<T, M> | ProblemDetails | null;
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      (body as ProblemDetails | null) ?? {
+        type: 'about:blank',
+        title: res.statusText,
+        status: res.status,
+        code: 'INTERNAL',
+      },
+    );
+  }
+  const env = body as Envelope<T, M>;
+  return { data: env.data, meta: env.meta ?? ({} as M) };
+}
+
+export const json = (body: unknown): RequestInit => ({
+  method: 'POST',
+  body: JSON.stringify(body),
+});
+export const patch = (body: unknown): RequestInit => ({
+  method: 'PATCH',
+  body: JSON.stringify(body),
+});
+export const put = (body: unknown): RequestInit => ({
+  method: 'PUT',
+  body: JSON.stringify(body),
+});
+export const del = (body?: unknown): RequestInit => ({
+  method: 'DELETE',
+  body: body === undefined ? undefined : JSON.stringify(body),
+});
+
 export async function api<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
   const res = await rawFetch(path, init);
   if (res.status === 401 && retry) {

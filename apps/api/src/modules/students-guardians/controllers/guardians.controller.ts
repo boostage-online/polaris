@@ -92,7 +92,7 @@ export class GuardiansController {
   @Post(':id/invite')
   @HttpCode(200)
   @NoTransaction()
-  @RateLimit({ points: 30, duration: 3600, keyBy: 'tenant', name: 'guardian-invite' })
+  @RateLimit({ points: 60, duration: 3600, keyBy: 'tenant', name: 'guardian-invite' })
   @RequirePermission('MANAGE_GUARDIANS')
   @ApiDoc({
     summary: "Inviter le tuteur : crée son accès parent et envoie le SMS d'accueil",
