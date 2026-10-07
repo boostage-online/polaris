@@ -1,0 +1,30 @@
+# HTTPS automatique (Let's Encrypt) pour un domaine unique : les pages viennent de Next.js, /api/* de NestJS.
+# Les en-têtes de sécurité applicatifs (CSP, HSTS, Permissions-Policy) sont posés par les applications.
+{
+	email {$ACME_EMAIL}
+	admin off
+}
+
+{$APP_DOMAIN} {
+	encode zstd gzip
+
+	@api path /api/*
+	handle @api {
+		reverse_proxy api:4000 {
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+
+	log {
+		output file /data/access.log {
+			roll_size 50mb
+			roll_keep 5
+		}
+		format json
+	}
+}

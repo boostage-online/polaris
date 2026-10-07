@@ -1,5 +1,7 @@
 # Déploiement et rollback
 
+> **Infrastructure retenue pour les pilotes (octobre 2026)** : un VPS unique, décrit pas à pas dans [`deploy-vps.md`](./deploy-vps.md) (`infra/vps/`). Les principes ci-dessous (expand/contract, fenêtre interdite 7 h–9 h, rollback par image précédente) s'y appliquent tels quels ; les commandes PaaS restent indicatives.
+
 ## Principes (Partie 14 du document directeur)
 
 - Une image Docker par processus (`api`, `worker`), construite **une fois** sur `main`, promue telle quelle en production sur un tag `vX.Y.Z`.
