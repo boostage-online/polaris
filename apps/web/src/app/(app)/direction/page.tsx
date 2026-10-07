@@ -172,9 +172,9 @@ export default function DirectionPage() {
           <TrendBars points={d.trends.collectionsWeekly} format={kFcfa} tone="green" />
         </Card>
 
-        <Card title="Classes à surveiller (30 jours)">
+        <Card title="Classes les moins assidues (30 jours)">
           {d.groupsAtRisk.length === 0 ? (
-            <Empty>Aucune classe sous le seuil d&apos;alerte.</Empty>
+            <Empty>Aucune séance tenue sur les 30 derniers jours.</Empty>
           ) : (
             <Table
               head={

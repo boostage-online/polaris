@@ -169,7 +169,7 @@ function Overview({ d }: { d: PlatformOverview }) {
               <span>{d.tenants.suspended}</span>
             </li>
             <li className="flex justify-between border-t border-slate-100 pt-1">
-              <span>Agrégats de reporting périmés (&gt; 15 min)</span>
+              <span>Agrégats de reporting périmés (&gt; 20 min)</span>
               <span className={d.health.staleReports ? 'font-medium text-amber-700' : ''}>
                 {d.health.staleReports}
               </span>

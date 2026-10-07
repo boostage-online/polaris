@@ -1,6 +1,6 @@
-# Backlog — Phases 1 à 5
+# Backlog — Phases 1 à 6
 
-Cinq fichiers, un par phase, découpés en **epics** puis **user stories** avec critères d'acceptation. Les phases 6+ (reporting, durcissement, lancement) seront détaillées à la fin de la Phase 5.
+Six fichiers, un par phase, découpés en **epics** puis **user stories** avec critères d'acceptation. Les phases 7 (durcissement) et 8 (lancement) seront détaillées à la fin de la Phase 6.
 
 | Phase                           | Fichier                                          | Fenêtre cible            | Porte de sortie                                                               |
 | ------------------------------- | ------------------------------------------------ | ------------------------ | ----------------------------------------------------------------------------- |
@@ -9,6 +9,7 @@ Cinq fichiers, un par phase, découpés en **epics** puis **user stories** avec 
 | 3 — Assiduité et notifications  | [phase-3-assiduite.md](./phase-3-assiduite.md)   | 18 jan → 19 fév 2027     | G3 : appel < 60 s, notification < 2 min, pilote en production restreinte      |
 | 4 — Frais et paiements manuels  | [phase-4-billing.md](./phase-4-billing.md)       | 22 fév → 26 mar 2027     | G4 : créances complètes, caisse = brouillard, 0 écart d'intégrité, rappels    |
 | 5 — Paiements électroniques     | [phase-5-payments.md](./phase-5-payments.md)     | 22 mar → 30 avr 2027     | G5 : réconciliation à 0 écart, 0 double paiement, reçu < 60 s, clés scellées  |
+| 6 — Reporting et Super Admin    | [phase-6-reporting.md](./phase-6-reporting.md)   | 3 mai → 28 mai 2027      | G6 : dashboards compris sans explication, agrégats < 5 min, export < 10 min   |
 
 ## Conventions
 
