@@ -4,3 +4,5 @@ export * from './schemas/tenant';
 export * from './schemas/auth';
 export * from './schemas/rbac';
 export * from './schemas/audit';
+export * from './schemas/academic';
+export * from './schemas/students';

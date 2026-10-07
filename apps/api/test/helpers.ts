@@ -15,6 +15,8 @@ process.env['DATABASE_URL_PLATFORM'] = TEST_OWNER_URL;
 process.env['REDIS_URL'] ??= 'redis://localhost:6379';
 process.env['LOG_LEVEL'] = 'silent';
 process.env['ACCESS_TOKEN_TTL_SECONDS'] = '600';
+// La matrice de permissions joue chaque route pour chaque rôle : bien au-delà du plafond de production.
+process.env['RATE_LIMIT_GLOBAL_PER_MINUTE'] = '100000';
 
 export const seed: SeedResult = JSON.parse(readFileSync(SEED_FILE, 'utf8')) as SeedResult;
 
@@ -29,7 +31,9 @@ export interface TestContext {
 
 export async function startApp(): Promise<TestContext> {
   const app = await createApp();
-  await app.init();
+  // Le serveur écoute réellement : supertest ne gère alors pas son cycle de vie (évite la course
+  // « address of null » quand il ferme/rouvre le serveur entre deux requêtes).
+  await app.listen(0, '127.0.0.1');
   const redis = app.get(RedisService);
   await redis.client.flushdb();
   const owner = new Pool({ connectionString: TEST_OWNER_URL, max: 3 });

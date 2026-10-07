@@ -1,12 +1,11 @@
-import { type CanActivate, type ExecutionContext, Injectable } from '@nestjs/common';
+import { type CanActivate, type ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { META_RATE_LIMIT, type RateLimitOptions } from '../../../common/decorators';
 import { AppError } from '../../../common/errors/app-error';
+import { ENV, type Env } from '../../../config/env';
 import { RequestContextStore } from '../../../database/request-context';
 import { RedisService } from './redis.service';
-
-const DEFAULT: RateLimitOptions = { points: 300, duration: 60, keyBy: 'ip', name: 'global' };
 
 /**
  * Rate limiting fenêtre fixe dans Redis (INCR + EXPIRE). Suffisant pour protéger auth/OTP/paiements ;
@@ -16,17 +15,27 @@ const DEFAULT: RateLimitOptions = { points: 300, duration: 60, keyBy: 'ip', name
  */
 @Injectable()
 export class RateLimitGuard implements CanActivate {
+  private readonly global: RateLimitOptions;
+
   constructor(
     private readonly reflector: Reflector,
     private readonly redis: RedisService,
-  ) {}
+    @Inject(ENV) env: Env,
+  ) {
+    this.global = {
+      points: env.RATE_LIMIT_GLOBAL_PER_MINUTE,
+      duration: 60,
+      keyBy: 'ip',
+      name: 'global',
+    };
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const opts =
       this.reflector.getAllAndOverride<RateLimitOptions | undefined>(META_RATE_LIMIT, [
         context.getHandler(),
         context.getClass(),
-      ]) ?? DEFAULT;
+      ]) ?? this.global;
     const req = context.switchToHttp().getRequest<Request>();
     const key = this.keyFor(opts, req);
     if (!key) return true;

@@ -18,15 +18,72 @@ describe('Isolation inter-tenant', () => {
 
   const A = () => seed.tenants.lycee;
 
-  /** Identifiants du tenant A et corps minimal valide, par nom de paramètre. */
-  const params: Record<string, () => string> = {
-    id: () => A().roleIds.TEACHER,
-    membershipId: () => A().users.TEACHER.membershipId,
+  /** Identifiant du tenant A selon la ressource visée par la route (toujours un objet réel du tenant A). */
+  const idFor = (path: string, name: string): string => {
+    const ac = A().academic;
+    if (name === 'membershipId') return A().users.TEACHER.membershipId;
+    if (name === 'familyId') return '00000000-0000-0000-0000-000000000000';
+    const byPrefix: [string, string][] = [
+      ['/api/v1/academic-years', ac.yearId],
+      ['/api/v1/programs', ac.programId],
+      ['/api/v1/levels', ac.levelIds.sixieme],
+      ['/api/v1/groups', ac.groupIds.sixA],
+      ['/api/v1/subjects', ac.subjectIds.math],
+      ['/api/v1/courses', ac.courseIds.math6a],
+      ['/api/v1/schedule-slots', ac.slotId],
+      ['/api/v1/sessions', ac.sessionId],
+      ['/api/v1/students', ac.studentIds[0]!],
+      ['/api/v1/enrollments', ac.enrollmentIds.s1Class],
+      ['/api/v1/guardians', ac.guardianIds.parent],
+      ['/api/v1/student-guardians', ac.linkIds.parentS1],
+      ['/api/v1/imports', ac.importJobId],
+      ['/api/v1/roles', A().roleIds.TEACHER],
+    ];
+    const hit = byPrefix.find(([p]) => path.startsWith(p));
+    if (!hit) throw new Error(`Aucune fixture d'isolation pour ${path} (:${name})`);
+    return hit[1];
   };
+  /** Corps valides (la validation précède la recherche : un corps invalide donnerait 400, pas 404). */
+  const B = () => seed.tenants.univ.academic;
   const bodies: Record<string, () => object> = {
     'PATCH /api/v1/roles/:id/permissions': () => ({ permissions: ['VIEW_STUDENTS'] }),
     'POST /api/v1/roles/:id/duplicate': () => ({ name: `Copie ${Date.now()}` }),
     'PUT /api/v1/members/:membershipId/roles': () => ({ roleIds: [A().roleIds.TEACHER] }),
+    'PATCH /api/v1/academic-years/:id': () => ({ label: 'Isolation' }),
+    'POST /api/v1/academic-years/:id/terms': () => ({
+      label: 'T1',
+      startDate: '2026-09-15',
+      endDate: '2026-12-15',
+    }),
+    'PATCH /api/v1/programs/:id': () => ({ name: 'Isolation' }),
+    'POST /api/v1/programs/:id/levels': () => ({ name: 'Isolation', rank: 9 }),
+    'PATCH /api/v1/levels/:id': () => ({ name: 'Isolation' }),
+    'PATCH /api/v1/groups/:id': () => ({ name: 'Isolation' }),
+    'PATCH /api/v1/subjects/:id': () => ({ name: 'Isolation' }),
+    'PATCH /api/v1/staff/:membershipId': () => ({ isTeacher: true }),
+    'PUT /api/v1/courses/:id/teachers': () => ({ teachers: [] }),
+    'POST /api/v1/courses/:id/schedule-slots': () => ({
+      weekday: 2,
+      startTime: '10:00',
+      endTime: '11:00',
+    }),
+    'POST /api/v1/courses/:id/sessions': () => ({
+      startsAt: '2026-11-02T08:00:00.000Z',
+      endsAt: '2026-11-02T09:00:00.000Z',
+    }),
+    'PATCH /api/v1/sessions/:id': () => ({ room: 'Isolation' }),
+    'PATCH /api/v1/students/:id': () => ({ notes: 'Isolation' }),
+    'POST /api/v1/students/:id/enrollments': () => ({ groupId: B().groupIds.sixB }),
+    'POST /api/v1/students/:id/transfer': () => ({ toGroupId: B().groupIds.sixB }),
+    'POST /api/v1/students/:id/leave': () => ({ status: 'LEFT' }),
+    'POST /api/v1/students/:id/guardians': () => ({
+      guardianId: B().guardianIds.other,
+      relationship: 'TUTOR',
+    }),
+    'POST /api/v1/enrollments/:id/close': () => ({ reason: 'Isolation' }),
+    'PATCH /api/v1/guardians/:id': () => ({ firstName: 'Isolation' }),
+    'PATCH /api/v1/student-guardians/:id': () => ({ isPrimary: true }),
+    'DELETE /api/v1/student-guardians/:id': () => ({ reason: 'Isolation' }),
   };
 
   it('toutes les routes tenant avec identifiant répondent 404 pour une ressource du tenant A', async () => {
@@ -37,11 +94,7 @@ describe('Isolation inter-tenant', () => {
     const failures: string[] = [];
     for (const r of routes) {
       const key = `${r.method.toUpperCase()} ${r.path}`;
-      const path = r.path.replace(/:([A-Za-z0-9_]+)/g, (_m, name: string) => {
-        const f = params[name];
-        if (!f) throw new Error(`Aucune fixture pour le paramètre :${name} (${key})`);
-        return f();
-      });
+      const path = r.path.replace(/:([A-Za-z0-9_]+)/g, (_m, name: string) => idFor(r.path, name));
       const req = ctx.http[r.method](path).set(bearer(admB));
       const body = bodies[key];
       const res = body ? await req.send(body()) : await req.send();

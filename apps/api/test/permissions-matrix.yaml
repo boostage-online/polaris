@@ -27,3 +27,82 @@ routes:
   'POST /api/v1/platform/tenants': { scope: platform }
   'PATCH /api/v1/platform/tenants/:id/status': { scope: platform }
   'POST /api/v1/platform/tenants/:id/admin-invitations': { scope: platform }
+
+  # --- Phase 2 : structure académique (ADR-0004) ---
+  'GET /api/v1/academic-years':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'POST /api/v1/academic-years': { allow: [ADMIN] }
+  'PATCH /api/v1/academic-years/:id': { allow: [ADMIN] }
+  'POST /api/v1/academic-years/:id/set-current': { allow: [ADMIN] }
+  'GET /api/v1/academic-years/:id/terms':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'POST /api/v1/academic-years/:id/terms': { allow: [ADMIN] }
+  'GET /api/v1/programs':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'POST /api/v1/programs': { allow: [ADMIN] }
+  'PATCH /api/v1/programs/:id': { allow: [ADMIN] }
+  'DELETE /api/v1/programs/:id': { allow: [ADMIN] }
+  'POST /api/v1/programs/:id/levels': { allow: [ADMIN] }
+  'PATCH /api/v1/levels/:id': { allow: [ADMIN] }
+  'GET /api/v1/groups':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'GET /api/v1/groups/:id':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'POST /api/v1/groups': { allow: [ADMIN] }
+  'PATCH /api/v1/groups/:id': { allow: [ADMIN] }
+  'DELETE /api/v1/groups/:id': { allow: [ADMIN] }
+  'GET /api/v1/subjects':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'POST /api/v1/subjects': { allow: [ADMIN] }
+  'PATCH /api/v1/subjects/:id': { allow: [ADMIN] }
+  'DELETE /api/v1/subjects/:id': { allow: [ADMIN] }
+  'GET /api/v1/staff': { allow: [ADMIN] }
+  'PATCH /api/v1/staff/:membershipId': { allow: [ADMIN] }
+  'GET /api/v1/courses':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'GET /api/v1/courses/:id':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'POST /api/v1/courses': { allow: [ADMIN] }
+  'PUT /api/v1/courses/:id/teachers': { allow: [ADMIN] }
+  'DELETE /api/v1/courses/:id': { allow: [ADMIN] }
+  'POST /api/v1/courses/:id/schedule-slots': { allow: [ADMIN] }
+  'POST /api/v1/courses/:id/sessions': { allow: [ADMIN] }
+  'DELETE /api/v1/schedule-slots/:id': { allow: [ADMIN] }
+  'GET /api/v1/sessions':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'GET /api/v1/sessions/:id':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'PATCH /api/v1/sessions/:id': { allow: [ADMIN] }
+  'POST /api/v1/sessions/generate': { allow: [ADMIN] }
+  'GET /api/v1/me/schedule': { scope: identity }
+
+  # --- Phase 2 : élèves, inscriptions, tuteurs, imports, tableaux de bord ---
+  'GET /api/v1/students':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'GET /api/v1/students/:id':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'POST /api/v1/students': { allow: [ADMIN, REGISTRAR] }
+  'PATCH /api/v1/students/:id': { allow: [ADMIN, REGISTRAR] }
+  'POST /api/v1/students/:id/enrollments': { allow: [ADMIN, REGISTRAR] }
+  'POST /api/v1/students/:id/transfer': { allow: [ADMIN, REGISTRAR] }
+  'POST /api/v1/students/:id/leave': { allow: [ADMIN, REGISTRAR] }
+  'GET /api/v1/students/:id/guardians':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'POST /api/v1/students/:id/guardians': { allow: [ADMIN, REGISTRAR] }
+  'POST /api/v1/enrollments/:id/close': { allow: [ADMIN, REGISTRAR] }
+  'GET /api/v1/guardians':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'GET /api/v1/guardians/:id':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'POST /api/v1/guardians': { allow: [ADMIN, REGISTRAR] }
+  'PATCH /api/v1/guardians/:id': { allow: [ADMIN, REGISTRAR] }
+  'POST /api/v1/guardians/:id/invite': { allow: [ADMIN, REGISTRAR] }
+  'PATCH /api/v1/student-guardians/:id': { allow: [ADMIN, REGISTRAR] }
+  'DELETE /api/v1/student-guardians/:id': { allow: [ADMIN, REGISTRAR] }
+  'GET /api/v1/me/children': { scope: identity }
+  'POST /api/v1/imports/students': { allow: [ADMIN, REGISTRAR] }
+  'POST /api/v1/imports/guardians': { allow: [ADMIN, REGISTRAR] }
+  'GET /api/v1/imports/:id': { allow: [ADMIN, REGISTRAR] }
+  'GET /api/v1/dashboards/registrar':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'GET /api/v1/dashboards/admin': { allow: [ADMIN] }

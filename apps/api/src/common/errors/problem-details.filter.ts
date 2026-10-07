@@ -83,7 +83,10 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       title: 'Erreur interne',
       status: HttpStatus.INTERNAL_SERVER_ERROR,
       code: ErrorCodes.INTERNAL,
-      detail: 'Une erreur inattendue est survenue. Communiquez le code support au service client.',
+      detail:
+        process.env['NODE_ENV'] === 'production'
+          ? 'Une erreur inattendue est survenue. Communiquez le code support au service client.'
+          : `${(exception as Error | undefined)?.name ?? 'Error'}: ${(exception as Error | undefined)?.message ?? String(exception)}`,
       traceId,
     };
   }
