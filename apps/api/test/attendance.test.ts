@@ -146,7 +146,7 @@ describe("Feuilles d'appel", () => {
     ).toBe(409);
 
     const events = await ctx.owner.query(
-      `select payload from outbox_events where type = 'AttendanceSheetSubmitted' and aggregate_id = $1`,
+      `select payload from outbox_events where event_type = 'AttendanceSheetSubmitted' and aggregate_id = $1`,
       [sheetId],
     );
     expect(events.rowCount).toBe(1);
@@ -276,12 +276,19 @@ describe("Feuilles d'appel", () => {
     );
   });
 
-  it("l'alerte seedée figure dans la liste de surveillance et se clôt", async () => {
+  it('une alerte ouverte figure dans la liste de surveillance et se clôt une seule fois', async () => {
+    // Alerte posée directement (l'alerte seedée peut déjà avoir été résolue par le test des justificatifs).
+    const s4 = ac().studentIds[3]!;
+    await ctx.owner.query(
+      `insert into attendance_alerts (tenant_id, student_id, kind, window_from, window_to, count) values ($1, $2, 'REPEATED_ABSENCES', '2026-09-15', '2026-10-12', 4)
+       on conflict do nothing`,
+      [seed.tenants.lycee.id, s4],
+    );
     const list = await ctx.http.get('/api/v1/attendance/watchlist').set(bearer(studentLife));
     expect(list.status).toBe(200);
-    const item = (list.body.data as { alertId: string; student: { id: string } }[]).find(
-      (w) => w.student.id === ac().studentIds[0],
-    );
+    const item = (
+      list.body.data as { alertId: string; student: { id: string }; count: number }[]
+    ).find((w) => w.student.id === s4);
     expect(item).toBeDefined();
     expect(
       (

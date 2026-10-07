@@ -37,7 +37,7 @@ export default function PreferencesPage() {
     const next = current.includes(channel)
       ? current.filter((c) => c !== channel)
       : [...current, channel];
-    m.mutate({ [kind]: next } as Partial<Record<NotificationKind, NotificationChannel[]>>);
+    m.mutate({ [kind]: next });
   };
   return (
     <>
