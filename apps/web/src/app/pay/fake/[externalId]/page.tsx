@@ -88,7 +88,9 @@ function FakeCheckout() {
               </div>
             )}
             {act.isError && (
-              <p className="mt-3 text-sm text-red-700">{(act.error as Error).message}</p>
+              <p className="mt-3 text-sm text-red-700">
+                {act.error instanceof Error ? act.error.message : 'Erreur inattendue'}
+              </p>
             )}
           </>
         )}

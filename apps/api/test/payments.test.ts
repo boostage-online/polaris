@@ -505,8 +505,8 @@ describe('Paiements électroniques', () => {
     await ctx.owner.query(
       `insert into payment_attempts (id, tenant_id, student_id, amount, currency, provider, status, external_id, expires_at, metadata)
        values ($1, $2, $3, 5000, 'XOF', 'FAKE', 'PENDING', null, now() - interval '2 days', '{}'),
-              ($4, $2, $3, 5000, 'XOF', 'FAKE', 'PROCESSING', 'fake_mute_' || $4, now() - interval '2 days', '{}')`,
-      [noExt, T().id, studentId, withExt],
+              ($4::uuid, $2, $3, 5000, 'XOF', 'FAKE', 'PROCESSING', $5, now() - interval '2 days', '{}')`,
+      [noExt, T().id, studentId, withExt, `fake_mute_${withExt}`],
     );
     const stale = await reconciliation.expireStale(T().id);
     expect(stale.expired).toBeGreaterThanOrEqual(1);

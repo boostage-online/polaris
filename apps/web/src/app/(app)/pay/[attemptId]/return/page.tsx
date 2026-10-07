@@ -64,14 +64,17 @@ function ReturnInner() {
     confirm.mutate();
   }, [studentId]);
   const dl = useMutation({
-    mutationFn: () =>
-      parentFinance.downloadReceipt(studentId, a!.paymentId!, a!.receiptNumber ?? 'recu'),
+    mutationFn: () => {
+      const cur = q.data;
+      if (!cur?.paymentId) throw new Error('Aucun paiement à télécharger');
+      return parentFinance.downloadReceipt(studentId, cur.paymentId, cur.receiptNumber ?? 'recu');
+    },
   });
 
   if (!studentId) return <Alert tone="error">Lien de retour incomplet.</Alert>;
   if (q.isPending) return <Loading />;
   if (q.isError) return <ErrorAlert error={q.error} />;
-  const a = q.data!;
+  const a = q.data;
   const waiting = a.status === 'PENDING' || a.status === 'PROCESSING' || a.status === 'CREATED';
   return (
     <>

@@ -1,6 +1,6 @@
-# Backlog — Phases 1 à 4
+# Backlog — Phases 1 à 5
 
-Quatre fichiers, un par phase, découpés en **epics** puis **user stories** avec critères d'acceptation. Les phases 5+ (paiements électroniques, reporting, durcissement) seront détaillées à la fin de la Phase 4.
+Cinq fichiers, un par phase, découpés en **epics** puis **user stories** avec critères d'acceptation. Les phases 6+ (reporting, durcissement, lancement) seront détaillées à la fin de la Phase 5.
 
 | Phase                           | Fichier                                          | Fenêtre cible            | Porte de sortie                                                               |
 | ------------------------------- | ------------------------------------------------ | ------------------------ | ----------------------------------------------------------------------------- |
@@ -8,6 +8,7 @@ Quatre fichiers, un par phase, découpés en **epics** puis **user stories** ave
 | 2 — Académique, élèves, parents | [phase-2-academique.md](./phase-2-academique.md) | 7 déc 2026 → 15 jan 2027 | G2 : données des pilotes importées, parents invités                           |
 | 3 — Assiduité et notifications  | [phase-3-assiduite.md](./phase-3-assiduite.md)   | 18 jan → 19 fév 2027     | G3 : appel < 60 s, notification < 2 min, pilote en production restreinte      |
 | 4 — Frais et paiements manuels  | [phase-4-billing.md](./phase-4-billing.md)       | 22 fév → 26 mar 2027     | G4 : créances complètes, caisse = brouillard, 0 écart d'intégrité, rappels    |
+| 5 — Paiements électroniques     | [phase-5-payments.md](./phase-5-payments.md)     | 22 mar → 30 avr 2027     | G5 : réconciliation à 0 écart, 0 double paiement, reçu < 60 s, clés scellées  |
 
 ## Conventions
 
