@@ -149,6 +149,25 @@ export async function seedDatabase(
        values ($1, 'seed:demo', 'WARNING', 'Alerte de démonstration (résolue)', '{"demo":true}'::jsonb, $2, now() - interval '1 day', now() - interval '23 hours', now() - interval '22 hours', now() - interval '1 day')`,
       [alertId, lycee.id],
     );
+    // Lancement (Phase 8) : le lycée est en production depuis 10 jours (hypercare en cours), l'université reste
+    // en préparation ; une revue quotidienne et quelques sondes de disponibilité pour les écrans.
+    await client.query(
+      `update tenants set plan = 'STANDARD', live_at = now() - interval '10 days', hypercare_until = now() + interval '18 days',
+              launch_checklist = '{"contractSigned":true,"smsBudgetValidated":true,"onCallInformed":true,"dataValidatedByTenant":true}'::jsonb
+       where id = $1`,
+      [lycee.id],
+    );
+    await client.query(
+      `insert into availability_checks (checked_at, ok, latency_ms)
+       select now() - (g || ' minutes')::interval, g % 97 <> 0, 20 + (g % 7) * 5 from generate_series(1, 180) g`,
+    );
+    const reviewDay = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    await client.query(
+      `insert into platform_daily_reviews (day, generated_at, summary, tenants, reviewed_at, reviewed_by, notes)
+       values ($1, now() - interval '1 day', '{"availability24h":99.4,"availabilityChecks":1440,"openAlerts":0,"criticalAlerts":0,"unknownAttempts":0,"reconciliationGaps":0,"ledgerMismatches":0,"tenantsOverSmsBudget":0,"importsFailed":0,"notificationsFailed":0,"tenantsInHypercare":1,"tenantsFlagged":0,"healthy":true}'::jsonb,
+               '[]'::jsonb, now() - interval '20 hours', $2, 'Revue de démonstration : rien à signaler')`,
+      [reviewDay, platformAdmin],
+    );
     await client.query('commit');
     log(
       `✔ seed : plateforme (admin@polaris.local), ${lycee.code}, ${univ.code} — mot de passe ${DEMO_PASSWORD}, TOTP ${DEMO_MFA_SECRET} (admin, finance, super admin)`,

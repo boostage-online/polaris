@@ -1,9 +1,11 @@
-import { Controller, Get, Patch, Post, Put } from '@nestjs/common';
+import { Controller, Get, HttpCode, Patch, Post, Put } from '@nestjs/common';
 import { z } from 'zod';
 import {
   AssignRolesSchema,
   InviteMemberSchema,
+  MfaResetResultSchema,
   RoleSchema,
+  SupportMfaResetSchema,
   UpdateRolePermissionsSchema,
   type Permission,
 } from '@polaris/contracts';
@@ -16,6 +18,7 @@ import {
 } from '../../../common/decorators';
 import { RequestContextStore, type Actor } from '../../../database/request-context';
 import { InvitationService } from '../application/invitation.service';
+import { MfaService } from '../application/mfa.service';
 import { RoleService } from '../application/role.service';
 
 const IdParams = z.object({ id: z.string().uuid() });
@@ -79,6 +82,7 @@ export class MembersController {
   constructor(
     private readonly roles: RoleService,
     private readonly invitations: InvitationService,
+    private readonly mfa: MfaService,
   ) {}
 
   @Get()
@@ -120,5 +124,26 @@ export class MembersController {
       ...body,
       invitedBy: actor.userId,
     });
+  }
+
+  @Post(':membershipId/mfa-reset')
+  @HttpCode(200)
+  @RequirePermission('RESET_USER_MFA')
+  @ApiDoc({
+    summary:
+      "Réinitialiser la MFA d'un membre (téléphone perdu, plus de code de récupération) : sessions révoquées, motif journalisé",
+    tags: ['rbac'],
+    params: MembershipParams,
+    body: SupportMfaResetSchema,
+    response: MfaResetResultSchema,
+  })
+  resetMfa(
+    @ZodParams(MembershipParams) params: z.infer<typeof MembershipParams>,
+    @ZodBody(SupportMfaResetSchema) body: z.infer<typeof SupportMfaResetSchema>,
+  ) {
+    return this.mfa.resetByAdmin(
+      { membershipId: params.membershipId, tenantId: RequestContextStore.require().tenantId! },
+      body.reason,
+    );
   }
 }

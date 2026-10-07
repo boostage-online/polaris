@@ -13,6 +13,11 @@ export const tenants = pgTable('tenants', {
   suspensionReason: text('suspension_reason'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+  /** Lancement (Phase 8). */
+  plan: text('plan').$type<'PILOT' | 'STANDARD' | 'PREMIUM'>().notNull(),
+  liveAt: timestamp('live_at', { withTimezone: true }),
+  hypercareUntil: timestamp('hypercare_until', { withTimezone: true }),
+  launchChecklist: jsonb('launch_checklist').$type<Record<string, unknown>>().notNull(),
 });
 
 export const campuses = pgTable('campuses', {

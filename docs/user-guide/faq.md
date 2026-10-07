@@ -4,6 +4,8 @@
 
 **Je n'ai pas reçu l'e-mail d'invitation.** Vérifiez les courriers indésirables ; demandez à votre administrateur de renvoyer l'invitation (Personnel → Réinviter). Le lien est valable 7 jours.
 
+**Le service est-il disponible ?** La page publique `/status` affiche l'état du service et la disponibilité des 30 derniers jours.
+
 **Le parent ne reçoit pas le SMS de code.** Vérifiez le numéro sur sa fiche (format `+229…`). Trois envois par heure au maximum ; le code est valable 5 minutes.
 
 **« Trop de tentatives ».** Attendez le délai indiqué. Il augmente à chaque série d'échecs puis se remet à zéro après une connexion réussie.

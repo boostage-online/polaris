@@ -1,7 +1,7 @@
 /**
  * Règles de couches du modular monolith (ADR-0001).
  *
- *   Couche 4 — transverse     : notifications, reporting
+ *   Couche 4 — transverse     : notifications, reporting, launch
  *   Couche 3 — métier cœur    : attendance, billing, payments
  *   Couche 2 — référentiels   : academic, students-guardians
  *   Couche 1 — socle          : tenancy, identity, platform, audit, shared, database, common
@@ -11,7 +11,7 @@
 const layer1 = ['tenancy', 'identity', 'platform', 'audit'];
 const layer2 = ['academic', 'students-guardians'];
 const layer3 = ['attendance', 'billing', 'payments'];
-const layer4 = ['notifications', 'reporting'];
+const layer4 = ['notifications', 'reporting', 'launch'];
 const infra = ['shared', 'database', 'common', 'config', 'health'];
 
 const mod = (names) => `^src/modules/(${names.join('|')})/`;

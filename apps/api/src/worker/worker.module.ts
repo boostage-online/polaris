@@ -6,6 +6,7 @@ import { DatabaseModule } from '../database/database.module';
 import { AcademicModule } from '../modules/academic';
 import { BillingModule } from '../modules/billing';
 import { PaymentsModule } from '../modules/payments';
+import { LaunchModule } from '../modules/launch';
 import { ReportingModule } from '../modules/reporting';
 import { NotificationsModule } from '../modules/notifications';
 import { SharedModule } from '../modules/shared';
@@ -39,6 +40,7 @@ import { SchedulesService } from './schedules.service';
     ReportingModule,
     NotificationsModule,
     StudentsGuardiansModule,
+    LaunchModule,
   ],
   providers: [
     InvitationEmailHandler,

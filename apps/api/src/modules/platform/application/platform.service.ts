@@ -51,6 +51,8 @@ export class PlatformService {
         settings: {},
         createdAt: new Date(),
         updatedAt: new Date(),
+        plan: 'PILOT',
+        launchChecklist: {},
       });
     } catch (e) {
       if ((e as { code?: string }).code === '23505')

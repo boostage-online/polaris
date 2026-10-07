@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parse } from 'yaml';
@@ -38,7 +39,12 @@ const params: Record<string, () => string> = {
   familyId: () => '00000000-0000-0000-0000-000000000000',
   impersonationId: () => seed.platform.impersonationSessionId,
   alertId: () => seed.platform.alertId,
+  day: () => new Date(Date.now() - 86_400_000).toISOString().slice(0, 10),
+  // Réinitialisation de MFA : un compte jetable, pour ne révoquer les sessions de personne d'autre.
+  throwawayUserId: () => throwaway.userId,
+  throwawayMembershipId: () => throwaway.membershipId,
 };
+const throwaway = { userId: '', membershipId: '' };
 const bodies: Record<string, () => object> = {
   'POST /api/v1/platform/tenants/:id/impersonate': () => ({
     reason: 'Matrice de permissions : vérification',
@@ -46,6 +52,12 @@ const bodies: Record<string, () => object> = {
   'POST /api/v1/privacy/students/:id/anonymize': () => ({ reason: 'Matrice de permissions' }),
   'POST /api/v1/privacy/guardians/:id/anonymize': () => ({ reason: 'Matrice de permissions' }),
   'PATCH /api/v1/onboarding': () => ({ dismissed: false }),
+  'PATCH /api/v1/platform/tenants/:id/launch/checklist': () => ({}),
+  'POST /api/v1/platform/tenants/:id/launch/go-live': () => ({ plan: 'PILOT', checklist: {} }),
+  'POST /api/v1/platform/reviews/:day/ack': () => ({ notes: 'Matrice de permissions' }),
+  'POST /api/v1/platform/support/unlock': () => ({ identifier: 'matrice@example.com' }),
+  'POST /api/v1/platform/support/users/:id/mfa-reset': () => ({ reason: 'Matrice de permissions' }),
+  'POST /api/v1/members/:membershipId/mfa-reset': () => ({ reason: 'Matrice de permissions' }),
   'POST /api/v1/me/mfa/enable': () => ({ code: '000000' }),
   'POST /api/v1/me/mfa/disable': () => ({ code: '000000' }),
   'POST /api/v1/me/mfa/recovery-codes': () => ({ code: '000000' }),
@@ -105,6 +117,16 @@ describe('Matrice de permissions', () => {
     ctx = await startApp();
     for (const role of SYSTEM_ROLE_CODES) sessions[role] = await loginAs(ctx, 'univ', role);
     platform = await loginPlatform(ctx);
+    throwaway.userId = randomUUID();
+    throwaway.membershipId = randomUUID();
+    await ctx.owner.query(
+      `insert into users (id, email, display_name, mfa_enabled) values ($1, $2, 'Compte jetable (matrice)', false)`,
+      [throwaway.userId, `matrice-${throwaway.userId.slice(0, 8)}@${T().code}.local`],
+    );
+    await ctx.owner.query(
+      `insert into memberships (id, user_id, tenant_id, kind, status, accepted_at) values ($1, $2, $3, 'STAFF', 'ACTIVE', now())`,
+      [throwaway.membershipId, throwaway.userId, T().id],
+    );
   });
   afterAll(() => ctx.close());
 
@@ -138,7 +160,11 @@ describe('Matrice de permissions', () => {
                 ? 'impersonationId'
                 : n === 'id' && r.path.startsWith('/api/v1/platform/alerts')
                   ? 'alertId'
-                  : n
+                  : n === 'id' && r.path.startsWith('/api/v1/platform/support/users')
+                    ? 'throwawayUserId'
+                    : n === 'membershipId' && r.path.endsWith('mfa-reset')
+                      ? 'throwawayMembershipId'
+                      : n
           ];
         if (!f) throw new Error(`fixture manquante pour :${n}`);
         return f();

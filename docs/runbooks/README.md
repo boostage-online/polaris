@@ -15,4 +15,6 @@ Un runbook par situation opérationnelle : symptômes, vérifications, actions, 
 | [sms-quota.md](./sms-quota.md)                 | Quota SMS atteint ou proche                                                      |
 | [impersonation.md](./impersonation.md)         | Sessions de support Super Admin : règles, procédure, contrôle                    |
 | [onboarding-tenant.md](./onboarding-tenant.md) | Onboarder un établissement en moins de 2 h                                       |
+| [astreinte.md](./astreinte.md)                 | Astreinte : plage, rotation, délais, journée type, escalade (Phase 8)            |
+| [hypercare.md](./hypercare.md)                 | Revue quotidienne après une mise en production : lecture, seuils, acquittement   |
 | [exercise-log.md](./exercise-log.md)           | Journal des exercices (restauration, panne provider, fuite, charge)              |

@@ -9,6 +9,6 @@ import { TenantController } from './controllers/tenant.controller';
   imports: [AuditModule],
   controllers: [TenantController, OnboardingController],
   providers: [TenantService, OnboardingService],
-  exports: [TenantService],
+  exports: [TenantService, OnboardingService],
 })
 export class TenancyModule {}

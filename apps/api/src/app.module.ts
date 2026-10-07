@@ -13,6 +13,7 @@ import { AttendanceModule } from './modules/attendance';
 import { AuditModule } from './modules/audit';
 import { BillingModule } from './modules/billing';
 import { PaymentsModule } from './modules/payments';
+import { LaunchModule } from './modules/launch';
 import { ReportingModule } from './modules/reporting';
 import { AuthGuard, IdentityModule, PermissionGuard, ScopeGuard } from './modules/identity';
 import { NotificationsModule } from './modules/notifications';
@@ -83,6 +84,7 @@ const REDACT_PATHS = [
     BillingModule,
     PaymentsModule,
     ReportingModule,
+    LaunchModule,
     NotificationsModule,
     HealthModule,
   ],

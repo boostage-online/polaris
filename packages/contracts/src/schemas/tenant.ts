@@ -3,6 +3,8 @@ import { SlugSchema, UuidSchema } from './common';
 
 export const TenantTypeSchema = z.enum(['SCHOOL', 'UNIVERSITY', 'TRAINING_CENTER']);
 export const TenantStatusSchema = z.enum(['TRIAL', 'ACTIVE', 'SUSPENDED']);
+export const TenantPlanSchema = z.enum(['PILOT', 'STANDARD', 'PREMIUM']);
+export type TenantPlan = z.infer<typeof TenantPlanSchema>;
 
 export const TenantSchema = z.object({
   id: UuidSchema,
@@ -13,6 +15,10 @@ export const TenantSchema = z.object({
   timezone: z.string().min(3).max(64),
   country: z.string().length(2),
   createdAt: z.string().datetime(),
+  /** Lancement (Phase 8) : offre, date de mise en production, fin de l'hypercare. */
+  plan: TenantPlanSchema.optional(),
+  liveAt: z.string().datetime().nullable().optional(),
+  hypercareUntil: z.string().datetime().nullable().optional(),
 });
 export type Tenant = z.infer<typeof TenantSchema>;
 

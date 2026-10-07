@@ -251,3 +251,22 @@ routes:
   # route sans permission (le parent exporte ses propres données ; un membre du personnel reçoit 404)
   'GET /api/v1/me/personal-data':
     { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  # --- Phase 8 : lancement (mise en production, adoption, hypercare, disponibilité, consommation, support N1) ---
+  'GET /api/v1/platform/tenants/:id/launch': { scope: platform }
+  'PATCH /api/v1/platform/tenants/:id/launch/checklist': { scope: platform }
+  'POST /api/v1/platform/tenants/:id/launch/go-live': { scope: platform }
+  'GET /api/v1/platform/adoption': { scope: platform }
+  'GET /api/v1/platform/reviews': { scope: platform }
+  'POST /api/v1/platform/reviews/generate': { scope: platform }
+  'GET /api/v1/platform/reviews/:day': { scope: platform }
+  'POST /api/v1/platform/reviews/:day/ack': { scope: platform }
+  'GET /api/v1/platform/availability': { scope: platform }
+  'POST /api/v1/platform/availability/probe': { scope: platform }
+  'GET /api/v1/platform/usage': { scope: platform }
+  'GET /api/v1/platform/usage/export.csv': { scope: platform }
+  'POST /api/v1/platform/usage/snapshot': { scope: platform }
+  'GET /api/v1/platform/support/lookup': { scope: platform }
+  'POST /api/v1/platform/support/unlock': { scope: platform }
+  'POST /api/v1/platform/support/users/:id/mfa-reset': { scope: platform }
+  # permission sensible RESET_USER_MFA : administrateur seul (session MFA)
+  'POST /api/v1/members/:membershipId/mfa-reset': { allow: [ADMIN] }

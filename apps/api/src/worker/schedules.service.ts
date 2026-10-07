@@ -12,6 +12,7 @@ import {
   ReportRefreshService,
   ScheduledReportsService,
 } from '../modules/reporting';
+import { AvailabilityService, HypercareService, UsageService } from '../modules/launch';
 import { PrivacyService } from '../modules/students-guardians';
 import { RedisService } from '../modules/shared';
 
@@ -41,6 +42,9 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
     private readonly scheduledReports: ScheduledReportsService,
     private readonly alerts: PlatformAlertsService,
     private readonly privacy: PrivacyService,
+    private readonly availability: AvailabilityService,
+    private readonly hypercare: HypercareService,
+    private readonly usage: UsageService,
   ) {}
 
   async onModuleInit() {
@@ -100,6 +104,21 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
       { pattern: '30 3 * * *', tz: 'Africa/Porto-Novo' },
       { name: 'privacy-retention' },
     );
+    await this.queue.upsertJobScheduler(
+      'availability-probe',
+      { every: 60_000 },
+      { name: 'availability-probe' },
+    );
+    await this.queue.upsertJobScheduler(
+      'hypercare-digest',
+      { pattern: '0 7 * * *', tz: 'Africa/Porto-Novo' },
+      { name: 'hypercare-digest' },
+    );
+    await this.queue.upsertJobScheduler(
+      'usage-snapshot',
+      { pattern: '15 4 * * *', tz: 'Africa/Porto-Novo' },
+      { name: 'usage-snapshot' },
+    );
     this.worker = new Worker(SCHEDULES_QUEUE, async (job) => this.run(job.name), {
       connection: this.redis.duplicate(),
       concurrency: 1,
@@ -122,6 +141,9 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
     if (name === 'reports-scheduled-send') return this.scheduledReportsAll();
     if (name === 'platform-alerts') return this.alerts.evaluate();
     if (name === 'privacy-retention') return this.privacyRetentionAll();
+    if (name === 'availability-probe') return this.availabilityProbe();
+    if (name === 'hypercare-digest') return this.hypercare.generate();
+    if (name === 'usage-snapshot') return this.usage.snapshotAll();
     return this.generateAll();
   }
 
@@ -235,6 +257,13 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
       }
     }
     return results;
+  }
+
+  /** Sonde de disponibilité (chaque minute) ; purge des sondes anciennes une fois par heure. */
+  async availabilityProbe() {
+    const result = await this.availability.probe();
+    if (new Date().getMinutes() === 0) await this.availability.prune();
+    return result;
   }
 
   /** Rapports planifiés dus aujourd'hui (06:30). */

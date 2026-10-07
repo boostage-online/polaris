@@ -1,6 +1,6 @@
-# Backlog — Phases 1 à 7
+# Backlog — Phases 1 à 8
 
-Sept fichiers, un par phase, découpés en **epics** puis **user stories** avec critères d'acceptation. La Phase 8 (lancement et hypercare) sera détaillée à la fin de la Phase 7.
+Huit fichiers, un par phase, découpés en **epics** puis **user stories** avec critères d'acceptation. La V1 (Partie 18 du document directeur) sera détaillée après la rentrée, une fois l'adoption observée.
 
 | Phase                             | Fichier                                          | Fenêtre cible            | Porte de sortie                                                                    |
 | --------------------------------- | ------------------------------------------------ | ------------------------ | ---------------------------------------------------------------------------------- |
