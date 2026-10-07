@@ -1,0 +1,9 @@
+export { IdentityModule } from './identity.module';
+export { AuthGuard } from './infrastructure/auth.guard';
+export { ScopeGuard } from './infrastructure/scope.guard';
+export { PermissionGuard } from './infrastructure/permission.guard';
+export { RoleService } from './application/role.service';
+export { InvitationService } from './application/invitation.service';
+export { PasswordService } from './application/password.service';
+export { TokenService } from './application/token.service';
+export { RolePolicy, LockoutPolicy } from './domain/policies';

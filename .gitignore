@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.next/
+.turbo/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+openapi.json
+/tmp/
+apps/api/.test-seed.json
