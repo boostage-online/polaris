@@ -2,18 +2,18 @@
 
 Objectif G7 : **p95 API < 400 ms à 2 000 utilisateurs simultanés**, 0 erreur, webhooks absorbés en rafale.
 
-| Script              | Ce qu'il mesure                                                                                   |
-| ------------------- | ------------------------------------------------------------------------------------------------- |
-| `k6/api.js`         | Parcours de lecture par rôle (enseignant, scolarité, direction, parent) : `/me`, appels du jour, élèves, tableau de bord, rapports, enfants |
-| `k6/webhooks.js`    | Rafale de webhooks signés (provider de démonstration) : réponse 200 rapide, traitement en file     |
+| Script           | Ce qu'il mesure                                                                                                                             |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `k6/api.js`      | Parcours de lecture par rôle (enseignant, scolarité, direction, parent) : `/me`, appels du jour, élèves, tableau de bord, rapports, enfants |
+| `k6/webhooks.js` | Rafale de webhooks signés (provider de démonstration) : réponse 200 rapide, traitement en file                                              |
 
 ## Profils
 
-| Profil    | VUs   | Durée | Webhooks/s | Usage                                             |
-| --------- | ----- | ----- | ---------- | ------------------------------------------------- |
-| `smoke`   | 10    | 45 s  | 10         | CI (`load.yml`, hebdomadaire et à la demande)     |
-| `nominal` | 200   | 5 min | 50         | Staging, avant chaque mise en production          |
-| `full`    | 2 000 | 10 min| 100        | Staging dimensionné comme la production (G7)      |
+| Profil    | VUs   | Durée  | Webhooks/s | Usage                                         |
+| --------- | ----- | ------ | ---------- | --------------------------------------------- |
+| `smoke`   | 10    | 45 s   | 10         | CI (`load.yml`, hebdomadaire et à la demande) |
+| `nominal` | 200   | 5 min  | 50         | Staging, avant chaque mise en production      |
+| `full`    | 2 000 | 10 min | 100        | Staging dimensionné comme la production (G7)  |
 
 ## Lancer
 

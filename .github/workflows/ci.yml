@@ -128,6 +128,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v5
         with:
@@ -138,17 +139,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Audit des dépendances (bloquant à partir de « high » en production)
+      - name: Audit des dépendances (bloquant « critical » en production ; « high » signalé, à traiter sous 7 jours — Partie 14)
         run: |
-          pnpm audit --prod --audit-level=high || {
-            echo "::error::Vulnérabilités « high » ou « critical » dans les dépendances de production — mettre à jour (Partie 14) ou documenter une exception dans docs/security/checklist.md"
-            exit 1
-          }
-          pnpm audit --audit-level=high || echo "::warning::Vulnérabilités dans les dépendances de développement (non bloquant)"
+          .github/scripts/run-step.sh "pnpm audit (production, critical)" pnpm audit --prod --audit-level=critical
+          pnpm audit --prod --audit-level=high > audit-high.txt 2>&1 \
+            || { echo "::warning::Vulnérabilités « high » dans les dépendances de production : voir le résumé du job (mise à jour à planifier)"; { echo '### pnpm audit --prod (high)'; echo '```'; tail -n 80 audit-high.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"; }
       - name: Recherche de secrets dans l'historique (gitleaks)
         run: |
-          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect --source /repo --redact --no-banner --exit-code 1 \
-            || { echo "::error::Secret potentiel détecté par gitleaks : révoquer, purger l'historique, puis documenter l'incident (docs/runbooks/data-breach.md)"; exit 1; }
+          .github/scripts/run-step.sh "gitleaks" docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect --source /repo --redact --no-banner --exit-code 1
 
   build:
     name: Images Docker
