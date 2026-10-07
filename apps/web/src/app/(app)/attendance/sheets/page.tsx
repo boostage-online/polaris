@@ -202,10 +202,15 @@ export default function SheetsPage() {
                   <td className="text-xs text-slate-500">
                     {s.submittedAt ? fmtDate(s.submittedAt, me.tenantTimezone) : '—'}
                   </td>
-                  <td className="text-right">
+                  <td className="whitespace-nowrap text-right">
                     <Link href={`/attendance/sessions/${s.sessionId}`}>
                       <Button size="sm" variant="ghost">
                         Ouvrir
+                      </Button>
+                    </Link>
+                    <Link href={`/trace/sheets/${s.id}`} title="Traçabilité de la feuille">
+                      <Button size="sm" variant="ghost">
+                        Tracer
                       </Button>
                     </Link>
                   </td>

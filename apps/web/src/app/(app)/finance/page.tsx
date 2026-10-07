@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useCan } from '@/components/app-shell';
 import { Money } from '@/components/billing';
+import { Bar } from '@/components/reporting';
 import {
   Alert,
   Button,
@@ -16,7 +17,7 @@ import {
   Table,
 } from '@/components/ui';
 import { fmtDateTime, fmtXof, PAYMENT_METHODS } from '@/lib/format';
-import { billing } from '@/lib/resources';
+import { billing, reporting } from '@/lib/resources';
 
 /** Tableau de bord finance : année, caisse du jour, mois, 7 prochains jours, par classe, intégrité. */
 export default function FinanceDashboardPage() {
@@ -223,6 +224,97 @@ export default function FinanceDashboardPage() {
           </Table>
         )}
       </Card>
+
+      <ChannelsCard />
     </>
+  );
+}
+
+/** Encaissements par canal (manuel / en ligne, par provider) sur 30 jours — agrégats Phase 6. */
+function ChannelsCard() {
+  const q = useQuery({
+    queryKey: ['dashboards', 'finance', 'channels'],
+    queryFn: () => reporting.channels(),
+  });
+  if (q.isPending) return null;
+  if (q.isError) return <ErrorAlert error={q.error} />;
+  const c = q.data;
+  const total = c.channels.reduce((t, x) => t + x.amount, 0);
+  return (
+    <Card
+      title="Par canal (30 derniers jours)"
+      className="mt-4"
+      actions={
+        <Link href="/reports" className="text-sm underline">
+          Rapports
+        </Link>
+      }
+    >
+      {c.channels.length === 0 ? (
+        <Empty>Aucun encaissement sur la période.</Empty>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+          <ul className="space-y-2 text-sm">
+            {c.channels.map((ch) => (
+              <li key={ch.channel}>
+                <div className="mb-0.5 flex justify-between">
+                  <span>
+                    {ch.label}{' '}
+                    <span className="text-xs text-slate-400">
+                      {ch.kind === 'ELECTRONIC' ? 'en ligne' : 'manuel'} · {ch.payments} paiement(s)
+                    </span>
+                  </span>
+                  <span className="tabular-nums">
+                    {fmtXof(ch.amount)}{' '}
+                    <span className="text-slate-400">
+                      ({ch.share === null ? '—' : `${ch.share} %`})
+                    </span>
+                  </span>
+                </div>
+                <Bar
+                  value={ch.amount}
+                  max={total}
+                  tone={ch.kind === 'ELECTRONIC' ? 'blue' : 'brand'}
+                  label={`${ch.label} : ${fmtXof(ch.amount)}`}
+                />
+                {(ch.reversedAmount > 0 || ch.fees > 0) && (
+                  <p className="text-xs text-slate-500">
+                    {ch.reversedAmount > 0 && `annulés : ${fmtXof(ch.reversedAmount)} `}
+                    {ch.fees > 0 && `· frais provider : ${fmtXof(ch.fees)}`}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+          <div className="rounded-md border border-slate-100 bg-slate-50 p-3 text-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Paiements en ligne
+            </p>
+            <p className="mt-1 text-2xl font-semibold">
+              {c.online.successRate === null ? '—' : `${c.online.successRate} %`}
+              <span className="ml-1 text-xs font-normal text-slate-500">de réussite</span>
+            </p>
+            <ul className="mt-2 space-y-0.5 text-xs text-slate-600">
+              <li>{c.online.attempts} tentative(s)</li>
+              <li>
+                {c.online.succeeded} réussie(s) · {c.online.failed} échouée(s)
+              </li>
+              <li>
+                {c.online.pending} en attente ·{' '}
+                <span className={c.online.unknown ? 'font-medium text-red-700' : ''}>
+                  {c.online.unknown} à vérifier
+                </span>
+              </li>
+              <li>
+                Confirmation médiane :{' '}
+                {c.online.medianConfirmSeconds === null
+                  ? '—'
+                  : `${Math.round(c.online.medianConfirmSeconds)} s`}
+              </li>
+            </ul>
+          </div>
+        </div>
+      )}
+    </Card>
   );
 }

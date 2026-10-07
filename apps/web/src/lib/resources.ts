@@ -17,12 +17,15 @@ import type {
   CreateCourseInput,
   CreateFeeStructureInput,
   CreateGroupInput,
+  CreateScheduledReportInput,
   CreateGuardianInput,
   CreateScheduleSlotInput,
   CreateStudentInput,
+  DirectionDashboard,
   Enrollment,
   FeeCategory,
   FeeStructure,
+  FinanceChannels,
   FinanceDashboard,
   Group,
   Guardian,
@@ -35,26 +38,35 @@ import type {
   Notification,
   NotificationChannel,
   NotificationKind,
+  NotificationTrace,
   NotificationUsage,
   Payment,
   PaymentAttempt,
   PaymentConfig,
   PaymentMethod,
   PaymentOptions,
+  PedagogyDashboard,
   PendingPayments,
+  PlatformOverview,
   Program,
   Receipt,
   ReconciliationRun,
   RecordInput,
+  ReportDefinition,
+  ReportKey,
+  ReportResult,
   RecordManualPaymentInput,
   RecordRevision,
   RegistrarDashboard,
+  ScheduledReport,
+  SheetTrace,
   Staff,
   Student,
   StudentAccount,
   StudentLifeDashboard,
   Subject,
   TeacherDashboard,
+  TenantExport,
   Term,
   TodaySession,
   UnpaidByGroup,
@@ -570,4 +582,67 @@ export const payments = {
       if (!r.ok) throw new Error(`Caisse factice : ${r.status}`);
       return (await r.json()) as { data: { status: string; webhook: string } };
     }),
+};
+
+// ----------------------------------------------------------------------------- Phase 6 : reporting
+
+export const reporting = {
+  catalog: () => api<ReportDefinition[]>('/reports'),
+  run: (key: ReportKey, q: { from?: string; to?: string; groupId?: string } = {}) =>
+    api<ReportResult>(`/reports/${key}${qs(q)}`),
+  downloadCsv: (key: ReportKey, q: { from?: string; to?: string; groupId?: string } = {}) =>
+    downloadFile(`/reports/${key}.csv${qs(q)}`, `${key}.csv`),
+  refresh: (full = false) =>
+    api<{ queued?: boolean; attendanceRows?: number; financeRows?: number }>(
+      '/reports/refresh',
+      json({ full }),
+    ),
+  direction: () => api<DirectionDashboard>('/dashboards/direction'),
+  pedagogy: (q: { from?: string; to?: string } = {}) =>
+    api<PedagogyDashboard>(`/dashboards/pedagogy${qs(q)}`),
+  channels: (q: { from?: string; to?: string } = {}) =>
+    api<FinanceChannels>(`/dashboards/finance/channels${qs(q)}`),
+  sheetTrace: (id: string) => api<SheetTrace>(`/trace/sheets/${id}`),
+  notificationTrace: (id: string) => api<NotificationTrace>(`/trace/notifications/${id}`),
+
+  scheduled: () => api<ScheduledReport[]>('/scheduled-reports'),
+  createScheduled: (b: CreateScheduledReportInput) =>
+    api<ScheduledReport>('/scheduled-reports', json(b)),
+  updateScheduled: (id: string, b: Partial<CreateScheduledReportInput> & { enabled?: boolean }) =>
+    api<ScheduledReport>(`/scheduled-reports/${id}`, patch(b)),
+  removeScheduled: (id: string) => api<void>(`/scheduled-reports/${id}`, del()),
+  sendScheduled: (id: string) => api<{ sent: number }>(`/scheduled-reports/${id}/send`, json({})),
+
+  exports: () => api<TenantExport[]>('/tenant-exports'),
+  requestExport: () => api<TenantExport>('/tenant-exports', json({})),
+  exportStatus: (id: string) => api<TenantExport>(`/tenant-exports/${id}`),
+  downloadExport: (id: string) =>
+    downloadFile(`/tenant-exports/${id}/download`, 'export-polaris.zip'),
+};
+
+export interface PlatformTenant {
+  id: string;
+  code: string;
+  name: string;
+  type: string;
+  status: string;
+  timezone: string;
+  activeMembers: number;
+  createdAt?: string;
+}
+export const platform = {
+  overview: () => api<PlatformOverview>('/platform/overview'),
+  tenants: () => api<PlatformTenant[]>('/platform/tenants'),
+  createTenant: (b: {
+    code: string;
+    name: string;
+    type: string;
+    timezone?: string;
+    country?: string;
+    adminEmail?: string;
+  }) => api<PlatformTenant>('/platform/tenants', json(b)),
+  setStatus: (id: string, status: string, reason?: string) =>
+    api<PlatformTenant>(`/platform/tenants/${id}/status`, patch({ status, reason })),
+  inviteAdmin: (id: string, email: string) =>
+    api<{ invited: boolean }>(`/platform/tenants/${id}/admin-invitations`, json({ email })),
 };

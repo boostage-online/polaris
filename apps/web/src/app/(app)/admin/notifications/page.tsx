@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import {
@@ -166,7 +167,12 @@ export default function NotificationsJournalPage() {
                     </span>
                   )}
                 </td>
-                <td className="text-right">
+                <td className="whitespace-nowrap text-right">
+                  <Link href={`/trace/notifications/${n.id}`}>
+                    <Button size="sm" variant="ghost">
+                      Tracer
+                    </Button>
+                  </Link>
                   {(n.status === 'FAILED' || n.status === 'SUPPRESSED') && (
                     <Button
                       size="sm"
