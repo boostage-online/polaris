@@ -76,15 +76,24 @@ Export PDF des rapports (le CSV suffit aux pilotes) ; comparaison inter-années 
 
 ## État de vérification (CI GitHub Actions, PR #6)
 
-_À compléter lorsque les minutes GitHub Actions de l'organisation seront rétablies (les jobs des commits `ffb6916` et `d879165` n'ont pas démarré : « spending limit needs to be increased »)._
+**CI verte** au commit `637d6bb` (7 octobre 2026, API + écrans web + documentation) — lint type-checked, typecheck (api, web, contrats), frontières de modules, migrations up → down → up, tests unitaires, **124 tests d'intégration** (dont 8 nouveaux pour le reporting), OpenAPI.
 
-Vérifications faites hors CI : migration `0006` jouée up → down → up sur PostgreSQL 16 local ; toutes les requêtes SQL des services exécutées sur le schéma local ; typecheck TypeScript de l'API (hors dépendances) et contrôle des écrans web ; Prettier.
+La CI a d'abord été bloquée côté GitHub (quota de minutes Actions de l'organisation épuisé sur un dépôt privé : « spending limit needs to be increased ») ; le dépôt a été rendu public pour la débloquer. Corrections apportées pendant la boucle :
 
-Tests écrits : unitaires `infrastructure/zip.test.ts` (archive relue, CRC, noms UTF-8) ; intégration `test/reporting.test.ts` — agrégats (égalité avec les tables sources), catalogue filtré et 403 par rapport, les 8 rapports en JSON et CSV (BOM, `;`), dashboards direction/pédagogie/canaux, traces feuille et notification, rapports planifiés (création, `runDue` une fois par jour, envoi avec pièce jointe), export complet (construction par le worker, téléchargement, inventaire), vue plateforme ; matrice et isolation étendues.
+| Problème rencontré                                                                                                                                           | Correction                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| Express fait correspondre `GET /reports/:key` à « clé.csv » avant la route CSV                                                                               | route `:key.csv` déclarée en premier dans le contrôleur                                   |
+| le rafraîchissement complet partait de la première séance : le paiement seedé (2 oct.) précédait la séance (12 oct.) et les séances futures étaient ignorées | bornes = première séance ou premier paiement → dernière séance planifiée ou aujourd'hui   |
+| `column reference "adjustments_total" is ambiguous` (installments ⋈ student_fees) sur le tableau de bord de direction                                        | colonnes qualifiées ; toutes les requêtes du module repassées au parseur PostgreSQL local |
+| `instanceof Date` sur un type `Cell` (TS2358) dans l'export                                                                                                  | lignes lues en `unknown` avant conversion des dates                                       |
+| le test d'isolation n'avait pas de fixture pour `:key`                                                                                                       | `:key` exclu (clé de rapport, pas un identifiant de ressource)                            |
+| la matrice de permissions (≈ 190 routes × 9 rôles) dépassait les 5 s par défaut : les délais de la racine vitest ne sont pas hérités par les projets         | délais répétés dans chaque projet, délai explicite sur la matrice                         |
+| assertion de type inutile sur `filters`                                                                                                                      | supprimée                                                                                 |
+
+Tests : unitaires (`infrastructure/zip.test.ts` — archive relue, CRC, noms UTF-8) ; intégration `test/reporting.test.ts` — agrégats (égalité avec les tables sources, rejeu sans doublon), catalogue filtré et 403 par rapport, les 8 rapports en JSON et CSV (BOM, `;`, `Content-Disposition`), élèves à risque et encaissements par canal sur données seedées, dashboards direction/pédagogie/canaux et leurs 403, traces feuille et notification, rapports planifiés (création, validation 422, envoi immédiat avec pièce jointe CSV, `runDue` une fois par jour, suspension, suppression), export complet (409 si déjà en cours ou pas prêt, construction par le worker, inventaire, ZIP téléchargé et relu, 404 depuis l'autre tenant), vue plateforme (parc, santé, par établissement, 404 pour un rôle tenant) ; matrice (+20 routes) et isolation étendues.
 
 ## Prochaines étapes
 
-1. Rétablir les minutes GitHub Actions (facturation de l'organisation), relancer la CI de la PR #6 et compléter l'état de vérification ci-dessus.
-2. Test utilisateur G6 : faire lire `/direction` et `/pedagogy` à un chef d'établissement pilote sans explication, noter les incompréhensions, ajuster libellés et seuils.
-3. Staging : vérifier la durée de l'export complet sur les données réelles des pilotes (G6 < 10 min) et la charge du cron de rafraîchissement.
-4. Phase 7 — durcissement : supervision et alertes (DLQ, outbox, agrégats périmés), sauvegardes et restauration testées, charge (k6), revue de sécurité, journal d'audit consultable.
+1. Test utilisateur G6 : faire lire `/direction` et `/pedagogy` à un chef d'établissement pilote sans explication, noter les incompréhensions, ajuster libellés et seuils.
+2. Staging : vérifier la durée de l'export complet sur les données réelles des pilotes (G6 < 10 min) et la charge du cron de rafraîchissement.
+3. Phase 7 — durcissement : supervision et alertes (DLQ, outbox, agrégats périmés), sauvegardes et restauration testées, charge (k6), revue de sécurité, journal d'audit consultable.
