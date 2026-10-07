@@ -35,8 +35,9 @@ export type RouteScope = 'tenant' | 'platform' | 'identity';
  */
 export const Scope = (scope: RouteScope) => SetMetadata(META_SCOPE, scope);
 
-export const RequirePermission = (permission: Permission) =>
-  SetMetadata(META_PERMISSION, permission);
+/** Permission requise ; plusieurs = l'une d'elles suffit (ex. TAKE_ATTENDANCE ou TAKE_ATTENDANCE_ANY). */
+export const RequirePermission = (...permissions: [Permission, ...Permission[]]) =>
+  SetMetadata(META_PERMISSION, permissions);
 
 export interface RateLimitOptions {
   /** Nombre de requêtes autorisées par fenêtre. */

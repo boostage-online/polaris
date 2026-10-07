@@ -106,3 +106,49 @@ routes:
   'GET /api/v1/dashboards/registrar':
     { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
   'GET /api/v1/dashboards/admin': { allow: [ADMIN] }
+
+  # --- Phase 3 : assiduité, justificatifs, notifications (ADR-0006) ---
+  'GET /api/v1/me/schedule/today': { scope: identity }
+  'POST /api/v1/sessions/:id/attendance-sheet': { allow: [ADMIN, TEACHER, STUDENT_LIFE] }
+  'GET /api/v1/sessions/:id/attendance-sheet':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION] }
+  'GET /api/v1/attendance-sheets':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION] }
+  'GET /api/v1/attendance-sheets/missing':
+    { allow: [ADMIN, REGISTRAR, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION] }
+  'POST /api/v1/attendance-sheets/lock': { allow: [ADMIN, STUDENT_LIFE] }
+  'GET /api/v1/attendance-sheets/:id':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION] }
+  'PATCH /api/v1/attendance-sheets/:id': { allow: [ADMIN, TEACHER, STUDENT_LIFE] }
+  'POST /api/v1/attendance-sheets/:id/submit': { allow: [ADMIN, TEACHER, STUDENT_LIFE] }
+  'PATCH /api/v1/attendance-records/:id': { allow: [ADMIN, TEACHER, STUDENT_LIFE] }
+  'GET /api/v1/attendance-records/:id/revisions':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION] }
+  'GET /api/v1/justifications':
+    { allow: [ADMIN, REGISTRAR, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION] }
+  'POST /api/v1/justifications': { allow: [ADMIN, STUDENT_LIFE] }
+  'GET /api/v1/justifications/:id':
+    { allow: [ADMIN, REGISTRAR, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION] }
+  'POST /api/v1/justifications/:id/review': { allow: [ADMIN, STUDENT_LIFE] }
+  'GET /api/v1/students/:id/attendance':
+    { allow: [ADMIN, REGISTRAR, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION] }
+  'GET /api/v1/students/:id/attendance/summary':
+    { allow: [ADMIN, REGISTRAR, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION] }
+  'GET /api/v1/attendance/watchlist':
+    { allow: [ADMIN, REGISTRAR, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION] }
+  'POST /api/v1/attendance/alerts/:id/resolve': { allow: [ADMIN, STUDENT_LIFE] }
+  'GET /api/v1/dashboards/teacher': { allow: [ADMIN, TEACHER, STUDENT_LIFE] }
+  'GET /api/v1/dashboards/student-life':
+    { allow: [ADMIN, REGISTRAR, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION] }
+  'GET /api/v1/me/children/summary': { scope: identity }
+  'GET /api/v1/me/children/:studentId/attendance': { scope: identity }
+  'GET /api/v1/me/children/:studentId/justifications': { scope: identity }
+  'POST /api/v1/me/children/:studentId/justifications': { scope: identity }
+  'GET /api/v1/me/notifications': { scope: identity }
+  'POST /api/v1/me/notifications/read-all': { scope: identity }
+  'POST /api/v1/me/notifications/:id/read': { scope: identity }
+  'GET /api/v1/me/notifications/preferences': { scope: identity }
+  'PUT /api/v1/me/notifications/preferences': { scope: identity }
+  'GET /api/v1/notifications': { allow: [ADMIN, DIRECTION] }
+  'GET /api/v1/notifications/usage': { allow: [ADMIN, DIRECTION] }
+  'POST /api/v1/notifications/:id/resend': { allow: [ADMIN] }

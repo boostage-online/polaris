@@ -6,3 +6,4 @@ export * from './schemas/rbac';
 export * from './schemas/audit';
 export * from './schemas/academic';
 export * from './schemas/students';
+export * from './schemas/attendance';

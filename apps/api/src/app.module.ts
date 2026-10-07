@@ -9,8 +9,10 @@ import { ProblemDetailsFilter } from './common/errors/problem-details.filter';
 import { EnvelopeInterceptor } from './common/interceptors/envelope.interceptor';
 import { HealthModule } from './health/health.module';
 import { AcademicModule } from './modules/academic';
+import { AttendanceModule } from './modules/attendance';
 import { AuditModule } from './modules/audit';
 import { AuthGuard, IdentityModule, PermissionGuard, ScopeGuard } from './modules/identity';
+import { NotificationsModule } from './modules/notifications';
 import { PlatformModule } from './modules/platform';
 import { StudentsGuardiansModule } from './modules/students-guardians';
 import {
@@ -74,6 +76,8 @@ const REDACT_PATHS = [
     PlatformModule,
     AcademicModule,
     StudentsGuardiansModule,
+    AttendanceModule,
+    NotificationsModule,
     HealthModule,
   ],
   providers: [

@@ -22,6 +22,7 @@ describe('Isolation inter-tenant', () => {
   const idFor = (path: string, name: string): string => {
     const ac = A().academic;
     if (name === 'membershipId') return A().users.TEACHER.membershipId;
+    if (name === 'studentId') return ac.studentIds[0]!;
     if (name === 'familyId') return '00000000-0000-0000-0000-000000000000';
     const byPrefix: [string, string][] = [
       ['/api/v1/academic-years', ac.yearId],
@@ -37,6 +38,12 @@ describe('Isolation inter-tenant', () => {
       ['/api/v1/guardians', ac.guardianIds.parent],
       ['/api/v1/student-guardians', ac.linkIds.parentS1],
       ['/api/v1/imports', ac.importJobId],
+      ['/api/v1/attendance-sheets', ac.attendance.sheetId],
+      ['/api/v1/attendance-records', ac.attendance.recordIds.s1],
+      ['/api/v1/justifications', ac.attendance.justificationId],
+      ['/api/v1/attendance/alerts', ac.attendance.alertId],
+      ['/api/v1/me/notifications', ac.attendance.notificationId],
+      ['/api/v1/notifications', ac.attendance.notificationId],
       ['/api/v1/roles', A().roleIds.TEACHER],
     ];
     const hit = byPrefix.find(([p]) => path.startsWith(p));
@@ -84,6 +91,15 @@ describe('Isolation inter-tenant', () => {
     'PATCH /api/v1/guardians/:id': () => ({ firstName: 'Isolation' }),
     'PATCH /api/v1/student-guardians/:id': () => ({ isPrimary: true }),
     'DELETE /api/v1/student-guardians/:id': () => ({ reason: 'Isolation' }),
+    'PATCH /api/v1/attendance-sheets/:id': () => ({ version: 1, records: [] }),
+    'POST /api/v1/attendance-sheets/:id/submit': () => ({ version: 1 }),
+    'PATCH /api/v1/attendance-records/:id': () => ({ status: 'PRESENT', reason: 'Isolation' }),
+    'POST /api/v1/justifications/:id/review': () => ({ decision: 'APPROVED' }),
+    'POST /api/v1/me/children/:studentId/justifications': () => ({
+      fromDate: '2026-10-12',
+      toDate: '2026-10-12',
+      reason: 'Isolation',
+    }),
   };
 
   it('toutes les routes tenant avec identifiant répondent 404 pour une ressource du tenant A', async () => {

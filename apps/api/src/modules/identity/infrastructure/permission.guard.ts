@@ -23,7 +23,7 @@ export class PermissionGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const targets = [context.getHandler(), context.getClass()];
     if (this.reflector.getAllAndOverride<boolean>(META_PUBLIC, targets)) return true;
-    const required = this.reflector.getAllAndOverride<Permission | undefined>(
+    const required = this.reflector.getAllAndOverride<Permission[] | undefined>(
       META_PERMISSION,
       targets,
     );
@@ -40,8 +40,8 @@ export class PermissionGuard implements CanActivate {
       actor.permissionsVersion,
     );
     actor.permissions = permissions;
-    if (required && !permissions.includes(required))
-      throw AppError.forbidden(`Permission requise : ${required}`);
+    if (required && !required.some((p) => permissions.includes(p)))
+      throw AppError.forbidden(`Permission requise : ${required.join(' ou ')}`);
     return true;
   }
 
