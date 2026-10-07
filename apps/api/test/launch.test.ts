@@ -359,8 +359,8 @@ describe('Lancement et hypercare (Phase 8)', () => {
     // qui vient de ré-enrôler sa MFA.
     const setup = await ctx.http.post('/api/v1/me/mfa/setup').set(bearer(direct));
     expect(setup.status).toBe(200);
-    const { totp, base32Decode } = await import('../src/modules/identity/domain/totp');
-    const code = totp(base32Decode(setup.body.data.secret as string), Date.now());
+    const { totp } = await import('../src/modules/identity/domain/totp');
+    const code = totp(setup.body.data.secret as string, new Date());
     const enable = await ctx.http.post('/api/v1/me/mfa/enable').set(bearer(direct)).send({ code });
     expect(enable.status, JSON.stringify(enable.body)).toBe(200);
     const admin = await loginAs(ctx, 'univ', 'ADMIN');

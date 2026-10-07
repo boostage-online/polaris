@@ -67,7 +67,7 @@ export class SupportService {
           select m.id, m.user_id, m.kind, m.status, m.tenant_id, t.code as tenant_code, t.name as tenant_name,
                  (select array_agg(r.name order by r.name) from membership_roles mr join roles r on r.id = mr.role_id where mr.membership_id = m.id) as roles
           from memberships m left join tenants t on t.id = m.tenant_id
-          where m.user_id = any(${ids}::uuid[])
+          where m.user_id = any(${`{${ids.join(',')}}`}::uuid[])
           order by m.created_at`)
       : { rows: [] };
     const guardiansNoAccount = await tx.execute<{
