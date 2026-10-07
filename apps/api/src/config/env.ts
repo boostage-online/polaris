@@ -21,6 +21,8 @@ const EnvSchema = z.object({
   ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(60).max(900).default(600),
   /** Plafond global par IP et par minute (les routes sensibles ont leurs propres limites). */
   RATE_LIMIT_GLOBAL_PER_MINUTE: z.coerce.number().int().min(1).default(300),
+  /** Secret de l'empreinte de vérification des reçus (QR / page publique). */
+  RECEIPT_SECRET: z.string().min(16).default('dev-receipt-secret-change-me'),
   REFRESH_TOKEN_TTL_DAYS_STAFF: z.coerce.number().int().min(1).default(30),
   REFRESH_TOKEN_TTL_DAYS_GUARDIAN: z.coerce.number().int().min(1).default(90),
   REFRESH_TOKEN_TTL_HOURS_PLATFORM: z.coerce.number().int().min(1).default(8),
@@ -51,6 +53,8 @@ export function loadEnv(overrides: Partial<Record<keyof Env, string>> = {}): Env
       throw new Error('JWT_PRIVATE_JWK et JWT_PUBLIC_JWK sont obligatoires en production');
     }
     if (!parsed.data.COOKIE_SECURE) throw new Error('COOKIE_SECURE doit être true en production');
+    if (parsed.data.RECEIPT_SECRET === 'dev-receipt-secret-change-me')
+      throw new Error('RECEIPT_SECRET doit être défini en production');
   }
   cached = parsed.data;
   return cached;

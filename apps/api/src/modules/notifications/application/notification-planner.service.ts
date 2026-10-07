@@ -24,6 +24,7 @@ import {
   type NotificationChannel,
 } from '../../../database/schema';
 import { AttendanceEvents, rulesFrom, type MarkedStudent } from '../../attendance';
+import { BillingEvents, type ReminderItem } from '../../billing';
 import { EMAIL_GATEWAY, SMS_GATEWAY, type EmailGateway, type SmsGateway } from '../../shared';
 import {
   Templates,
@@ -76,6 +77,11 @@ export class NotificationPlanner {
     AttendanceEvents.JustificationSubmitted,
     AttendanceEvents.JustificationReviewed,
     AttendanceEvents.RepeatedAbsencesDetected,
+    BillingEvents.PaymentRecorded,
+    BillingEvents.PaymentReversed,
+    BillingEvents.InstallmentsDueSoon,
+    BillingEvents.InstallmentsOverdue,
+    BillingEvents.LedgerIntegrityMismatch,
   ];
 
   /** Point d'entrée du worker : planifie puis envoie, dans le tenant de l'événement. */
@@ -228,6 +234,89 @@ export class NotificationPlanner {
             payload: { alertId: event.aggregateId },
           });
         return drafts;
+      }
+      case BillingEvents.PaymentRecorded:
+      case BillingEvents.PaymentReversed: {
+        const p = event.payload as {
+          studentId: string;
+          amount: number;
+          receiptNumber: string;
+          credit?: number;
+        };
+        const s = await this.student(tx, p.studentId);
+        const links = await this.guardiansOf(tx, [p.studentId], 'finance');
+        const rendered =
+          event.type === BillingEvents.PaymentRecorded
+            ? Templates.paymentReceived({
+                tenantName: tenant.name,
+                firstName: s.firstName,
+                amount: p.amount,
+                receiptNumber: p.receiptNumber,
+                credit: p.credit ?? 0,
+              })
+            : Templates.paymentReversed({
+                tenantName: tenant.name,
+                firstName: s.firstName,
+                amount: p.amount,
+                receiptNumber: p.receiptNumber,
+              });
+        return dedupe(links.map((l) => l.recipient)).map((recipient) => ({
+          kind:
+            event.type === BillingEvents.PaymentRecorded
+              ? ('PAYMENT_RECEIVED' as const)
+              : ('PAYMENT_REVERSED' as const),
+          recipient,
+          studentId: p.studentId,
+          rendered,
+          payload: { paymentId: event.aggregateId, amount: p.amount },
+        }));
+      }
+      case BillingEvents.InstallmentsDueSoon:
+      case BillingEvents.InstallmentsOverdue: {
+        const p = event.payload as { items: ReminderItem[]; message?: string };
+        if (p.items.length === 0) return [];
+        const kind =
+          event.type === BillingEvents.InstallmentsDueSoon
+            ? ('INSTALLMENT_DUE_SOON' as const)
+            : ('INSTALLMENT_OVERDUE' as const);
+        const studentIds = [...new Set(p.items.map((i) => i.studentId))];
+        const names = await this.studentNames(tx, studentIds);
+        const links = await this.guardiansOf(tx, studentIds, 'finance');
+        // Un message par tuteur, toutes les échéances de ses enfants (plafond : 1 SMS par tuteur et par jour sur ce sujet).
+        const byGuardian = new Map<string, { recipient: Recipient; items: ReminderItem[] }>();
+        for (const l of links) {
+          const e = byGuardian.get(l.recipient.userId) ?? { recipient: l.recipient, items: [] };
+          for (const it of p.items.filter((i) => i.studentId === l.studentId)) e.items.push(it);
+          byGuardian.set(l.recipient.userId, e);
+        }
+        return [...byGuardian.values()].map(({ recipient, items }) => ({
+          kind,
+          recipient,
+          studentId: items.length === 1 ? items[0]!.studentId : null,
+          rendered: Templates.installmentsReminder({
+            tenantName: tenant.name,
+            kind: kind === 'INSTALLMENT_DUE_SOON' ? 'DUE_SOON' : 'OVERDUE',
+            items: items.map((i) => ({
+              firstName: names.get(i.studentId) ?? 'votre enfant',
+              amount: i.amount,
+              dueDate: i.dueDate,
+              label: i.label,
+            })),
+            message: p.message,
+          }),
+          payload: { installments: items.map((i) => i.installmentId) },
+        }));
+      }
+      case BillingEvents.LedgerIntegrityMismatch: {
+        const p = event.payload as { mismatches: number };
+        const staff = await this.membersWithPermission(tx, 'VIEW_FINANCIAL_REPORTS');
+        return staff.map((recipient) => ({
+          kind: 'LEDGER_INTEGRITY' as const,
+          recipient,
+          studentId: null,
+          rendered: Templates.ledgerIntegrity({ mismatches: p.mismatches }),
+          payload: { checkId: event.aggregateId },
+        }));
       }
       default:
         return [];

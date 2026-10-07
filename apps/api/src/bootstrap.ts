@@ -34,7 +34,13 @@ export async function createApp(): Promise<NestExpressApplication> {
       'X-Client',
       'X-Request-Id',
     ],
-    exposedHeaders: ['X-Request-Id', 'X-Trace-Id', 'Retry-After', 'Idempotent-Replayed'],
+    exposedHeaders: [
+      'X-Request-Id',
+      'X-Trace-Id',
+      'Retry-After',
+      'Idempotent-Replayed',
+      'Content-Disposition',
+    ],
     maxAge: 600,
   });
   app.enableShutdownHooks();

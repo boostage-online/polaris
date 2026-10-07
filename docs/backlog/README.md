@@ -1,12 +1,13 @@
-# Backlog — Phases 1 à 3
+# Backlog — Phases 1 à 4
 
-Trois fichiers, un par phase, découpés en **epics** puis **user stories** avec critères d'acceptation. Les phases 4+ (billing, payments, reporting, durcissement) seront détaillées à la fin de la Phase 2, une fois les retours du socle intégrés.
+Quatre fichiers, un par phase, découpés en **epics** puis **user stories** avec critères d'acceptation. Les phases 5+ (paiements électroniques, reporting, durcissement) seront détaillées à la fin de la Phase 4.
 
 | Phase                           | Fichier                                          | Fenêtre cible            | Porte de sortie                                                               |
 | ------------------------------- | ------------------------------------------------ | ------------------------ | ----------------------------------------------------------------------------- |
 | 1 — Socle technique             | [phase-1-socle.md](./phase-1-socle.md)           | 2 nov → 4 déc 2026       | G1 : isolation tenant prouvée, auth complète, CI/CD et observabilité en place |
 | 2 — Académique, élèves, parents | [phase-2-academique.md](./phase-2-academique.md) | 7 déc 2026 → 15 jan 2027 | G2 : données des pilotes importées, parents invités                           |
 | 3 — Assiduité et notifications  | [phase-3-assiduite.md](./phase-3-assiduite.md)   | 18 jan → 19 fév 2027     | G3 : appel < 60 s, notification < 2 min, pilote en production restreinte      |
+| 4 — Frais et paiements manuels  | [phase-4-billing.md](./phase-4-billing.md)       | 22 fév → 26 mar 2027     | G4 : créances complètes, caisse = brouillard, 0 écart d'intégrité, rappels    |
 
 ## Conventions
 

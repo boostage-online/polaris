@@ -13,7 +13,7 @@ import {
 } from '@/components/ui';
 import { tenant } from '@/lib/resources';
 
-/** Paramètres de l'établissement : règles d'assiduité (ADR-0006) et quota SMS. */
+/** Paramètres de l'établissement : règles d'assiduité (ADR-0006), quota SMS, frais et rappels (Phase 4). */
 export default function SettingsPage() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ['tenant'], queryFn: tenant.get });
@@ -24,10 +24,14 @@ export default function SettingsPage() {
     repeatedAbsenceThreshold: '3',
     repeatedAbsenceWindowDays: '30',
     smsMonthlyCap: '2000',
+    graceDays: '0',
+    reminderDaysBefore: '7, 1',
+    overdueReminderEveryDays: '14',
   });
   useEffect(() => {
     const a = q.data?.settings.attendance ?? {};
     const n = q.data?.settings.notifications ?? {};
+    const b = q.data?.settings.billing ?? {};
     if (q.data)
       setForm({
         lateToAbsentMinutes: String(a.lateToAbsentMinutes ?? 30),
@@ -36,6 +40,9 @@ export default function SettingsPage() {
         repeatedAbsenceThreshold: String(a.repeatedAbsenceThreshold ?? 3),
         repeatedAbsenceWindowDays: String(a.repeatedAbsenceWindowDays ?? 30),
         smsMonthlyCap: String(n.smsMonthlyCap ?? 2000),
+        graceDays: String(b.graceDays ?? 0),
+        reminderDaysBefore: (b.reminderDaysBefore ?? [7, 1]).join(', '),
+        overdueReminderEveryDays: String(b.overdueReminderEveryDays ?? 14),
       });
   }, [q.data]);
   const m = useMutation({
@@ -49,6 +56,14 @@ export default function SettingsPage() {
           repeatedAbsenceWindowDays: Number(form.repeatedAbsenceWindowDays),
         },
         notifications: { smsMonthlyCap: Number(form.smsMonthlyCap) },
+        billing: {
+          graceDays: Number(form.graceDays),
+          reminderDaysBefore: form.reminderDaysBefore
+            .split(/[,\s;]+/)
+            .map((x) => Number(x))
+            .filter((x) => Number.isInteger(x) && x > 0),
+          overdueReminderEveryDays: Number(form.overdueReminderEveryDays),
+        },
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tenant'] }),
   });
@@ -136,6 +151,40 @@ export default function SettingsPage() {
                 onChange={(e) => setForm({ ...form, smsMonthlyCap: e.target.value })}
               />
             </Field>
+          </Card>
+          <Card title="Frais et rappels de paiement">
+            <div className="grid gap-3 md:grid-cols-3">
+              <Field
+                label="Jours de grâce"
+                hint="Après l'échéance, délai avant qu'elle soit « en retard »."
+              >
+                <Input
+                  type="number"
+                  min={0}
+                  max={90}
+                  value={form.graceDays}
+                  onChange={(e) => setForm({ ...form, graceDays: e.target.value })}
+                />
+              </Field>
+              <Field label="Rappels avant échéance (jours)" hint="Ex. « 7, 1 » : à J−7 puis J−1.">
+                <Input
+                  value={form.reminderDaysBefore}
+                  onChange={(e) => setForm({ ...form, reminderDaysBefore: e.target.value })}
+                />
+              </Field>
+              <Field
+                label="Relance en retard tous les (jours)"
+                hint="Premier rappel à J+1, puis à cette fréquence."
+              >
+                <Input
+                  type="number"
+                  min={1}
+                  max={90}
+                  value={form.overdueReminderEveryDays}
+                  onChange={(e) => setForm({ ...form, overdueReminderEveryDays: e.target.value })}
+                />
+              </Field>
+            </div>
           </Card>
           <div className="lg:col-span-2">
             <ErrorAlert error={m.error} />

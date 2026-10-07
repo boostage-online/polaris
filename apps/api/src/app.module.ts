@@ -11,6 +11,7 @@ import { HealthModule } from './health/health.module';
 import { AcademicModule } from './modules/academic';
 import { AttendanceModule } from './modules/attendance';
 import { AuditModule } from './modules/audit';
+import { BillingModule } from './modules/billing';
 import { AuthGuard, IdentityModule, PermissionGuard, ScopeGuard } from './modules/identity';
 import { NotificationsModule } from './modules/notifications';
 import { PlatformModule } from './modules/platform';
@@ -77,6 +78,7 @@ const REDACT_PATHS = [
     AcademicModule,
     StudentsGuardiansModule,
     AttendanceModule,
+    BillingModule,
     NotificationsModule,
     HealthModule,
   ],

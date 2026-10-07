@@ -1,21 +1,28 @@
 'use client';
 import type {
   AcademicYear,
+  Adjustment,
   AdminDashboard,
+  AssignmentReport,
   AttendanceHistoryItem,
   AttendanceSheet,
   AttendanceSummary,
   ChildAttendanceSummary,
+  ChildFinanceSummary,
   ChildSummary,
   ClassSession,
   Course,
   CreateAcademicYearInput,
   CreateCourseInput,
+  CreateFeeStructureInput,
   CreateGroupInput,
   CreateGuardianInput,
   CreateScheduleSlotInput,
   CreateStudentInput,
   Enrollment,
+  FeeCategory,
+  FeeStructure,
+  FinanceDashboard,
   Group,
   Guardian,
   GuardianLink,
@@ -23,24 +30,31 @@ import type {
   Justification,
   LinkGuardianInput,
   MissingSheet,
+  Installment,
   Notification,
   NotificationChannel,
   NotificationKind,
   NotificationUsage,
+  Payment,
+  PaymentMethod,
   Program,
+  Receipt,
   RecordInput,
+  RecordManualPaymentInput,
   RecordRevision,
   RegistrarDashboard,
   Staff,
   Student,
+  StudentAccount,
   StudentLifeDashboard,
   Subject,
   TeacherDashboard,
   Term,
   TodaySession,
+  UnpaidByGroup,
   WatchlistItem,
 } from '@polaris/contracts';
-import { api, apiEnvelope, del, json, patch, put, qs, type PageMeta } from './api';
+import { api, apiEnvelope, del, downloadFile, json, patch, put, qs, type PageMeta } from './api';
 
 /** Fonctions d'accès aux ressources Phase 2, une par route, typées par les contrats. */
 
@@ -337,9 +351,125 @@ export interface TenantInfo {
       repeatedAbsenceWindowDays?: number;
     };
     notifications?: { smsMonthlyCap?: number };
+    billing?: {
+      graceDays?: number;
+      reminderDaysBefore?: number[];
+      overdueReminderEveryDays?: number;
+    };
   };
 }
 export const tenant = {
   get: () => api<TenantInfo>('/tenant'),
   updateSettings: (b: TenantInfo['settings']) => api<TenantInfo>('/tenant/settings', patch(b)),
+};
+
+// ----------------------------------------------------------------------------- Phase 4 : frais et paiements
+
+export const billing = {
+  categories: () => api<FeeCategory[]>('/fee-categories'),
+  createCategory: (b: { code: string; name: string }) =>
+    api<FeeCategory>('/fee-categories', json(b)),
+  updateCategory: (id: string, b: { code?: string; name?: string }) =>
+    api<FeeCategory>(`/fee-categories/${id}`, patch(b)),
+  removeCategory: (id: string) => api<void>(`/fee-categories/${id}`, del()),
+
+  structures: (q: { academicYearId?: string; categoryId?: string; status?: string } = {}) =>
+    api<FeeStructure[]>(`/fee-structures${qs(q)}`),
+  structure: (id: string) => api<FeeStructure>(`/fee-structures/${id}`),
+  createStructure: (b: CreateFeeStructureInput) => api<FeeStructure>('/fee-structures', json(b)),
+  updateStructure: (
+    id: string,
+    b: Partial<Omit<CreateFeeStructureInput, 'code' | 'academicYearId'>> & {
+      status?: 'ACTIVE' | 'ARCHIVED';
+    },
+  ) => api<FeeStructure>(`/fee-structures/${id}`, patch(b)),
+  removeStructure: (id: string) => api<void>(`/fee-structures/${id}`, del()),
+
+  assign: (b: {
+    feeStructureId: string;
+    target?: {
+      groupIds?: string[];
+      levelIds?: string[];
+      studentIds?: string[];
+      useStructureTarget?: boolean;
+    };
+    asOf?: string;
+  }) => api<AssignmentReport>('/fees/assign', json(b)),
+  assignToStudent: (studentId: string, feeStructureIds: string[]) =>
+    api<StudentAccount>(`/students/${studentId}/fees`, json({ feeStructureIds })),
+  adjust: (b: {
+    studentFeeId: string;
+    installmentId?: string;
+    amount: number;
+    kind: Adjustment['kind'];
+    reason: string;
+  }) => api<StudentAccount>('/fees/adjustments', json(b)),
+  integrityCheck: () =>
+    api<{ checkId: string; mismatches: number; details: unknown[] }>(
+      '/fees/integrity-check',
+      json({}),
+    ),
+
+  account: (studentId: string) => api<StudentAccount>(`/students/${studentId}/fees`),
+  /** Encaissement manuel : la clé d'idempotence est générée côté client et conservée pendant les relances. */
+  recordManual: (studentId: string, idempotencyKey: string, b: RecordManualPaymentInput) =>
+    api<Payment>(`/students/${studentId}/payments/manual`, {
+      ...json(b),
+      headers: { 'Idempotency-Key': idempotencyKey },
+    }),
+
+  payments: (
+    q: {
+      studentId?: string;
+      from?: string;
+      to?: string;
+      method?: PaymentMethod;
+      status?: 'COMPLETED' | 'REVERSED';
+      mine?: boolean;
+      limit?: number;
+      cursor?: string;
+    } = {},
+  ) => apiEnvelope<Payment[], PageMeta>(`/payments${qs(q)}`),
+  payment: (id: string) => api<Payment>(`/payments/${id}`),
+  reverse: (id: string, reason: string) =>
+    api<Payment>(`/payments/${id}/reverse`, json({ reason })),
+  receipt: (paymentId: string, kind: 'PAYMENT' | 'CANCELLATION' = 'PAYMENT') =>
+    api<Receipt>(`/payments/${paymentId}/receipt${qs({ kind })}`),
+  downloadReceipt: (paymentId: string, number: string) =>
+    downloadFile(`/payments/${paymentId}/receipt.pdf`, `recu-${number}.pdf`),
+
+  unpaid: (
+    q: {
+      groupId?: string;
+      feeStructureId?: string;
+      status?: 'DUE' | 'OVERDUE' | 'ALL_OPEN';
+      q?: string;
+      limit?: number;
+      cursor?: string;
+    } = {},
+  ) => apiEnvelope<Installment[], PageMeta>(`/unpaid${qs(q)}`),
+  unpaidByGroup: () => api<UnpaidByGroup[]>('/unpaid/by-group'),
+  remind: (installmentIds: string[], message?: string) =>
+    api<{ installments: number; guardians: number; skipped: number }>(
+      '/unpaid/reminders',
+      json({ installmentIds, message: message || undefined }),
+    ),
+  exportCsv: (
+    kind: 'payments' | 'aged-balance' | 'unpaid',
+    q: { from?: string; to?: string; groupId?: string } = {},
+  ) => downloadFile(`/exports/${kind}.csv${qs(q)}`, `${kind}.csv`),
+
+  dashboard: () => api<FinanceDashboard>('/dashboards/finance'),
+};
+
+export const parentFinance = {
+  children: () => api<ChildFinanceSummary[]>('/me/children/finance'),
+  account: (studentId: string) => api<StudentAccount>(`/me/children/${studentId}/fees`),
+  receipt: (studentId: string, paymentId: string) =>
+    api<Receipt>(`/me/children/${studentId}/payments/${paymentId}/receipt`),
+  downloadReceipt: (studentId: string, paymentId: string, number: string) =>
+    downloadFile(
+      `/me/children/${studentId}/payments/${paymentId}/receipt.pdf`,
+      `recu-${number}.pdf`,
+    ),
 };

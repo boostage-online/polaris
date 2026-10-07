@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { useMe } from '@/components/app-shell';
 import { JUSTIF_STATUS, StatusBadge } from '@/components/attendance';
+import { ChildFinanceSection } from '@/components/parent-finance';
 import {
   Badge,
   Button,
@@ -212,6 +213,9 @@ export default function ChildPage() {
             </ul>
           </Card>
         </div>
+      </div>
+      <div className="mt-8">
+        <ChildFinanceSection studentId={studentId} />
       </div>
     </>
   );

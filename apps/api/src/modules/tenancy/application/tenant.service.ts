@@ -27,6 +27,14 @@ export const TenantSettingsSchema = z
       })
       .partial()
       .default({}),
+    billing: z
+      .object({
+        graceDays: z.number().int().min(0).max(90).default(0),
+        reminderDaysBefore: z.array(z.number().int().min(1).max(60)).max(5).default([7, 1]),
+        overdueReminderEveryDays: z.number().int().min(1).max(90).default(14),
+      })
+      .partial()
+      .default({}),
   })
   .partial();
 export type TenantSettings = z.infer<typeof TenantSettingsSchema>;

@@ -7,3 +7,4 @@ export * from './schemas/audit';
 export * from './schemas/academic';
 export * from './schemas/students';
 export * from './schemas/attendance';
+export * from './schemas/billing';

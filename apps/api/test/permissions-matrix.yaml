@@ -152,3 +152,36 @@ routes:
   'GET /api/v1/notifications': { allow: [ADMIN, DIRECTION] }
   'GET /api/v1/notifications/usage': { allow: [ADMIN, DIRECTION] }
   'POST /api/v1/notifications/:id/resend': { allow: [ADMIN] }
+
+  # --- Phase 4 : frais, créances, paiements manuels, reçus, impayés (ADR-0005) ---
+  'GET /api/v1/fee-categories': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'POST /api/v1/fee-categories': { allow: [ADMIN, FINANCE] }
+  'PATCH /api/v1/fee-categories/:id': { allow: [ADMIN, FINANCE] }
+  'DELETE /api/v1/fee-categories/:id': { allow: [ADMIN, FINANCE] }
+  'GET /api/v1/fee-structures': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'GET /api/v1/fee-structures/:id': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'POST /api/v1/fee-structures': { allow: [ADMIN, FINANCE] }
+  'PATCH /api/v1/fee-structures/:id': { allow: [ADMIN, FINANCE] }
+  'DELETE /api/v1/fee-structures/:id': { allow: [ADMIN, FINANCE] }
+  'POST /api/v1/fees/assign': { allow: [ADMIN, FINANCE] }
+  'POST /api/v1/fees/adjustments': { allow: [ADMIN, FINANCE] }
+  'POST /api/v1/fees/integrity-check': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'GET /api/v1/students/:id/fees': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'POST /api/v1/students/:id/fees': { allow: [ADMIN, FINANCE] }
+  'POST /api/v1/students/:id/payments/manual': { allow: [ADMIN, FINANCE] }
+  'GET /api/v1/payments': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'GET /api/v1/payments/:id': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'POST /api/v1/payments/:id/reverse': { allow: [ADMIN, FINANCE] }
+  'GET /api/v1/payments/:id/receipt': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'GET /api/v1/payments/:id/receipt.pdf': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'GET /api/v1/unpaid': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'GET /api/v1/unpaid/by-group': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'POST /api/v1/unpaid/reminders': { allow: [ADMIN, FINANCE] }
+  'GET /api/v1/exports/payments.csv': { allow: [ADMIN, FINANCE] }
+  'GET /api/v1/exports/aged-balance.csv': { allow: [ADMIN, FINANCE] }
+  'GET /api/v1/exports/unpaid.csv': { allow: [ADMIN, FINANCE] }
+  'GET /api/v1/dashboards/finance': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'GET /api/v1/me/children/finance': { scope: identity }
+  'GET /api/v1/me/children/:studentId/fees': { scope: identity }
+  'GET /api/v1/me/children/:studentId/payments/:paymentId/receipt': { scope: identity }
+  'GET /api/v1/me/children/:studentId/payments/:paymentId/receipt.pdf': { scope: identity }

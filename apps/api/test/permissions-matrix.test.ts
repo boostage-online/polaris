@@ -31,6 +31,7 @@ const params: Record<string, () => string> = {
   tenantId: () => T().id,
   membershipId: () => T().users.TEACHER.membershipId,
   studentId: () => T().academic.studentIds[0]!,
+  paymentId: () => T().academic.billing.paymentId,
   familyId: () => '00000000-0000-0000-0000-000000000000',
 };
 const bodies: Record<string, () => object> = {
