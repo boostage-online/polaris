@@ -11,12 +11,19 @@ export interface SmsGateway {
 }
 export const SMS_GATEWAY = Symbol('SMS_GATEWAY');
 
+export interface EmailAttachment {
+  filename: string;
+  contentType: string;
+  /** Contenu encodé en base64. */
+  content: string;
+}
 export interface EmailMessage {
   to: string;
   subject: string;
   text: string;
   html?: string;
   reference?: string;
+  attachments?: EmailAttachment[];
 }
 export interface EmailGateway {
   send(message: EmailMessage): Promise<{ providerMessageId: string }>;

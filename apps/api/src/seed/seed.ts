@@ -11,6 +11,7 @@ import { randomUUID } from 'node:crypto';
 import { Pool, type PoolClient } from 'pg';
 import { PERMISSION_DEFINITIONS, SYSTEM_ROLES, type SystemRoleCode } from '@polaris/contracts';
 import { LocalKeyWrapper, sealSecrets } from '../modules/payments/infrastructure/secrets';
+import { buildZip } from '../modules/reporting/infrastructure/zip';
 
 export const DEMO_PASSWORD = 'Polaris-demo-2026';
 
@@ -57,6 +58,8 @@ export interface SeededAcademic {
     cancelledAttemptId: string;
     reconciliationRunId: string;
   };
+  /** Reporting (Phase 6) : un rapport planifié hebdomadaire et un export complet terminé (archive minimale). */
+  reporting: { scheduledReportId: string; exportId: string };
   /** Compte parent activé : connexion par e-mail + mot de passe de démo (OTP en réel). */
   parentUser: { userId: string; membershipId: string; email: string; phone: string };
 }
@@ -586,6 +589,21 @@ async function seedAcademic(
     [reconciliationRunId, t],
   );
 
+  // --- Phase 6 : rapport planifié et export de démonstration ---
+  const scheduledReportId = ids();
+  await q(
+    `insert into scheduled_reports (id, tenant_id, report_key, cadence, day_of_period, recipients, filters, enabled, created_by)
+     values ($1, $2, 'attendance-by-group', 'WEEKLY', 1, $3, '{}', true, $4)`,
+    [scheduledReportId, t, [`direction@${a.code.toLowerCase()}.local`], parentUserId],
+  );
+  const exportId = ids();
+  const demoZip = buildZip([{ name: 'README.txt', data: 'Export de démonstration Polaris\n' }]);
+  await q(
+    `insert into tenant_exports (id, tenant_id, status, started_at, finished_at, size_bytes, entries, file)
+     values ($1, $2, 'DONE', now() - interval '2 days', now() - interval '2 days', $3, '[{"name":"README","rows":1}]', $4)`,
+    [exportId, t, demoZip.length, demoZip],
+  );
+
   return {
     yearId: a.yearId,
     programId,
@@ -610,6 +628,7 @@ async function seedAcademic(
     attendance: { sheetId, recordIds, justificationId, alertId, notificationId },
     billing: { categoryId, structureId, feeIds, installmentIds, paymentId, receiptNumber },
     payments: { configId, webhookToken, webhookSecret, cancelledAttemptId, reconciliationRunId },
+    reporting: { scheduledReportId, exportId },
   };
 }
 

@@ -34,9 +34,18 @@ const params: Record<string, () => string> = {
   paymentId: () => T().academic.billing.paymentId,
   attemptId: () => T().academic.payments.cancelledAttemptId,
   provider: () => 'FAKE',
+  key: () => 'attendance-by-group',
   familyId: () => '00000000-0000-0000-0000-000000000000',
 };
 const bodies: Record<string, () => object> = {
+  'POST /api/v1/scheduled-reports': () => ({
+    reportKey: 'attendance-by-group',
+    cadence: 'WEEKLY',
+    dayOfPeriod: 1,
+    recipients: ['direction@example.com'],
+  }),
+  'PATCH /api/v1/scheduled-reports/:id': () => ({ enabled: true }),
+  'POST /api/v1/reports/refresh': () => ({}),
   'PUT /api/v1/payment-config': () => ({
     provider: 'FAKE',
     environment: 'SANDBOX',
@@ -145,7 +154,7 @@ describe('Matrice de permissions', () => {
     expect(failures, failures.join('\n')).toEqual([]);
     const fresh = await loginAs(ctx, 'univ', 'DIRECTION');
     expect((await ctx.http.post('/api/v1/auth/logout-all').set(bearer(fresh))).status).toBe(204);
-  });
+  }, 120_000);
 
   it('sans jeton, toute route non publique répond 401', async () => {
     const routes = collectRoutes(ctx.app).filter((r) => !r.isPublic);

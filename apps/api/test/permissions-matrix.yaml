@@ -205,3 +205,27 @@ routes:
   'POST /api/v1/payment-config/:provider/test': { allow: [ADMIN] }
   'PATCH /api/v1/payment-config/:provider/status': { allow: [ADMIN] }
   'POST /api/v1/dev/fake-provider/outage': { allow: [ADMIN] }
+
+  # --- Phase 6 : reporting, tableaux de bord, traçabilité, exports ---
+  'GET /api/v1/reports': { allow: [ADMIN, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  'POST /api/v1/reports/refresh':
+    { allow: [ADMIN, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }
+  # le rapport joué (attendance-by-group) exige VIEW_ATTENDANCE_REPORTS : FINANCE reçoit 403 au niveau du rapport
+  'GET /api/v1/reports/:key': { allow: [ADMIN, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION] }
+  'GET /api/v1/reports/:key.csv': { allow: [ADMIN, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION] }
+  'GET /api/v1/dashboards/direction': { allow: [ADMIN, ACADEMIC_HEAD, DIRECTION] }
+  'GET /api/v1/dashboards/pedagogy': { allow: [ADMIN, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION] }
+  'GET /api/v1/dashboards/finance/channels': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'GET /api/v1/trace/sheets/:id':
+    { allow: [ADMIN, REGISTRAR, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION] }
+  'GET /api/v1/trace/notifications/:id': { allow: [ADMIN, DIRECTION] }
+  'GET /api/v1/scheduled-reports': { allow: [ADMIN, ACADEMIC_HEAD, DIRECTION] }
+  'POST /api/v1/scheduled-reports': { allow: [ADMIN, ACADEMIC_HEAD, DIRECTION] }
+  'PATCH /api/v1/scheduled-reports/:id': { allow: [ADMIN, ACADEMIC_HEAD, DIRECTION] }
+  'DELETE /api/v1/scheduled-reports/:id': { allow: [ADMIN, ACADEMIC_HEAD, DIRECTION] }
+  'POST /api/v1/scheduled-reports/:id/send': { allow: [ADMIN, ACADEMIC_HEAD, DIRECTION] }
+  'GET /api/v1/tenant-exports': { allow: [ADMIN] }
+  'POST /api/v1/tenant-exports': { allow: [ADMIN] }
+  'GET /api/v1/tenant-exports/:id': { allow: [ADMIN] }
+  'GET /api/v1/tenant-exports/:id/download': { allow: [ADMIN] }
+  'GET /api/v1/platform/overview': { scope: platform }

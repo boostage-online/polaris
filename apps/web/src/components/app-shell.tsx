@@ -27,7 +27,7 @@ interface NavItem {
   label: string;
   /** Visible si l'une de ces permissions est détenue ; `kind` restreint au type d'appartenance. */
   any?: string[];
-  kind?: 'STAFF' | 'GUARDIAN';
+  kind?: 'STAFF' | 'GUARDIAN' | 'PLATFORM';
 }
 const NAV: { title: string; items: NavItem[] }[] = [
   {
@@ -43,6 +43,18 @@ const NAV: { title: string; items: NavItem[] }[] = [
       },
       { href: '/schedule', label: 'Mon emploi du temps', kind: 'STAFF' },
       { href: '/notifications', label: 'Notifications' },
+    ],
+  },
+  {
+    title: 'Pilotage',
+    items: [
+      { href: '/direction', label: 'Direction', any: ['VIEW_REPORTS'] },
+      { href: '/pedagogy', label: 'Pédagogie', any: ['VIEW_ATTENDANCE_REPORTS'] },
+      {
+        href: '/reports',
+        label: 'Rapports',
+        any: ['VIEW_REPORTS', 'VIEW_ATTENDANCE_REPORTS', 'VIEW_FINANCIAL_REPORTS'],
+      },
     ],
   },
   {
@@ -102,6 +114,16 @@ const NAV: { title: string; items: NavItem[] }[] = [
       },
       { href: '/settings/payments', label: 'Paiement en ligne', any: ['MANAGE_PAYMENT_PROVIDER'] },
       { href: '/settings', label: 'Paramètres', any: ['MANAGE_TENANT_SETTINGS'] },
+    ],
+  },
+  {
+    title: 'Super Admin',
+    items: [
+      {
+        href: '/platform',
+        label: 'Plateforme',
+        any: ['PLATFORM_VIEW_METRICS', 'PLATFORM_MANAGE_TENANTS'],
+      },
     ],
   },
 ];

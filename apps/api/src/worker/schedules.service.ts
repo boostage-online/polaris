@@ -7,6 +7,7 @@ import { SessionService } from '../modules/academic';
 import { LedgerService, UnpaidService } from '../modules/billing';
 import { NotificationPlanner } from '../modules/notifications';
 import { ReconciliationService } from '../modules/payments';
+import { ReportRefreshService, ScheduledReportsService } from '../modules/reporting';
 import { RedisService } from '../modules/shared';
 
 export const SCHEDULES_QUEUE = 'schedules';
@@ -31,6 +32,8 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
     private readonly ledger: LedgerService,
     private readonly unpaid: UnpaidService,
     private readonly reconciliation: ReconciliationService,
+    private readonly reportRefresh: ReportRefreshService,
+    private readonly scheduledReports: ScheduledReportsService,
   ) {}
 
   async onModuleInit() {
@@ -70,6 +73,16 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
       { pattern: '30 5 * * *', tz: 'Africa/Porto-Novo' },
       { name: 'payments-daily-reconciliation' },
     );
+    await this.queue.upsertJobScheduler(
+      'reports-refresh',
+      { every: 5 * 60_000 },
+      { name: 'reports-refresh' },
+    );
+    await this.queue.upsertJobScheduler(
+      'reports-scheduled-send',
+      { pattern: '30 6 * * *', tz: 'Africa/Porto-Novo' },
+      { name: 'reports-scheduled-send' },
+    );
     this.worker = new Worker(SCHEDULES_QUEUE, async (job) => this.run(job.name), {
       connection: this.redis.duplicate(),
       concurrency: 1,
@@ -88,6 +101,8 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
     if (name === 'payments-reconcile-pending') return this.paymentsJob('pending');
     if (name === 'payments-expire-stale') return this.paymentsJob('stale');
     if (name === 'payments-daily-reconciliation') return this.paymentsJob('daily');
+    if (name === 'reports-refresh') return this.reportsRefreshAll();
+    if (name === 'reports-scheduled-send') return this.scheduledReportsAll();
     return this.generateAll();
   }
 
@@ -161,6 +176,40 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
       } catch (e) {
         this.logger.error({
           msg: `payments ${kind} failed`,
+          tenantId: id,
+          err: (e as Error).message,
+        });
+      }
+    }
+    return results;
+  }
+
+  /** Agrégats du reporting : derniers jours, tenant par tenant (< 5 min de fraîcheur). */
+  async reportsRefreshAll() {
+    const results: Record<string, unknown> = {};
+    for (const id of await this.activeTenantIds()) {
+      try {
+        results[id] = await this.reportRefresh.refresh(id);
+      } catch (e) {
+        this.logger.error({
+          msg: 'reports refresh failed',
+          tenantId: id,
+          err: (e as Error).message,
+        });
+      }
+    }
+    return results;
+  }
+
+  /** Rapports planifiés dus aujourd'hui (06:30). */
+  async scheduledReportsAll() {
+    const results: Record<string, unknown> = {};
+    for (const id of await this.activeTenantIds()) {
+      try {
+        results[id] = await this.scheduledReports.runDue(id);
+      } catch (e) {
+        this.logger.error({
+          msg: 'scheduled reports failed',
           tenantId: id,
           err: (e as Error).message,
         });
