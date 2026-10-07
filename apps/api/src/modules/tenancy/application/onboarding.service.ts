@@ -212,7 +212,7 @@ export class OnboardingService {
     const tx = this.db.current();
     const tenantId = RequestContextStore.require().tenantId!;
     const tenant = (await tx.query.tenants.findFirst({ where: eq(tenants.id, tenantId) }))!;
-    const settings = tenant.settings as Record<string, unknown>;
+    const settings = tenant.settings;
     const merged = {
       ...settings,
       onboarding: {

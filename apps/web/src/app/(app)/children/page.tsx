@@ -1,17 +1,19 @@
 'use client';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useMe } from '@/components/app-shell';
 import { StatusBadge } from '@/components/attendance';
 import { ChildFinanceBadges } from '@/components/parent-finance';
+import { downloadExport } from '@/components/privacy';
 import { Badge, Button, Card, Empty, ErrorAlert, Loading, PageHeader } from '@/components/ui';
 import { fmtTime } from '@/lib/format';
-import { guardians, parent } from '@/lib/resources';
+import { guardians, parent, privacy } from '@/lib/resources';
 
 /** Vue parent : ses enfants, l'assiduité du jour, les 30 derniers jours et les alertes, en un appel. */
 export default function ChildrenPage() {
   const me = useMe();
   const kids = useQuery({ queryKey: ['me', 'children'], queryFn: guardians.myChildren });
+  const mine = useMutation({ mutationFn: privacy.mine, onSuccess: downloadExport });
   const summary = useQuery({
     queryKey: ['parent', 'summary'],
     queryFn: parent.summary,
@@ -22,7 +24,19 @@ export default function ChildrenPage() {
       <PageHeader
         title="Mes enfants"
         subtitle="Assiduité du jour, tendance sur 30 jours, frais, alertes et justificatifs."
+        actions={
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={mine.isPending}
+            onClick={() => mine.mutate()}
+            title="Exporter les données que l'établissement détient sur vous et vos enfants (JSON)"
+          >
+            {mine.isPending ? 'Export…' : 'Mes données'}
+          </Button>
+        }
       />
+      <ErrorAlert error={mine.error} />
       {kids.isPending && <Loading />}
       {kids.isError && <ErrorAlert error={kids.error} />}
       {kids.data && kids.data.length === 0 && (

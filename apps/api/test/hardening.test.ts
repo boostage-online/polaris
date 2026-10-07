@@ -370,7 +370,7 @@ describe('Durcissement (Phase 7)', () => {
         await ctx.http
           .post(`/api/v1/privacy/students/${ac.studentIds[0]}/anonymize`)
           .set(bearer(admin))
-          .send({ reason: 'Test' })
+          .send({ reason: 'Test de refus' })
       ).status,
     ).toBe(409);
     const leftId = ac.studentIds[4]!;
@@ -403,7 +403,7 @@ describe('Durcissement (Phase 7)', () => {
         await ctx.http
           .post(`/api/v1/privacy/guardians/${ac.guardianIds.parent}/anonymize`)
           .set(bearer(admin))
-          .send({ reason: 'Test' })
+          .send({ reason: 'Test de refus' })
       ).status,
     ).toBe(409);
     const reg = await ctx.http.get('/api/v1/privacy/requests').set(bearer(admin));

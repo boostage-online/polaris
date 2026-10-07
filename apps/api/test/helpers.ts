@@ -88,46 +88,35 @@ export async function login(
 
 /**
  * Relève un défi MFA avec le secret de démonstration. L'API refuse la réutilisation d'un code TOTP (anti-rejeu,
- * 90 s) : on évite les compteurs déjà consommés par ce processus, on essaie la fenêtre courante puis ±1, et en
- * dernier recours on attend la fenêtre suivante (plusieurs fichiers de tests se connectent avec les mêmes comptes).
+ * 90 s) : pour les comptes seedés, les marqueurs Redis du compteur courant sont effacés avant l'essai (les tests
+ * disposent de Redis), ce qui évite d'attendre la fenêtre suivante entre deux connexions rapprochées.
  */
-const usedTotpCounters = new Map<string, Set<number>>();
 export async function solveMfa(
   ctx: TestContext,
   email: string,
   challenge: string,
   secret = DEMO_MFA_SECRET,
 ): Promise<request.Response> {
-  const used = usedTotpCounters.get(email) ?? new Set<number>();
-  usedTotpCounters.set(email, used);
   const userId = userIdOf(email);
   const tried: string[] = [];
-  for (let attempt = 0; attempt < 6; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     const now = totpCounter();
-    let candidates = [now, now + 1, now - 1].filter((c) => !used.has(c));
-    // Compteurs déjà consommés côté API (anti-rejeu, autres fichiers de tests) : on les évite plutôt que d'échouer.
-    if (userId && candidates.length) {
-      const flags = await Promise.all(
-        candidates.map((c) => ctx.redis.client.exists(`mfa:used:${userId}:${c}`)),
+    if (userId)
+      await ctx.redis.client.del(
+        `mfa:used:${userId}:${now - 1}`,
+        `mfa:used:${userId}:${now}`,
+        `mfa:used:${userId}:${now + 1}`,
       );
-      candidates = candidates.filter((_, i) => flags[i] === 0);
-    }
-    for (const c of candidates) {
-      used.add(c);
-      const res = await ctx.http
-        .post('/api/v1/auth/mfa/verify')
-        .set('X-Client', 'test/1.0')
-        .send({ challenge, code: hotp(base32Decode(secret), c) });
-      if (res.status === 200) return res;
-      tried.push(`${c}:${res.status}`);
-      if (res.status !== 401)
-        throw new Error(
-          `mfa ${email} → ${res.status} ${JSON.stringify(res.body)} retry-after=${String(res.headers['retry-after'])} tried=${tried.join(',')}`,
-        );
-    }
-    // Tous les codes de la fenêtre ont servi : attendre la fenêtre suivante.
-    const wait = 30_000 - (Date.now() % 30_000) + 250;
-    await new Promise((r) => setTimeout(r, wait));
+    const res = await ctx.http
+      .post('/api/v1/auth/mfa/verify')
+      .set('X-Client', 'test/1.0')
+      .send({ challenge, code: hotp(base32Decode(secret), now) });
+    if (res.status === 200) return res;
+    tried.push(`${now}:${res.status}`);
+    if (res.status !== 401)
+      throw new Error(
+        `mfa ${email} → ${res.status} ${JSON.stringify(res.body)} retry-after=${String(res.headers['retry-after'])} tried=${tried.join(',')}`,
+      );
   }
   throw new Error(`mfa ${email} : impossible de relever le défi (${tried.join(',')})`);
 }

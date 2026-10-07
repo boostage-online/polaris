@@ -8,6 +8,7 @@
  */
 import argon2 from 'argon2';
 import { randomUUID } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
 import { Pool, type PoolClient } from 'pg';
 import {
   PERMISSION_DEFINITIONS,
@@ -693,8 +694,14 @@ if (require.main === module) {
     console.error('DATABASE_URL_PLATFORM requis');
     process.exit(1);
   }
-  seedDatabase(cs).catch((e: unknown) => {
-    console.error(e);
-    process.exit(1);
-  });
+  seedDatabase(cs)
+    .then((result) => {
+      // SEED_OUTPUT=chemin.json : identifiants et jetons du seed pour les tests de charge (load/k6).
+      const out = process.env['SEED_OUTPUT'];
+      if (out) writeFileSync(out, JSON.stringify(result, null, 2));
+    })
+    .catch((e: unknown) => {
+      console.error(e);
+      process.exit(1);
+    });
 }

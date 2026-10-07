@@ -181,7 +181,7 @@ export class PrivacyService {
       generatedAt: new Date().toISOString(),
       subject: { type: subjectType, id: subjectId },
       tenant: { id: tenant.id, code: tenant.code, name: tenant.name },
-      sections: sections as PersonalDataExport['sections'],
+      sections,
       counts,
     };
   }
