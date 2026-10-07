@@ -77,7 +77,7 @@ export class KKiaPayProvider implements PaymentProvider {
         raw: body,
       };
     const providerStatus = str(body['status']);
-    const source = String(body['source'] ?? body['paymentMethod'] ?? '').toLowerCase();
+    const source = (str(body['source']) ?? str(body['paymentMethod']) ?? '').toLowerCase();
     return {
       status: mapKKiaPayStatus(providerStatus),
       providerStatus,

@@ -53,8 +53,12 @@ export const pick = (o: unknown, path: string[]): unknown =>
     (acc, k) => (acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[k] : undefined),
     o,
   );
-export const str = (v: unknown): string | null =>
-  v === null || v === undefined ? null : typeof v === 'string' ? v : String(v as string | number);
+export const str = (v: unknown): string | null => {
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number' || typeof v === 'boolean' || typeof v === 'bigint') return String(v);
+  return null;
+};
 export const num = (v: unknown): number | null => {
   if (v === null || v === undefined || v === '') return null;
   const n = typeof v === 'number' ? v : Number(v);

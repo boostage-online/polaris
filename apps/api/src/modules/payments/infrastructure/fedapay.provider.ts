@@ -114,7 +114,7 @@ export class FedaPayProvider implements PaymentProvider {
       amount: num(tx['amount']),
       fees: num(tx['fees']),
       currency: str(pick(tx, ['currency', 'iso'])) ?? 'XOF',
-      method: String(tx['mode'] ?? '').toLowerCase() === 'card' ? 'CARD' : 'MOBILE_MONEY',
+      method: (str(tx['mode']) ?? '').toLowerCase() === 'card' ? 'CARD' : 'MOBILE_MONEY',
       attemptId: str(pick(tx, ['custom_metadata', 'attempt_id'])),
       raw: tx,
     };
