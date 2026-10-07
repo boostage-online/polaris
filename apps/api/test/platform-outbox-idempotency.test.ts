@@ -167,11 +167,13 @@ describe('Plateforme, outbox, idempotence', () => {
           occurredAt: new Date().toISOString(),
         },
       } as unknown as Job<QueuedEvent>;
-      const sentBefore = email.sent.length;
+      // Le worker BullMQ réel traite en parallèle d'autres événements : on compte par référence, pas globalement.
+      const ref = `invitation:${synthetic.data.id}`;
       await processor.process(synthetic);
       await processor.process(synthetic); // rejeu
-      expect(email.sent.length).toBe(sentBefore + 1);
-      expect(email.sent.at(-1)!.text).toContain('/invitation?token=');
+      const mine = email.sent.filter((m) => m.reference === ref);
+      expect(mine).toHaveLength(1);
+      expect(mine[0]!.text).toContain('/invitation?token=');
     } finally {
       await worker.close();
     }

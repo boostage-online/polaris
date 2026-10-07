@@ -14,7 +14,8 @@ import {
   Table,
 } from '@/components/ui';
 import { fmtDateTime, todayIso, addDaysIso } from '@/lib/format';
-import { dashboards, sessions } from '@/lib/resources';
+import { SheetState } from '@/components/attendance';
+import { attendance, dashboards, sessions } from '@/lib/resources';
 
 /** Tableau de bord selon le profil : scolarité, administrateur, enseignant, parent. */
 export default function DashboardPage() {
@@ -41,11 +42,152 @@ export default function DashboardPage() {
         </Card>
       )}
       <div className="space-y-6">
+        {can('TAKE_ATTENDANCE', 'TAKE_ATTENDANCE_ANY') && <TeacherBlock />}
+        {can('VIEW_ATTENDANCE_ANY', 'VIEW_ATTENDANCE_REPORTS') && <StudentLifeBlock />}
         {can('VIEW_STUDENTS') && <RegistrarBlock />}
         {can('MANAGE_TENANT_SETTINGS') && <AdminBlock />}
-        {me.membership?.kind === 'STAFF' && <UpcomingBlock />}
+        {me.membership?.kind === 'STAFF' && !can('TAKE_ATTENDANCE', 'TAKE_ATTENDANCE_ANY') && (
+          <UpcomingBlock />
+        )}
       </div>
     </>
+  );
+}
+
+function TeacherBlock() {
+  const me = useMe();
+  const q = useQuery({
+    queryKey: ['dashboards', 'teacher'],
+    queryFn: attendance.teacherDashboard,
+    refetchInterval: 60_000,
+  });
+  if (q.isPending) return <Loading />;
+  if (q.isError) return <ErrorAlert error={q.error} />;
+  const d = q.data;
+  const next = d.today.find((s) => s.isNext);
+  return (
+    <section>
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Mes appels
+      </h2>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <Stat label="Séances aujourd'hui" value={d.today.length} />
+        <Stat
+          label="Appels à faire"
+          value={d.pendingSheets}
+          tone={d.pendingSheets ? 'amber' : undefined}
+        />
+        <Stat
+          label="Absences signalées"
+          value={d.absencesToday}
+          tone={d.absencesToday ? 'red' : undefined}
+        />
+        <Stat label="Retards signalés" value={d.lateToday} />
+      </div>
+      {next && (
+        <Link
+          href={`/attendance/sessions/${next.id}`}
+          className="mt-3 block rounded-lg border-2 border-[var(--color-brand)] bg-white p-4 hover:bg-slate-50"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-brand)]">
+            Prochain cours
+          </p>
+          <p className="text-lg font-semibold">
+            {next.subjectName} — {next.groupName}
+          </p>
+          <p className="text-sm text-slate-600">{fmtDateTime(next.startsAt, me.tenantTimezone)}</p>
+          <p className="mt-1 text-sm font-medium text-[var(--color-brand)]">
+            {next.sheet?.status === 'DRAFT' ? "Reprendre l'appel →" : "Faire l'appel →"}
+          </p>
+        </Link>
+      )}
+      {d.today.length > 0 && (
+        <Card className="mt-3">
+          <Table
+            head={
+              <>
+                <th>Heure</th>
+                <th>Cours</th>
+                <th>Groupe</th>
+                <th>Appel</th>
+                <th></th>
+              </>
+            }
+          >
+            {d.today.map((s) => (
+              <tr key={s.id}>
+                <td className="whitespace-nowrap">{fmtDateTime(s.startsAt, me.tenantTimezone)}</td>
+                <td>{s.subjectName}</td>
+                <td>{s.groupName}</td>
+                <td>
+                  <SheetState sheet={s.sheet} />
+                </td>
+                <td className="text-right">
+                  <Link
+                    href={`/attendance/sessions/${s.id}`}
+                    className="text-[var(--color-brand)] underline"
+                  >
+                    {s.sheet && s.sheet.status !== 'DRAFT' ? 'Voir' : 'Appel'}
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </Table>
+        </Card>
+      )}
+    </section>
+  );
+}
+
+function StudentLifeBlock() {
+  const q = useQuery({
+    queryKey: ['dashboards', 'student-life'],
+    queryFn: attendance.studentLifeDashboard,
+    refetchInterval: 120_000,
+  });
+  if (q.isPending) return <Loading />;
+  if (q.isError) return <ErrorAlert error={q.error} />;
+  const d = q.data;
+  return (
+    <section>
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Vie scolaire — aujourd&apos;hui
+      </h2>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
+        <Stat label="Séances" value={d.today.sessions} />
+        <Stat
+          label="Appels soumis"
+          value={d.today.sheetsSubmitted}
+          tone={d.today.sheetsSubmitted < d.today.sessions ? 'amber' : undefined}
+        />
+        <Stat label="Absents" value={d.today.absent} tone={d.today.absent ? 'red' : undefined} />
+        <Stat label="Retards" value={d.today.late} />
+        <Stat
+          label="Non justifiées"
+          value={d.today.unjustified}
+          tone={d.today.unjustified ? 'amber' : undefined}
+        />
+        <Link href="/justifications">
+          <Stat
+            label="Justificatifs à traiter"
+            value={d.justificationsPending}
+            tone={d.justificationsPending ? 'amber' : undefined}
+          />
+        </Link>
+        <Link href="/attendance/watchlist">
+          <Stat
+            label="Élèves à surveiller"
+            value={d.watchlist}
+            tone={d.watchlist ? 'red' : undefined}
+          />
+        </Link>
+      </div>
+      <p className="mt-2 text-sm">
+        <Link href="/attendance/sheets" className="text-[var(--color-brand)] underline">
+          {d.missingSheets} appel(s) manquant(s) sur 7 jours →
+        </Link>
+      </p>
+    </section>
   );
 }
 

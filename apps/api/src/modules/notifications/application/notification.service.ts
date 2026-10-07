@@ -68,7 +68,8 @@ export class NotificationService {
     return { data: p.data, meta: { ...p.meta, unread: unread[0]?.n ?? 0 } };
   }
 
-  async markRead(id: string | 'all') {
+  /** `id` = identifiant, ou `all` pour tout marquer. */
+  async markRead(id: string) {
     const tx = this.db.current();
     const where = and(
       eq(notifications.recipientUserId, this.userId),

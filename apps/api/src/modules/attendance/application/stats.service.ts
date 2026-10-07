@@ -71,19 +71,22 @@ export class StatsService {
       .where(inArray(attendanceDailyStats.studentId, studentIds));
     await tx.execute(sql`
       insert into attendance_daily_stats (tenant_id, student_id, day, sessions, present, absent, late, excused, unjustified, updated_at)
-      select r.tenant_id, r.student_id, (s.starts_at at time zone ${tz})::date as day,
+      select t.tenant_id, t.student_id, t.day,
              count(*)::int,
-             count(*) filter (where r.status = 'PRESENT')::int,
-             count(*) filter (where r.status = 'ABSENT')::int,
-             count(*) filter (where r.status = 'LATE')::int,
-             count(*) filter (where r.status <> 'PRESENT' and r.excuse_status = 'EXCUSED')::int,
-             count(*) filter (where r.status = 'ABSENT' and r.excuse_status <> 'EXCUSED')::int,
+             count(*) filter (where t.status = 'PRESENT')::int,
+             count(*) filter (where t.status = 'ABSENT')::int,
+             count(*) filter (where t.status = 'LATE')::int,
+             count(*) filter (where t.status <> 'PRESENT' and t.excuse_status = 'EXCUSED')::int,
+             count(*) filter (where t.status = 'ABSENT' and t.excuse_status <> 'EXCUSED')::int,
              now()
-      from attendance_records r
-      join attendance_sheets sh on sh.id = r.sheet_id and sh.status in ('SUBMITTED','LOCKED')
-      join sessions s on s.id = r.session_id
-      where r.student_id in ${studentIds}
-      group by r.tenant_id, r.student_id, (s.starts_at at time zone ${tz})::date`);
+      from (
+        select r.tenant_id, r.student_id, r.status, r.excuse_status, (s.starts_at at time zone ${tz})::date as day
+        from attendance_records r
+        join attendance_sheets sh on sh.id = r.sheet_id and sh.status in ('SUBMITTED','LOCKED')
+        join sessions s on s.id = r.session_id
+        where r.student_id in ${studentIds}
+      ) t
+      group by t.tenant_id, t.student_id, t.day`);
   }
 
   /** Seuil « N absences non justifiées sur W jours » : une alerte ouverte par élève, mise à jour, résolue si retombe. */

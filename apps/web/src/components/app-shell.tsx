@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import type { Me } from '@polaris/contracts';
+import { useQuery } from '@tanstack/react-query';
 import { auth } from '@/lib/api';
+import { notifs } from '@/lib/resources';
 import { SessionGate } from './session-gate';
 
 const MeContext = createContext<Me | null>(null);
@@ -33,7 +35,34 @@ const NAV: { title: string; items: NavItem[] }[] = [
     items: [
       { href: '/dashboard', label: 'Tableau de bord' },
       { href: '/children', label: 'Mes enfants', kind: 'GUARDIAN' },
+      {
+        href: '/attendance/today',
+        label: 'Mes appels',
+        kind: 'STAFF',
+        any: ['TAKE_ATTENDANCE', 'TAKE_ATTENDANCE_ANY'],
+      },
       { href: '/schedule', label: 'Mon emploi du temps', kind: 'STAFF' },
+      { href: '/notifications', label: 'Notifications' },
+    ],
+  },
+  {
+    title: 'Assiduité',
+    items: [
+      {
+        href: '/attendance/sheets',
+        label: "Feuilles d'appel",
+        any: ['VIEW_ATTENDANCE_ANY', 'VIEW_ATTENDANCE_REPORTS'],
+      },
+      {
+        href: '/justifications',
+        label: 'Justificatifs',
+        any: ['REVIEW_JUSTIFICATION', 'VIEW_ATTENDANCE_ANY', 'VIEW_ATTENDANCE_REPORTS'],
+      },
+      {
+        href: '/attendance/watchlist',
+        label: 'Élèves à surveiller',
+        any: ['VIEW_ATTENDANCE_ANY', 'VIEW_ATTENDANCE_REPORTS', 'REVIEW_JUSTIFICATION'],
+      },
     ],
   },
   {
@@ -51,6 +80,12 @@ const NAV: { title: string; items: NavItem[] }[] = [
       { href: '/structure', label: 'Structure académique', any: ['MANAGE_ACADEMIC_STRUCTURE'] },
       { href: '/courses', label: 'Cours et emplois du temps', any: ['MANAGE_SCHEDULES'] },
       { href: '/staff', label: 'Personnel', any: ['MANAGE_USERS'] },
+      {
+        href: '/admin/notifications',
+        label: 'Journal des notifications',
+        any: ['MANAGE_TENANT_SETTINGS', 'VIEW_AUDIT_LOG'],
+      },
+      { href: '/settings', label: 'Paramètres', any: ['MANAGE_TENANT_SETTINGS'] },
     ],
   },
 ];
@@ -127,6 +162,7 @@ function Shell({ me, children }: { me: Me; children: ReactNode }) {
               </p>
             </div>
             <div className="flex items-center gap-2 text-sm">
+              <Bell />
               <span className="hidden text-slate-700 sm:inline">
                 {me.user.displayName ?? me.user.email ?? me.user.phone}
               </span>
@@ -156,6 +192,30 @@ function Shell({ me, children }: { me: Me; children: ReactNode }) {
         </div>
       </div>
     </MeContext.Provider>
+  );
+}
+
+/** Cloche : nombre de notifications non lues (rafraîchi toutes les 60 s). */
+function Bell() {
+  const q = useQuery({
+    queryKey: ['notifications', 'inbox', 'badge'],
+    queryFn: () => notifs.inbox({ unread: true, limit: 1 }),
+    refetchInterval: 60_000,
+  });
+  const unread = q.data?.meta.unread ?? 0;
+  return (
+    <Link
+      href="/notifications"
+      className="relative rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100"
+      aria-label={`Notifications (${unread} non lues)`}
+    >
+      🔔
+      {unread > 0 && (
+        <span className="absolute -right-0.5 -top-0.5 rounded-full bg-red-600 px-1.5 text-[10px] font-semibold text-white">
+          {unread > 99 ? '99+' : unread}
+        </span>
+      )}
+    </Link>
   );
 }
 
