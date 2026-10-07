@@ -71,7 +71,16 @@ Remboursements provider et avoirs (P18, V1) ; choix du provider par le parent et
 
 ## État de vérification (CI GitHub Actions, PR #5)
 
-Voir le dernier commentaire de CI sur la PR et la section « Vérification » de sa description.
+**CI verte** au commit `22d1c91` (7 octobre 2026, API + écrans web) — lint type-checked, typecheck (api, web, contrats), frontières de modules (`payments` n'importe ni `academic` ni `attendance` ; `billing` ignore `payments`), migrations up → down → up, tests unitaires, **116 tests d'intégration** (dont 11 nouveaux, avec le worker BullMQ réel), OpenAPI.
+
+Corrections apportées pendant la boucle :
+
+| Problème rencontré                                                                             | Correction                                                                             |
+| ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| l'élève créé pour la suite de paiements faussait les effectifs et les liens du lycée seedé     | suite jouée sur le tenant « univ » ; provider de démonstration réactivé en `beforeAll` |
+| la matrice de permissions désactivait le provider du tenant de test (`PATCH status DISABLED`)  | corps de la matrice en `ACTIVE` (409 ou sans effet)                                    |
+| `inconsistent types deduced for parameter` sur un `INSERT` de test (uuid concaténé à du texte) | paramètre dédié et transtypage explicite                                               |
+| `no-base-to-string` / assertions inutiles sur des champs provider `unknown`                    | lecture typée (`str()`), suppression des assertions                                    |
 
 Tests : unitaires (`domain/attempts.test.ts` — mappings, machine d'états, backoff, règles de montant ; `infrastructure/providers.test.ts` — enveloppe de secrets, signature FedaPay avec corps altéré et horodatage périmé, secret KKiaPay, widget) ; intégration `test/payments.test.ts` sur le provider de démonstration avec le worker réel : configuration (clés masquées, chiffrées en base, un seul actif), options et bornes, P1 (nominal, rejeu idempotent, reçu, chronologie), P5/P14 (dix webhooks, signature invalide, endpoint inconnu), P2/P4 (échec, annulation, notification), P6/P9 (retour sans webhook, cinq confirmations concurrentes), P13 (écart de montant → revue → résolution), P7 (panne → 503, disjoncteur), P3/P8 (réconciliation, expiration), rapprochement quotidien (orpheline → traitée), espace parent et 403 ; matrice et isolation étendues.
 
