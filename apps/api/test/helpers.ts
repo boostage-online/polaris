@@ -97,7 +97,7 @@ export async function solveMfa(
   email: string,
   challenge: string,
   secret = DEMO_MFA_SECRET,
-) {
+): Promise<request.Response> {
   const used = usedTotpCounters.get(email) ?? new Set<number>();
   usedTotpCounters.set(email, used);
   const userId = userIdOf(email);
@@ -139,11 +139,33 @@ function userIdOf(email: string): string | null {
   return null;
 }
 
+/**
+ * Les comptes avec MFA (admin, finance, super admin) ne disposent que de trois codes TOTP par fenêtre de 30 s
+ * (anti-rejeu) : leurs sessions sont réutilisées pendant 25 s au sein d'un même fichier de tests
+ * (même application, donc mêmes clés JWT). `login()` reste toujours une connexion neuve.
+ */
+const mfaSessionCache = new WeakMap<TestContext, Map<string, { session: Session; at: number }>>();
+async function cachedLogin(
+  ctx: TestContext,
+  email: string,
+  mfaEnrolled: boolean,
+): Promise<Session> {
+  if (!mfaEnrolled) return login(ctx, email);
+  const map = mfaSessionCache.get(ctx) ?? new Map<string, { session: Session; at: number }>();
+  mfaSessionCache.set(ctx, map);
+  const hit = map.get(email);
+  if (hit && Date.now() - hit.at < 25_000) return { ...hit.session };
+  const session = await login(ctx, email);
+  map.set(email, { session, at: Date.now() });
+  return { ...session };
+}
+
 export function loginAs(ctx: TestContext, tenant: 'lycee' | 'univ', role: SystemRoleCode) {
-  return login(ctx, seed.tenants[tenant].users[role].email);
+  const u = seed.tenants[tenant].users[role];
+  return cachedLogin(ctx, u.email, u.mfaEnrolled);
 }
 export function loginPlatform(ctx: TestContext) {
-  return login(ctx, seed.platformAdmin.email);
+  return cachedLogin(ctx, seed.platformAdmin.email, seed.platformAdmin.mfaEnrolled);
 }
 
 export const bearer = (s: Session) => ({ Authorization: `Bearer ${s.accessToken}` });

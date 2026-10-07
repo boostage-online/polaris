@@ -58,7 +58,7 @@ export class PrivacyService {
         q(
           'tuteurs',
           sql`select gu.first_name, gu.last_name, gu.phone_e164, gu.email, l.relationship, l.is_primary,
-                     l.can_view_attendance, l.can_view_finance, l.can_pay, l.can_justify, l.created_at as lie_le, l.unlinked_at as delie_le
+                     l.can_view_attendance, l.can_view_finance, l.can_pay, l.can_justify, l.linked_at as lie_le, l.unlinked_at as delie_le
               from student_guardians l join guardians gu on gu.id = l.guardian_id where l.student_id = ${studentId}`,
         ),
         q(
@@ -79,7 +79,7 @@ export class PrivacyService {
         ),
         q(
           'creances',
-          sql`select f.amount_due, f.adjustments_total, f.amount_allocated, f.status, f.created_at
+          sql`select f.total_amount, f.adjustments_total, f.amount_allocated, f.status, f.created_at
               from student_fees f where f.student_id = ${studentId} order by f.created_at`,
         ),
         q(
@@ -131,7 +131,7 @@ export class PrivacyService {
         ),
         q(
           'enfants',
-          sql`select s.first_name, s.last_name, s.matricule, l.relationship, l.is_primary, l.created_at as lie_le, l.unlinked_at as delie_le
+          sql`select s.first_name, s.last_name, s.matricule, l.relationship, l.is_primary, l.linked_at as lie_le, l.unlinked_at as delie_le
               from student_guardians l join students s on s.id = l.student_id where l.guardian_id = ${guardianId}`,
         ),
         q(

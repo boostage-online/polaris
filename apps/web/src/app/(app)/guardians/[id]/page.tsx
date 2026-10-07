@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { useCan } from '@/components/app-shell';
+import { PrivacyActions } from '@/components/privacy';
 import {
   Alert,
   Badge,
@@ -42,18 +43,28 @@ export default function GuardianPage() {
         title={`${g.lastName} ${g.firstName}`}
         subtitle={<span className="font-mono">{g.phone}</span>}
         actions={
-          can('MANAGE_GUARDIANS') && (
-            <>
-              <Button variant="secondary" onClick={() => setEditing(true)}>
-                Modifier
-              </Button>
-              {!g.activated && (
-                <Button disabled={invite.isPending} onClick={() => invite.mutate()}>
-                  {g.invitedAt ? 'Renvoyer l’invitation' : 'Inviter (SMS)'}
+          <>
+            {can('MANAGE_PRIVACY') && (
+              <PrivacyActions
+                subject="GUARDIAN"
+                id={g.id}
+                label={`${g.lastName} ${g.firstName}`}
+                anonymizable={(g.links ?? []).length === 0}
+              />
+            )}
+            {can('MANAGE_GUARDIANS') && (
+              <>
+                <Button variant="secondary" onClick={() => setEditing(true)}>
+                  Modifier
                 </Button>
-              )}
-            </>
-          )
+                {!g.activated && (
+                  <Button disabled={invite.isPending} onClick={() => invite.mutate()}>
+                    {g.invitedAt ? 'Renvoyer l’invitation' : 'Inviter (SMS)'}
+                  </Button>
+                )}
+              </>
+            )}
+          </>
         }
       />
       {invite.isSuccess && (

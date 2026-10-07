@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Post } from '@nestjs/common';
+import { Controller, Get, HttpCode, Patch, Post } from '@nestjs/common';
 import { z } from 'zod';
 import {
   CreateTenantSchema,
@@ -109,6 +109,7 @@ export class ImpersonationsController {
   }
 
   @Post(':id/end')
+  @HttpCode(200)
   @RequirePermission('PLATFORM_IMPERSONATE')
   @ApiDoc({
     summary: 'Clôturer une session de support (effectif en moins de 30 s)',

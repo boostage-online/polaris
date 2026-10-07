@@ -15,6 +15,7 @@ import {
 } from '@/components/ui';
 import { fmtDateTime, fmtXof, todayIso, addDaysIso } from '@/lib/format';
 import { SheetState } from '@/components/attendance';
+import { OnboardingBanner } from '@/components/onboarding-banner';
 import { attendance, billing, dashboards, sessions } from '@/lib/resources';
 
 /** Tableau de bord selon le profil : scolarité, administrateur, enseignant, parent. */
@@ -42,6 +43,7 @@ export default function DashboardPage() {
         </Card>
       )}
       <div className="space-y-6">
+        {!isGuardian && <OnboardingBanner />}
         {can('TAKE_ATTENDANCE', 'TAKE_ATTENDANCE_ANY') && <TeacherBlock />}
         {can('VIEW_ATTENDANCE_ANY', 'VIEW_ATTENDANCE_REPORTS') && <StudentLifeBlock />}
         {can('VIEW_FINANCIAL_REPORTS') && <FinanceBlock />}
