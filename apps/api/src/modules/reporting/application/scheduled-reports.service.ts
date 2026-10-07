@@ -208,7 +208,7 @@ export class ScheduledReportsService {
     cadence: r.cadence,
     dayOfPeriod: r.dayOfPeriod,
     recipients: r.recipients,
-    filters: r.filters as ScheduledReport['filters'],
+    filters: r.filters,
     enabled: r.enabled,
     lastSentAt: r.lastSentAt?.toISOString() ?? null,
     lastError: r.lastError,

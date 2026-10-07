@@ -14,7 +14,12 @@ export default defineConfig({
     projects: [
       {
         plugins: [swc.vite({ module: { type: 'es6' }, jsc: { target: 'es2022' } })],
-        test: { name: 'unit', include: ['src/**/*.test.ts'], environment: 'node' },
+        test: {
+          name: 'unit',
+          include: ['src/**/*.test.ts'],
+          environment: 'node',
+          testTimeout: 30_000,
+        },
       },
       {
         plugins: [swc.vite({ module: { type: 'es6' }, jsc: { target: 'es2022' } })],
@@ -24,6 +29,9 @@ export default defineConfig({
           environment: 'node',
           globalSetup: ['./test/global-setup.ts'],
           fileParallelism: false,
+          // Les options de délai de la racine ne sont pas héritées par les projets.
+          testTimeout: 30_000,
+          hookTimeout: 60_000,
         },
       },
     ],

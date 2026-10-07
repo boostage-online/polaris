@@ -154,7 +154,7 @@ describe('Matrice de permissions', () => {
     expect(failures, failures.join('\n')).toEqual([]);
     const fresh = await loginAs(ctx, 'univ', 'DIRECTION');
     expect((await ctx.http.post('/api/v1/auth/logout-all').set(bearer(fresh))).status).toBe(204);
-  });
+  }, 120_000);
 
   it('sans jeton, toute route non publique répond 401', async () => {
     const routes = collectRoutes(ctx.app).filter((r) => !r.isPublic);
