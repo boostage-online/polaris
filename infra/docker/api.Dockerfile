@@ -16,7 +16,7 @@ COPY packages ./packages
 COPY apps/api ./apps/api
 COPY turbo.json ./
 RUN pnpm --filter @polaris/contracts build && pnpm --filter @polaris/api build \
- && pnpm --filter @polaris/api --prod deploy /out
+ && pnpm --filter @polaris/api --prod deploy --legacy /out
 
 FROM node:22-alpine AS runtime
 ENV NODE_ENV=production

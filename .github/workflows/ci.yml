@@ -12,7 +12,8 @@ concurrency:
 
 env:
   NODE_VERSION: '22'
-  PR_NUMBER: ${{ github.event.pull_request.number }}
+  # Sur main et les tags (pas de PR), les extraits d'échec vont dans l'issue de journal CI (#9).
+  PR_NUMBER: ${{ github.event.pull_request.number || 9 }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
@@ -23,6 +24,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      issues: write
     steps:
       - uses: actions/checkout@v5
         with:
@@ -62,6 +64,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      issues: write
     services:
       postgres:
         image: postgres:16-alpine
@@ -129,6 +132,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      issues: write
     steps:
       - uses: actions/checkout@v5
         with:
@@ -156,6 +160,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      issues: write
     steps:
       - uses: actions/checkout@v5
       - uses: docker/setup-buildx-action@v3
@@ -165,27 +170,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Image api
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: infra/docker/api.Dockerfile
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository }}/api:${{ github.sha }}
-            ghcr.io/${{ github.repository }}/api:${{ github.ref_type == 'tag' && github.ref_name || 'main' }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          .github/scripts/run-step.sh "image api" docker buildx build --progress=plain --push \
+            -f infra/docker/api.Dockerfile \
+            -t ghcr.io/${{ github.repository }}/api:${{ github.sha }} \
+            -t ghcr.io/${{ github.repository }}/api:${{ github.ref_type == 'tag' && github.ref_name || 'main' }} \
+            --cache-from type=registry,ref=ghcr.io/${{ github.repository }}/api:buildcache \
+            --cache-to type=registry,ref=ghcr.io/${{ github.repository }}/api:buildcache,mode=max \
+            .
       - name: Image worker
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: infra/docker/worker.Dockerfile
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository }}/worker:${{ github.sha }}
-            ghcr.io/${{ github.repository }}/worker:${{ github.ref_type == 'tag' && github.ref_name || 'main' }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          .github/scripts/run-step.sh "image worker" docker buildx build --progress=plain --push \
+            -f infra/docker/worker.Dockerfile \
+            -t ghcr.io/${{ github.repository }}/worker:${{ github.sha }} \
+            -t ghcr.io/${{ github.repository }}/worker:${{ github.ref_type == 'tag' && github.ref_name || 'main' }} \
+            --cache-from type=registry,ref=ghcr.io/${{ github.repository }}/worker:buildcache \
+            --cache-to type=registry,ref=ghcr.io/${{ github.repository }}/worker:buildcache,mode=max \
+            .
 
   deploy-staging:
     name: Déploiement staging
