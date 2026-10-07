@@ -1,5 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { bearer, loginAs, seed, startApp, type Session, type TestContext } from './helpers';
+import {
+  bearer,
+  loginAs,
+  localDay,
+  seed,
+  startApp,
+  type Session,
+  type TestContext,
+} from './helpers';
 
 /** Phase 3 — feuilles d'appel, corrections, verrouillage, appels manquants, alertes (ADR-0006). Tenant « lycée ». */
 describe("Feuilles d'appel", () => {
@@ -191,8 +199,7 @@ describe("Feuilles d'appel", () => {
       outOfWindow: false,
     });
 
-    const day = (offset: number) =>
-      new Date(Date.now() + offset * 24 * 3_600_000).toISOString().slice(0, 10);
+    const day = (offset: number) => localDay(offset);
     const lock = await ctx.http
       .post('/api/v1/attendance-sheets/lock')
       .set(bearer(studentLife))

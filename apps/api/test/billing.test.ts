@@ -2,7 +2,16 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DatabaseService } from '../src/database/database.service';
 import { UnpaidService } from '../src/modules/billing';
-import { bearer, login, loginAs, seed, startApp, type Session, type TestContext } from './helpers';
+import {
+  bearer,
+  localDay,
+  login,
+  loginAs,
+  seed,
+  startApp,
+  type Session,
+  type TestContext,
+} from './helpers';
 
 /** Phase 4 — sous-grand-livre de créances (ADR-0005) : catalogue, affectation, caisse, reçus, impayés, parent. Tenant « lycée ». */
 describe('Frais et paiements', () => {
@@ -13,8 +22,7 @@ describe('Frais et paiements', () => {
   const ac = () => L().academic;
   const b = () => ac().billing;
   const key = () => ({ 'Idempotency-Key': randomUUID() });
-  const day = (offset: number) =>
-    new Date(Date.now() + offset * 24 * 3_600_000).toISOString().slice(0, 10);
+  const day = (offset: number) => localDay(offset);
 
   beforeAll(async () => {
     ctx = await startApp();
