@@ -78,6 +78,20 @@ export class ProblemDetailsFilter implements ExceptionFilter {
         traceId,
       };
     }
+    // Erreurs HTTP de la couche Express (body-parser : corps trop volumineux 413, JSON invalide 400…).
+    const raw = exception as { status?: unknown; statusCode?: unknown; type?: unknown } | undefined;
+    const rawStatus = Number(raw?.status ?? raw?.statusCode ?? 0);
+    if (rawStatus >= 400 && rawStatus < 500) {
+      const tooLarge = rawStatus === 413;
+      return {
+        type: `${TYPE_BASE}${tooLarge ? 'payload-too-large' : 'validation-failed'}`,
+        title: tooLarge ? 'Corps de requête trop volumineux' : 'Requête invalide',
+        status: rawStatus,
+        code: ErrorCodes.VALIDATION_FAILED,
+        detail: tooLarge ? 'Taille maximale : 1 Mo' : 'Le corps de la requête est illisible',
+        traceId,
+      };
+    }
     return {
       type: `${TYPE_BASE}internal`,
       title: 'Erreur interne',

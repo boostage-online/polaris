@@ -21,7 +21,27 @@ export async function createApp(): Promise<NestExpressApplication> {
   app.useLogger(app.get(Logger));
   app.setGlobalPrefix(API_PREFIX);
   app.set('trust proxy', 1);
-  app.use(helmet({ contentSecurityPolicy: false }));
+  // Taille maximale des corps (Partie 11) : 1 Mo JSON (imports CSV compris), formulaires 1 Mo.
+  app.useBodyParser('json', { limit: '1mb' });
+  app.useBodyParser('urlencoded', { limit: '1mb', extended: false });
+  app.use(
+    helmet({
+      // API JSON : aucune ressource n'est rendue ; la documentation interactive (/api/docs) est hors production.
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'none'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:'],
+          connectSrc: ["'self'"],
+          frameAncestors: ["'none'"],
+          baseUri: ["'none'"],
+          formAction: ["'none'"],
+        },
+      },
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
   app.use(cookieParser());
   app.enableCors({
     origin: [env.WEB_ORIGIN],

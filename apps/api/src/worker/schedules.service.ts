@@ -7,7 +7,12 @@ import { SessionService } from '../modules/academic';
 import { LedgerService, UnpaidService } from '../modules/billing';
 import { NotificationPlanner } from '../modules/notifications';
 import { ReconciliationService } from '../modules/payments';
-import { ReportRefreshService, ScheduledReportsService } from '../modules/reporting';
+import {
+  PlatformAlertsService,
+  ReportRefreshService,
+  ScheduledReportsService,
+} from '../modules/reporting';
+import { PrivacyService } from '../modules/students-guardians';
 import { RedisService } from '../modules/shared';
 
 export const SCHEDULES_QUEUE = 'schedules';
@@ -34,6 +39,8 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
     private readonly reconciliation: ReconciliationService,
     private readonly reportRefresh: ReportRefreshService,
     private readonly scheduledReports: ScheduledReportsService,
+    private readonly alerts: PlatformAlertsService,
+    private readonly privacy: PrivacyService,
   ) {}
 
   async onModuleInit() {
@@ -83,6 +90,16 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
       { pattern: '30 6 * * *', tz: 'Africa/Porto-Novo' },
       { name: 'reports-scheduled-send' },
     );
+    await this.queue.upsertJobScheduler(
+      'platform-alerts',
+      { every: 5 * 60_000 },
+      { name: 'platform-alerts' },
+    );
+    await this.queue.upsertJobScheduler(
+      'privacy-retention',
+      { pattern: '30 3 * * *', tz: 'Africa/Porto-Novo' },
+      { name: 'privacy-retention' },
+    );
     this.worker = new Worker(SCHEDULES_QUEUE, async (job) => this.run(job.name), {
       connection: this.redis.duplicate(),
       concurrency: 1,
@@ -103,6 +120,8 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
     if (name === 'payments-daily-reconciliation') return this.paymentsJob('daily');
     if (name === 'reports-refresh') return this.reportsRefreshAll();
     if (name === 'reports-scheduled-send') return this.scheduledReportsAll();
+    if (name === 'platform-alerts') return this.alerts.evaluate();
+    if (name === 'privacy-retention') return this.privacyRetentionAll();
     return this.generateAll();
   }
 
@@ -193,6 +212,23 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
       } catch (e) {
         this.logger.error({
           msg: 'reports refresh failed',
+          tenantId: id,
+          err: (e as Error).message,
+        });
+      }
+    }
+    return results;
+  }
+
+  /** Durées de conservation (Partie 11) : anonymisation automatique, tenant par tenant (03:30). */
+  async privacyRetentionAll() {
+    const results: Record<string, unknown> = {};
+    for (const id of await this.activeTenantIds()) {
+      try {
+        results[id] = await this.privacy.retention(id);
+      } catch (e) {
+        this.logger.error({
+          msg: 'privacy retention failed',
           tenantId: id,
           err: (e as Error).message,
         });

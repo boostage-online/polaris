@@ -179,7 +179,7 @@ export class PlatformOverviewService {
     };
   }
 
-  private async queueStats() {
+  async queueStats() {
     const out: PlatformOverview['health']['queues'] = [];
     for (const name of QUEUES) {
       const q = new Queue(name, { connection: this.redis.duplicate() });
@@ -212,7 +212,7 @@ export class PlatformOverviewService {
     return out;
   }
 
-  private async dlqStats() {
+  async dlqStats() {
     const out: { name: string; count: number }[] = [];
     for (const name of DLQS) {
       const q = new Queue(name, { connection: this.redis.duplicate() });

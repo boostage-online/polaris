@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { ProviderCredentials } from '../domain/provider';
 import { FedaPayProvider } from './fedapay.provider';
 import { KKiaPayProvider } from './kkiapay.provider';
-import { LocalKeyWrapper, maskSecret, openSecrets, sealSecrets } from './secrets';
+import { LocalKeyWrapper, maskSecret, openSecrets, sealSecrets } from '../../shared';
 
 const creds = (over: Partial<ProviderCredentials> = {}): ProviderCredentials => ({
   publicKey: 'pk_test',

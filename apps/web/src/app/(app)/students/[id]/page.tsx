@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import type { Guardian, GuardianLink, Student } from '@polaris/contracts';
 import { useCan } from '@/components/app-shell';
+import { PrivacyActions } from '@/components/privacy';
 import {
   Alert,
   Badge,
@@ -61,6 +62,14 @@ export default function StudentPage() {
         }
         actions={
           <>
+            {can('MANAGE_PRIVACY') && (
+              <PrivacyActions
+                subject="STUDENT"
+                id={s.id}
+                label={`${s.lastName} ${s.firstName}`}
+                anonymizable={!active}
+              />
+            )}
             {can('VIEW_FEES') && (
               <LinkButton href={`/finance/students/${s.id}`}>Frais et paiements</LinkButton>
             )}

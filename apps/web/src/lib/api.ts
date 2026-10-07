@@ -1,5 +1,5 @@
 'use client';
-import type { Me, ProblemDetails, TokenPair } from '@polaris/contracts';
+import type { LoginResponse, Me, ProblemDetails, TokenPair } from '@polaris/contracts';
 
 /**
  * Client HTTP du web (ADR-0009, ADR-0008) :
@@ -199,11 +199,34 @@ export async function apiPublic<T>(path: string): Promise<T> {
   return (body as { data: T }).data;
 }
 
+/** Session de support (impersonation) : le jeton plateforme d'origine est conservé en mémoire pour revenir. */
+let impersonationOrigin: string | null = null;
+export function startImpersonation(token: string) {
+  impersonationOrigin = accessToken;
+  accessToken = token;
+}
+export function endImpersonation() {
+  accessToken = impersonationOrigin;
+  impersonationOrigin = null;
+}
+export function isImpersonating() {
+  return impersonationOrigin !== null;
+}
+
 export const auth = {
+  /** Renvoie soit la session, soit un défi MFA (`mfaRequired`). */
   login: (identifier: string, password: string) =>
-    api<TokenPair>('/auth/login', {
+    api<LoginResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ identifier, password }),
+    }).then((r) => {
+      if (!('mfaRequired' in r)) accessToken = r.accessToken;
+      return r;
+    }),
+  mfaVerify: (challenge: string, factor: { code?: string; recoveryCode?: string }) =>
+    api<TokenPair>('/auth/mfa/verify', {
+      method: 'POST',
+      body: JSON.stringify({ challenge, ...factor }),
     }).then((pair) => {
       accessToken = pair.accessToken;
       return pair;

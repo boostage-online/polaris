@@ -36,8 +36,19 @@ const params: Record<string, () => string> = {
   provider: () => 'FAKE',
   key: () => 'attendance-by-group',
   familyId: () => '00000000-0000-0000-0000-000000000000',
+  impersonationId: () => seed.platform.impersonationSessionId,
+  alertId: () => seed.platform.alertId,
 };
 const bodies: Record<string, () => object> = {
+  'POST /api/v1/platform/tenants/:id/impersonate': () => ({
+    reason: 'Matrice de permissions : vérification',
+  }),
+  'POST /api/v1/privacy/students/:id/anonymize': () => ({ reason: 'Matrice de permissions' }),
+  'POST /api/v1/privacy/guardians/:id/anonymize': () => ({ reason: 'Matrice de permissions' }),
+  'PATCH /api/v1/onboarding': () => ({ dismissed: false }),
+  'POST /api/v1/me/mfa/enable': () => ({ code: '000000' }),
+  'POST /api/v1/me/mfa/disable': () => ({ code: '000000' }),
+  'POST /api/v1/me/mfa/recovery-codes': () => ({ code: '000000' }),
   'POST /api/v1/scheduled-reports': () => ({
     reportKey: 'attendance-by-group',
     cadence: 'WEEKLY',
@@ -120,7 +131,15 @@ describe('Matrice de permissions', () => {
       const entry = matrix[key]!;
       const path = r.path.replace(/:([A-Za-z0-9_]+)/g, (_m, n: string) => {
         const f =
-          params[n === 'id' && r.path.startsWith('/api/v1/platform/tenants') ? 'tenantId' : n];
+          params[
+            n === 'id' && r.path.startsWith('/api/v1/platform/tenants')
+              ? 'tenantId'
+              : n === 'id' && r.path.startsWith('/api/v1/platform/impersonations')
+                ? 'impersonationId'
+                : n === 'id' && r.path.startsWith('/api/v1/platform/alerts')
+                  ? 'alertId'
+                  : n
+          ];
         if (!f) throw new Error(`fixture manquante pour :${n}`);
         return f();
       });

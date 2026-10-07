@@ -11,8 +11,11 @@ import {
 import type { Response } from 'express';
 import { z } from 'zod';
 import {
+  AlertsEvaluationSchema,
+  AlertsQuerySchema,
   CreateScheduledReportSchema,
   DirectionDashboardSchema,
+  PlatformAlertSchema,
   FinanceChannelsSchema,
   NotificationTraceSchema,
   PedagogyDashboardSchema,
@@ -39,6 +42,7 @@ import { AppError } from '../../../common/errors/app-error';
 import { raw } from '../../../common/interceptors/envelope.interceptor';
 import { RequestContextStore } from '../../../database/request-context';
 import { DashboardsService } from '../application/dashboards.service';
+import { PlatformAlertsService } from '../application/platform-alerts.service';
 import { PlatformOverviewService } from '../application/platform-overview.service';
 import { ReportRefreshService } from '../application/refresh.service';
 import { ReportsQueue } from '../application/reports.queue';
@@ -336,5 +340,49 @@ export class PlatformOverviewController {
   })
   get() {
     return this.overview.overview();
+  }
+}
+
+@Controller('platform/alerts')
+@Scope('platform')
+export class PlatformAlertsController {
+  constructor(private readonly alerts: PlatformAlertsService) {}
+
+  @Get()
+  @RequirePermission('PLATFORM_VIEW_METRICS')
+  @ApiDoc({
+    summary: 'Alertes de supervision (ouvertes par défaut)',
+    tags: ['platform'],
+    query: AlertsQuerySchema,
+    response: z.array(PlatformAlertSchema),
+  })
+  list(@ZodQuery(AlertsQuerySchema) q: z.infer<typeof AlertsQuerySchema>) {
+    return this.alerts.list(q.status);
+  }
+
+  @Post('evaluate')
+  @HttpCode(200)
+  @NoTransaction()
+  @RequirePermission('PLATFORM_VIEW_METRICS')
+  @ApiDoc({
+    summary: 'Évaluer les conditions maintenant (le worker le fait toutes les 5 minutes)',
+    tags: ['platform'],
+    response: AlertsEvaluationSchema,
+  })
+  evaluate() {
+    return this.alerts.evaluate();
+  }
+
+  @Post(':id/ack')
+  @HttpCode(200)
+  @RequirePermission('PLATFORM_VIEW_METRICS')
+  @ApiDoc({
+    summary: 'Acquitter une alerte (plus de rappel e-mail tant qu’elle reste ouverte)',
+    tags: ['platform'],
+    params: Id,
+    response: PlatformAlertSchema,
+  })
+  ack(@ZodParams(Id) p: z.infer<typeof Id>) {
+    return this.alerts.acknowledge(p.id);
   }
 }

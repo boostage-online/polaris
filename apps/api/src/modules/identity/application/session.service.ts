@@ -68,6 +68,8 @@ export class SessionService {
       device: DeviceInfo;
       familyId?: string;
       replaces?: string;
+      /** La session a passé la MFA (connexion après défi, ou famille déjà vérifiée). */
+      mfa?: boolean;
     },
   ): Promise<IssuedSession> {
     const user = await tx.query.users.findFirst({
@@ -84,6 +86,9 @@ export class SessionService {
       kind,
       pv: input.membership?.permissionsVersion ?? 0,
       tv: user.tokenVersion,
+      mfa: input.mfa === true,
+      imp: null,
+      isid: null,
     });
     const refresh = await this.refreshTokens.issue(tx, {
       userId: input.userId,
@@ -93,6 +98,7 @@ export class SessionService {
       deviceLabel: input.device.deviceLabel,
       familyId: input.familyId,
       replaces: input.replaces,
+      mfaVerified: input.mfa === true,
     });
     return {
       pair: {
@@ -100,6 +106,7 @@ export class SessionService {
         accessTokenExpiresIn: this.tokens.accessTtlSeconds,
         membership: input.membership ? this.toSummary(input.membership) : null,
         memberships: input.all.map((m) => this.toSummary(m)),
+        mfa: input.mfa === true,
       },
       refresh,
     };

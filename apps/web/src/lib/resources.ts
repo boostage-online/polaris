@@ -1,6 +1,9 @@
 'use client';
 import type {
   AcademicYear,
+  AnonymizationResult,
+  AuditLog,
+  AuditQuery,
   Adjustment,
   AdminDashboard,
   AssignmentReport,
@@ -30,9 +33,12 @@ import type {
   Group,
   Guardian,
   GuardianLink,
+  ImpersonationGrant,
+  ImpersonationSession,
   ImportJob,
   Justification,
   LinkGuardianInput,
+  MfaStatus,
   MissingSheet,
   Installment,
   Notification,
@@ -40,14 +46,18 @@ import type {
   NotificationKind,
   NotificationTrace,
   NotificationUsage,
+  OnboardingStatus,
   Payment,
   PaymentAttempt,
   PaymentConfig,
   PaymentMethod,
   PaymentOptions,
   PedagogyDashboard,
+  PersonalDataExport,
+  PlatformAlert,
   PendingPayments,
   PlatformOverview,
+  PrivacyRequest,
   Program,
   Receipt,
   ReconciliationRun,
@@ -58,6 +68,7 @@ import type {
   RecordManualPaymentInput,
   RecordRevision,
   RegistrarDashboard,
+  SessionInfo,
   ScheduledReport,
   SheetTrace,
   Staff,
@@ -645,4 +656,60 @@ export const platform = {
     api<PlatformTenant>(`/platform/tenants/${id}/status`, patch({ status, reason })),
   inviteAdmin: (id: string, email: string) =>
     api<{ invited: boolean }>(`/platform/tenants/${id}/admin-invitations`, json({ email })),
+};
+
+// ----------------------------------------------------------------------------- Phase 7 : durcissement
+
+export const security = {
+  mfa: () => api<MfaStatus>('/me/mfa'),
+  mfaSetup: () =>
+    api<{ secret: string; otpauthUrl: string; issuer: string; account: string }>(
+      '/me/mfa/setup',
+      json({}),
+    ),
+  mfaEnable: (code: string) =>
+    api<{ enabled: true; recoveryCodes: string[] }>('/me/mfa/enable', json({ code })),
+  mfaDisable: (factor: { code?: string; recoveryCode?: string }) =>
+    api<{ enabled: false }>('/me/mfa/disable', json(factor)),
+  mfaRecoveryCodes: (factor: { code?: string; recoveryCode?: string }) =>
+    api<{ recoveryCodes: string[] }>('/me/mfa/recovery-codes', json(factor)),
+  sessions: () => api<SessionInfo[]>('/me/sessions'),
+  revokeSession: (familyId: string) => api<void>(`/me/sessions/${familyId}`, del()),
+  logoutAll: () => api<void>('/auth/logout-all', json({})),
+};
+
+export const platformOps = {
+  alerts: (status: 'open' | 'resolved' | 'all' = 'open') =>
+    api<PlatformAlert[]>(`/platform/alerts${qs({ status })}`),
+  evaluateAlerts: () =>
+    api<{ opened: number; stillOpen: number; resolved: number; notified: number }>(
+      '/platform/alerts/evaluate',
+      json({}),
+    ),
+  ackAlert: (id: string) => api<PlatformAlert>(`/platform/alerts/${id}/ack`, json({})),
+  impersonate: (tenantId: string, reason: string) =>
+    api<ImpersonationGrant>(`/platform/tenants/${tenantId}/impersonate`, json({ reason })),
+  impersonations: () => api<ImpersonationSession[]>('/platform/impersonations'),
+  endImpersonation: (id: string) =>
+    api<ImpersonationSession>(`/platform/impersonations/${id}/end`, json({})),
+};
+
+export const privacy = {
+  requests: () => api<PrivacyRequest[]>('/privacy/requests'),
+  exportStudent: (id: string) => api<PersonalDataExport>(`/privacy/students/${id}`),
+  anonymizeStudent: (id: string, reason: string, force = false) =>
+    api<AnonymizationResult>(`/privacy/students/${id}/anonymize`, json({ reason, force })),
+  exportGuardian: (id: string) => api<PersonalDataExport>(`/privacy/guardians/${id}`),
+  anonymizeGuardian: (id: string, reason: string) =>
+    api<AnonymizationResult>(`/privacy/guardians/${id}/anonymize`, json({ reason })),
+  mine: () => api<PersonalDataExport>('/me/personal-data'),
+};
+
+export const onboarding = {
+  status: () => api<OnboardingStatus>('/onboarding'),
+  dismiss: (dismissed: boolean) => api<OnboardingStatus>('/onboarding', patch({ dismissed })),
+};
+
+export const audit = {
+  list: (q: Partial<AuditQuery> = {}) => apiEnvelope<AuditLog[], PageMeta>(`/audit-logs${qs(q)}`),
 };

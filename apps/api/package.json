@@ -18,7 +18,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "depcruise": "depcruise src --config .dependency-cruiser.cjs",
     "test": "vitest run --project unit",
-    "test:integration": "vitest run --project integration",
+    "test:integration": "vitest run --project integration --no-file-parallelism",
     "test:all": "vitest run",
     "db:migrate": "node -r @swc-node/register src/database/migrate.ts up",
     "db:rollback": "node -r @swc-node/register src/database/migrate.ts down",

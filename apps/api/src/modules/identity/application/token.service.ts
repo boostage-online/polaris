@@ -45,13 +45,15 @@ export class TokenService implements OnModuleInit {
     return this.env.ACCESS_TOKEN_TTL_SECONDS;
   }
 
-  async signAccess(claims: AccessTokenClaims): Promise<string> {
+  async signAccess(claims: AccessTokenClaims, ttlSeconds = this.accessTtlSeconds): Promise<string> {
     return new SignJWT({
       mid: claims.mid,
       tid: claims.tid,
       kind: claims.kind,
       pv: claims.pv,
       tv: claims.tv,
+      mfa: claims.mfa,
+      ...(claims.imp ? { imp: claims.imp, isid: claims.isid } : {}),
     })
       .setProtectedHeader({ alg: 'ES256', kid: this.kid, typ: 'JWT' })
       .setSubject(claims.sub)
@@ -59,8 +61,59 @@ export class TokenService implements OnModuleInit {
       .setAudience('polaris-api')
       .setJti(randomUUID())
       .setIssuedAt()
-      .setExpirationTime(`${this.env.ACCESS_TOKEN_TTL_SECONDS}s`)
+      .setExpirationTime(`${ttlSeconds}s`)
       .sign(this.privateKey);
+  }
+
+  /** Défi MFA (5 min) : prouve que le mot de passe a été vérifié, sans ouvrir de session. */
+  async signMfaChallenge(input: {
+    sub: string;
+    deviceId?: string;
+    deviceLabel?: string;
+    preferredMembershipId?: string | null;
+  }): Promise<{ token: string; jti: string; expiresIn: number }> {
+    const jti = randomUUID();
+    const expiresIn = 300;
+    const token = await new SignJWT({
+      did: input.deviceId ?? null,
+      dlb: input.deviceLabel ?? null,
+      pmid: input.preferredMembershipId ?? null,
+    })
+      .setProtectedHeader({ alg: 'ES256', kid: this.kid, typ: 'mfa+jwt' })
+      .setSubject(input.sub)
+      .setIssuer(this.env.JWT_ISSUER)
+      .setAudience('polaris-mfa')
+      .setJti(jti)
+      .setIssuedAt()
+      .setExpirationTime(`${expiresIn}s`)
+      .sign(this.privateKey);
+    return { token, jti, expiresIn };
+  }
+
+  async verifyMfaChallenge(token: string): Promise<{
+    sub: string;
+    jti: string;
+    deviceId?: string;
+    deviceLabel?: string;
+    preferredMembershipId: string | null;
+  }> {
+    try {
+      const { payload } = await jwtVerify(token, this.publicKey, {
+        issuer: this.env.JWT_ISSUER,
+        audience: 'polaris-mfa',
+        algorithms: ['ES256'],
+        clockTolerance: 5,
+      });
+      return {
+        sub: payload.sub!,
+        jti: payload.jti!,
+        deviceId: (payload['did'] as string | null) ?? undefined,
+        deviceLabel: (payload['dlb'] as string | null) ?? undefined,
+        preferredMembershipId: (payload['pmid'] as string | null) ?? null,
+      };
+    } catch {
+      throw AppError.unauthenticated('Défi MFA invalide ou expiré', ErrorCodes.MFA_REQUIRED);
+    }
   }
 
   async verifyAccess(token: string): Promise<AccessTokenClaims> {
@@ -78,6 +131,9 @@ export class TokenService implements OnModuleInit {
         kind: (payload['kind'] as AccessTokenClaims['kind']) ?? null,
         pv: Number(payload['pv'] ?? 0),
         tv: Number(payload['tv'] ?? 0),
+        mfa: payload['mfa'] === true,
+        imp: (payload['imp'] as string | null) ?? null,
+        isid: (payload['isid'] as string | null) ?? null,
       };
     } catch (e) {
       const code = (e as { code?: string }).code;

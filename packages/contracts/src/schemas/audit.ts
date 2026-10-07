@@ -20,3 +20,5 @@ export const AuditQuerySchema = CursorQuerySchema.extend({
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
 });
+export type AuditLog = z.infer<typeof AuditLogSchema>;
+export type AuditQuery = z.infer<typeof AuditQuerySchema>;

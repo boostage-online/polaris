@@ -1,11 +1,15 @@
-import { Controller, Get, Patch, Post } from '@nestjs/common';
+import { Controller, Get, HttpCode, Patch, Post } from '@nestjs/common';
 import { z } from 'zod';
 import {
   CreateTenantSchema,
+  ImpersonateSchema,
+  ImpersonationGrantSchema,
+  ImpersonationSessionSchema,
   UpdateTenantStatusSchema,
   type CreateTenantInput,
 } from '@polaris/contracts';
 import { ApiDoc, RequirePermission, Scope, ZodBody, ZodParams } from '../../../common/decorators';
+import { ImpersonationService } from '../application/impersonation.service';
 import { PlatformService } from '../application/platform.service';
 
 const IdParams = z.object({ id: z.string().uuid() });
@@ -14,7 +18,10 @@ const InviteAdminSchema = z.object({ email: z.string().email() });
 @Controller('platform/tenants')
 @Scope('platform')
 export class PlatformController {
-  constructor(private readonly platform: PlatformService) {}
+  constructor(
+    private readonly platform: PlatformService,
+    private readonly impersonation: ImpersonationService,
+  ) {}
 
   @Get()
   @RequirePermission('PLATFORM_MANAGE_TENANTS')
@@ -64,5 +71,53 @@ export class PlatformController {
     @ZodBody(InviteAdminSchema) body: z.infer<typeof InviteAdminSchema>,
   ) {
     return this.platform.inviteAdmin(params.id, body.email);
+  }
+
+  @Post(':id/impersonate')
+  @RequirePermission('PLATFORM_IMPERSONATE')
+  @ApiDoc({
+    summary:
+      'Ouvrir une session de support dans un établissement (30 min, tracée, sans action financière)',
+    tags: ['platform'],
+    params: IdParams,
+    body: ImpersonateSchema,
+    response: ImpersonationGrantSchema,
+    status: 201,
+  })
+  impersonate(
+    @ZodParams(IdParams) params: z.infer<typeof IdParams>,
+    @ZodBody(ImpersonateSchema) body: z.infer<typeof ImpersonateSchema>,
+  ) {
+    return this.impersonation.start(params.id, body.reason);
+  }
+}
+
+@Controller('platform/impersonations')
+@Scope('platform')
+export class ImpersonationsController {
+  constructor(private readonly impersonation: ImpersonationService) {}
+
+  @Get()
+  @RequirePermission('PLATFORM_IMPERSONATE', 'PLATFORM_VIEW_METRICS')
+  @ApiDoc({
+    summary: 'Sessions de support (100 dernières)',
+    tags: ['platform'],
+    response: z.array(ImpersonationSessionSchema),
+  })
+  list() {
+    return this.impersonation.list();
+  }
+
+  @Post(':id/end')
+  @HttpCode(200)
+  @RequirePermission('PLATFORM_IMPERSONATE')
+  @ApiDoc({
+    summary: 'Clôturer une session de support (effectif en moins de 30 s)',
+    tags: ['platform'],
+    params: IdParams,
+    response: ImpersonationSessionSchema,
+  })
+  end(@ZodParams(IdParams) params: z.infer<typeof IdParams>) {
+    return this.impersonation.end(params.id);
   }
 }

@@ -50,6 +50,9 @@ export class AuthGuard implements CanActivate {
       kind: claims.kind,
       permissionsVersion: claims.pv,
       tokenVersion: claims.tv,
+      mfa: claims.mfa,
+      impersonatedBy: claims.imp,
+      impersonationSessionId: claims.isid,
     };
     return true;
   }

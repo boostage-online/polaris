@@ -3,12 +3,15 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import {
   LoginPasswordSchema,
+  LoginResponseSchema,
+  MfaVerifySchema,
   RefreshSchema,
   RequestOtpSchema,
   SwitchMembershipSchema,
   TokenPairSchema,
   VerifyOtpSchema,
   type LoginPasswordInput,
+  type MfaChallenge,
 } from '@polaris/contracts';
 import {
   ApiDoc,
@@ -23,9 +26,16 @@ import { ENV, type Env } from '../../../config/env';
 import type { Actor } from '../../../database/request-context';
 import { AuthService } from '../application/auth.service';
 import { InvitationService } from '../application/invitation.service';
+import { MfaService } from '../application/mfa.service';
 import { TokenService } from '../application/token.service';
 import type { IssuedSession } from '../application/session.service';
-import { clearRefreshCookie, isWebClient, readRefresh, setRefreshCookie } from './cookies';
+import {
+  assertTrustedOrigin,
+  clearRefreshCookie,
+  isWebClient,
+  readRefresh,
+  setRefreshCookie,
+} from './cookies';
 
 const AcceptInvitationSchema = z.object({
   token: z.string().min(32).max(512),
@@ -39,10 +49,12 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly invitations: InvitationService,
     private readonly tokens: TokenService,
+    private readonly mfa: MfaService,
     @Inject(ENV) private readonly env: Env,
   ) {}
 
-  private respond(req: Request, res: Response, session: IssuedSession) {
+  private respond(req: Request, res: Response, session: IssuedSession | MfaChallenge) {
+    if ('mfaRequired' in session) return session;
     if (isWebClient(req)) {
       setRefreshCookie(res, this.env, session.refresh.token, session.refresh.expiresAt);
       return session.pair;
@@ -55,10 +67,10 @@ export class AuthController {
   @HttpCode(200)
   @RateLimit({ points: 10, duration: 60, keyBy: 'identifier', name: 'login' })
   @ApiDoc({
-    summary: 'Connexion par identifiant et mot de passe',
+    summary: 'Connexion par identifiant et mot de passe (défi MFA si activée)',
     tags: ['auth'],
     body: LoginPasswordSchema,
-    response: TokenPairSchema,
+    response: LoginResponseSchema,
   })
   async login(
     @ZodBody(LoginPasswordSchema) body: LoginPasswordInput,
@@ -66,6 +78,24 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     return this.respond(req, res, await this.auth.loginWithPassword(body));
+  }
+
+  @Post('mfa/verify')
+  @Public()
+  @HttpCode(200)
+  @RateLimit({ points: 60, duration: 60, keyBy: 'ip', name: 'mfa' })
+  @ApiDoc({
+    summary: 'Relever le défi MFA (code TOTP ou code de récupération) et ouvrir la session',
+    tags: ['auth'],
+    body: MfaVerifySchema,
+    response: TokenPairSchema,
+  })
+  async mfaVerify(
+    @ZodBody(MfaVerifySchema) body: z.infer<typeof MfaVerifySchema>,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.respond(req, res, await this.mfa.verifyChallenge(body));
   }
 
   @Post('otp/request')
@@ -116,6 +146,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
+    if (!body.refreshToken) assertTrustedOrigin(req, this.env); // refresh par cookie : navigateur
     const raw = readRefresh(req, body.refreshToken);
     if (!raw) {
       clearRefreshCookie(res, this.env);
@@ -144,7 +175,13 @@ export class AuthController {
     return this.respond(
       req,
       res,
-      await this.auth.switchMembership(actor.userId, body.membershipId, raw, {}),
+      await this.auth.switchMembership(
+        actor.userId,
+        body.membershipId,
+        raw,
+        {},
+        actor.mfa === true,
+      ),
     );
   }
 
@@ -153,6 +190,7 @@ export class AuthController {
   @HttpCode(204)
   @ApiDoc({ summary: 'Déconnexion de cet appareil', tags: ['auth'], status: 204 })
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    assertTrustedOrigin(req, this.env);
     await this.auth.logout(
       readRefresh(req, (req.body as { refreshToken?: string } | undefined)?.refreshToken),
     );

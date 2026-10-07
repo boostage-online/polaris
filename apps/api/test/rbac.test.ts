@@ -24,7 +24,7 @@ describe('RBAC (ADR-0007)', () => {
       .patch(`/api/v1/roles/${seed.tenants.lycee.roleIds.ADMIN}/permissions`)
       .set(bearer(a))
       .send({ permissions: ['VIEW_STUDENTS'] });
-    expect(res.status).toBe(409);
+    expect(res.status, JSON.stringify({ body: res.body, membershipId: a.membershipId })).toBe(409);
   });
 
   it('une permission plateforme ne peut pas être donnée à un rôle tenant', async () => {

@@ -229,3 +229,25 @@ routes:
   'GET /api/v1/tenant-exports/:id': { allow: [ADMIN] }
   'GET /api/v1/tenant-exports/:id/download': { allow: [ADMIN] }
   'GET /api/v1/platform/overview': { scope: platform }
+  # --- Phase 7 : durcissement (MFA, impersonation, alertes, RGPD, onboarding) ---
+  'GET /api/v1/me/mfa': { scope: identity }
+  'POST /api/v1/me/mfa/setup': { scope: identity }
+  'POST /api/v1/me/mfa/enable': { scope: identity }
+  'POST /api/v1/me/mfa/disable': { scope: identity }
+  'POST /api/v1/me/mfa/recovery-codes': { scope: identity }
+  'POST /api/v1/platform/tenants/:id/impersonate': { scope: platform }
+  'GET /api/v1/platform/impersonations': { scope: platform }
+  'POST /api/v1/platform/impersonations/:id/end': { scope: platform }
+  'GET /api/v1/platform/alerts': { scope: platform }
+  'POST /api/v1/platform/alerts/evaluate': { scope: platform }
+  'POST /api/v1/platform/alerts/:id/ack': { scope: platform }
+  'GET /api/v1/onboarding': { allow: [ADMIN, REGISTRAR] }
+  'PATCH /api/v1/onboarding': { allow: [ADMIN] }
+  'GET /api/v1/privacy/requests': { allow: [ADMIN] }
+  'GET /api/v1/privacy/students/:id': { allow: [ADMIN] }
+  'POST /api/v1/privacy/students/:id/anonymize': { allow: [ADMIN] }
+  'GET /api/v1/privacy/guardians/:id': { allow: [ADMIN] }
+  'POST /api/v1/privacy/guardians/:id/anonymize': { allow: [ADMIN] }
+  # route sans permission (le parent exporte ses propres données ; un membre du personnel reçoit 404)
+  'GET /api/v1/me/personal-data':
+    { allow: [ADMIN, REGISTRAR, TEACHER, STUDENT_LIFE, ACADEMIC_HEAD, DIRECTION, FINANCE] }

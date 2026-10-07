@@ -3,9 +3,10 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import type { Me } from '@polaris/contracts';
-import { useQuery } from '@tanstack/react-query';
-import { auth } from '@/lib/api';
-import { notifs } from '@/lib/resources';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { auth, endImpersonation, isImpersonating } from '@/lib/api';
+import { notifs, platformOps } from '@/lib/resources';
+import { fmtTime } from '@/lib/format';
 import { SessionGate } from './session-gate';
 
 const MeContext = createContext<Me | null>(null);
@@ -43,6 +44,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
       },
       { href: '/schedule', label: 'Mon emploi du temps', kind: 'STAFF' },
       { href: '/notifications', label: 'Notifications' },
+      { href: '/settings/security', label: 'Sécurité du compte' },
     ],
   },
   {
@@ -114,6 +116,18 @@ const NAV: { title: string; items: NavItem[] }[] = [
       },
       { href: '/settings/payments', label: 'Paiement en ligne', any: ['MANAGE_PAYMENT_PROVIDER'] },
       { href: '/settings', label: 'Paramètres', any: ['MANAGE_TENANT_SETTINGS'] },
+      {
+        href: '/onboarding',
+        label: 'Assistant de démarrage',
+        any: [
+          'MANAGE_TENANT_SETTINGS',
+          'MANAGE_ACADEMIC_STRUCTURE',
+          'MANAGE_USERS',
+          'IMPORT_STUDENTS',
+        ],
+      },
+      { href: '/admin/audit', label: "Journal d'audit", any: ['VIEW_AUDIT_LOG'] },
+      { href: '/admin/privacy', label: 'Données personnelles', any: ['MANAGE_PRIVACY'] },
     ],
   },
   {
@@ -186,6 +200,7 @@ function Shell({ me, children }: { me: Me; children: ReactNode }) {
           {nav}
         </aside>
         <div className="flex min-h-dvh flex-col">
+          {me.impersonation && <ImpersonationBanner me={me} />}
           <header className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
             <div className="flex items-center gap-3">
               <button
@@ -230,6 +245,43 @@ function Shell({ me, children }: { me: Me; children: ReactNode }) {
         </div>
       </div>
     </MeContext.Provider>
+  );
+}
+
+/** Bannière obligatoire d'une session de support Super Admin (Partie 11) : qui, pourquoi, jusqu'à quand, sortie. */
+function ImpersonationBanner({ me }: { me: Me }) {
+  const router = useRouter();
+  const qc = useQueryClient();
+  const imp = me.impersonation!;
+  const end = useMutation({
+    mutationFn: async () => {
+      // On revient d'abord au jeton plateforme, puis on clôture la session (route plateforme).
+      const sessionId = imp.sessionId;
+      endImpersonation();
+      await platformOps.endImpersonation(sessionId).catch(() => undefined);
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries();
+      router.replace('/platform');
+    },
+  });
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm text-amber-950">
+      <p>
+        <strong>Session de support</strong> dans « {imp.tenantName} » — motif : {imp.reason}. Expire
+        à {fmtTime(imp.expiresAt, me.tenantTimezone)}. Aucune action financière n&apos;est possible
+        ; tout est journalisé.
+      </p>
+      {isImpersonating() && (
+        <button
+          onClick={() => end.mutate()}
+          disabled={end.isPending}
+          className="rounded-md border border-amber-900/40 bg-white/70 px-2.5 py-1 text-xs font-medium"
+        >
+          Quitter le mode support
+        </button>
+      )}
+    </div>
   );
 }
 

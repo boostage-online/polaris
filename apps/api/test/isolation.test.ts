@@ -50,6 +50,8 @@ describe('Isolation inter-tenant', () => {
       ['/api/v1/trace/notifications', ac.attendance.notificationId],
       ['/api/v1/scheduled-reports', ac.reporting.scheduledReportId],
       ['/api/v1/tenant-exports', ac.reporting.exportId],
+      ['/api/v1/privacy/students', ac.studentIds[4]!],
+      ['/api/v1/privacy/guardians', ac.guardianIds.parent],
       ['/api/v1/attendance-sheets', ac.attendance.sheetId],
       ['/api/v1/attendance-records', ac.attendance.recordIds.s1],
       ['/api/v1/justifications', ac.attendance.justificationId],
@@ -65,6 +67,8 @@ describe('Isolation inter-tenant', () => {
   /** Corps valides (la validation précède la recherche : un corps invalide donnerait 400, pas 404). */
   const B = () => seed.tenants.univ.academic;
   const bodies: Record<string, () => object> = {
+    'POST /api/v1/privacy/students/:id/anonymize': () => ({ reason: 'Isolation' }),
+    'POST /api/v1/privacy/guardians/:id/anonymize': () => ({ reason: 'Isolation' }),
     'PATCH /api/v1/roles/:id/permissions': () => ({ permissions: ['VIEW_STUDENTS'] }),
     'POST /api/v1/roles/:id/duplicate': () => ({ name: `Copie ${Date.now()}` }),
     'PUT /api/v1/members/:membershipId/roles': () => ({ roleIds: [A().roleIds.TEACHER] }),

@@ -45,7 +45,7 @@ export class RateLimitGuard implements CanActivate {
       if (count === 1) await this.redis.client.expire(redisKey, opts.duration);
       if (count > opts.points) {
         const ttl = await this.redis.client.ttl(redisKey);
-        throw AppError.rateLimited(Math.max(ttl, 1));
+        throw AppError.rateLimited(Math.max(ttl, 1), 'Trop de requêtes', opts.name ?? 'route');
       }
       return true;
     } catch (e) {

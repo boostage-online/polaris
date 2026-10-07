@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AcademicModule } from '../academic';
 import { AuditModule } from '../audit';
 import { DashboardsService } from './application/dashboards.service';
+import { PlatformAlertsService } from './application/platform-alerts.service';
 import { PlatformOverviewService } from './application/platform-overview.service';
 import { ReportRefreshService } from './application/refresh.service';
 import { ReportsQueue } from './application/reports.queue';
@@ -10,6 +11,7 @@ import { ScheduledReportsService } from './application/scheduled-reports.service
 import { TenantExportService } from './application/tenant-export.service';
 import { TraceService } from './application/trace.service';
 import {
+  PlatformAlertsController,
   PlatformOverviewController,
   ReportingDashboardsController,
   ReportsController,
@@ -27,6 +29,7 @@ import {
     ScheduledReportsController,
     TenantExportsController,
     PlatformOverviewController,
+    PlatformAlertsController,
   ],
   providers: [
     ReportRefreshService,
@@ -36,6 +39,7 @@ import {
     ScheduledReportsService,
     TenantExportService,
     PlatformOverviewService,
+    PlatformAlertsService,
     ReportsQueue,
   ],
   exports: [
@@ -43,6 +47,7 @@ import {
     ReportsService,
     ScheduledReportsService,
     TenantExportService,
+    PlatformAlertsService,
     ReportsQueue,
   ],
 })

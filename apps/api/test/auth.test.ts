@@ -34,7 +34,7 @@ describe('Authentification (ADR-0008)', () => {
     const res = await ctx.http
       .post('/api/v1/auth/login')
       .set('X-Client', 'web/0.1.0')
-      .send({ identifier: seed.tenants.lycee.users.ADMIN.email, password: DEMO_PASSWORD });
+      .send({ identifier: seed.tenants.lycee.users.TEACHER.email, password: DEMO_PASSWORD });
     expect(res.status).toBe(200);
     expect(res.body.data.refreshToken).toBeUndefined();
     const cookie = (res.headers['set-cookie'] as unknown as string[] | undefined)?.find((c) =>

@@ -7,3 +7,5 @@ export { InvitationService } from './application/invitation.service';
 export { PasswordService } from './application/password.service';
 export { TokenService } from './application/token.service';
 export { RolePolicy, LockoutPolicy } from './domain/policies';
+export { PermissionCache } from './infrastructure/permission.cache';
+export { MfaService } from './application/mfa.service';

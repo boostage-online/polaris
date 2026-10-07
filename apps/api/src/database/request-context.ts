@@ -16,6 +16,10 @@ export interface Actor {
   permissionsVersion: number;
   tokenVersion: number;
   impersonatedBy?: string | null;
+  /** Session d'impersonation (identifiant de `impersonation_sessions`). */
+  impersonationSessionId?: string | null;
+  /** La session a passé la MFA (claim `mfa`). */
+  mfa?: boolean;
   /** Permissions effectives, résolues à la demande par PermissionGuard (cache Redis versionné). */
   permissions?: string[];
 }
@@ -28,6 +32,8 @@ export interface RequestContext {
   actor: Actor | null;
   /** Tenant effectif de la requête (posé par TenantGuard ou explicitement par un job). */
   tenantId: string | null;
+  /** Portée de la route courante (posée par ScopeGuard) : tenant, identity ou platform. */
+  scope?: 'tenant' | 'identity' | 'platform';
   /** Transaction courante (posée par withTenantTx / withPlatformTx). */
   tx: Db | null;
   /** 'app' = rôle sans BYPASSRLS ; 'platform' = BYPASSRLS, réservé au module Platform et aux jobs listés. */

@@ -9,6 +9,7 @@ import { PaymentsModule } from '../modules/payments';
 import { ReportingModule } from '../modules/reporting';
 import { NotificationsModule } from '../modules/notifications';
 import { SharedModule } from '../modules/shared';
+import { StudentsGuardiansModule } from '../modules/students-guardians';
 import { DomainEventsProcessor } from './domain-events.processor';
 import {
   EVENT_HANDLERS,
@@ -37,6 +38,7 @@ import { SchedulesService } from './schedules.service';
     PaymentsModule,
     ReportingModule,
     NotificationsModule,
+    StudentsGuardiansModule,
   ],
   providers: [
     InvitationEmailHandler,

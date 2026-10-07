@@ -107,6 +107,12 @@ jobs:
           ../../.github/scripts/run-step.sh "db:migrate (2)" pnpm db:migrate
       - run: .github/scripts/run-step.sh "test unitaires" pnpm test
       - run: .github/scripts/run-step.sh "test intégration" pnpm test:integration
+      - name: Exercice de restauration (sauvegarde → base jetable → invariants, RTO mesuré)
+        env:
+          PGPASSWORD: polaris
+        run: |
+          .github/scripts/run-step.sh "restore-drill" ops/db/restore-drill.sh "$DATABASE_URL_TEST" "postgres://polaris_owner:polaris@localhost:5432/polaris_restore" restore-report.md
+          cat restore-report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Contrat OpenAPI (routes documentées, SDK à jour)
         env:
           DATABASE_URL: ${{ env.DATABASE_URL_TEST_APP }}
@@ -116,10 +122,36 @@ jobs:
           .github/scripts/run-step.sh "sdk:generate" pnpm --filter @polaris/contracts sdk:generate
           git diff --exit-code -- packages/contracts/src/sdk/schema.d.ts || echo "::warning::SDK régénéré : committer packages/contracts/src/sdk/schema.d.ts si la spec a changé"
 
+  security:
+    name: Sécurité (dépendances, secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Audit des dépendances (bloquant « critical » en production ; « high » signalé, à traiter sous 7 jours — Partie 14)
+        run: |
+          .github/scripts/run-step.sh "pnpm audit (production, critical)" pnpm audit --prod --audit-level=critical
+          pnpm audit --prod --audit-level=high > audit-high.txt 2>&1 \
+            || { echo "::warning::Vulnérabilités « high » dans les dépendances de production : voir le résumé du job (mise à jour à planifier)"; { echo '### pnpm audit --prod (high)'; echo '```'; tail -n 80 audit-high.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"; }
+      - name: Recherche de secrets dans l'historique (gitleaks)
+        run: |
+          .github/scripts/run-step.sh "gitleaks" docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect --source /repo --config /repo/.gitleaks.toml --redact --verbose --no-color --no-banner --exit-code 1
+
   build:
     name: Images Docker
     runs-on: ubuntu-latest
-    needs: [quality, test]
+    needs: [quality, test, security]
     if: github.event_name == 'push'
     permissions:
       contents: read

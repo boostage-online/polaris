@@ -8,12 +8,30 @@
  */
 import argon2 from 'argon2';
 import { randomUUID } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
 import { Pool, type PoolClient } from 'pg';
-import { PERMISSION_DEFINITIONS, SYSTEM_ROLES, type SystemRoleCode } from '@polaris/contracts';
-import { LocalKeyWrapper, sealSecrets } from '../modules/payments/infrastructure/secrets';
+import {
+  PERMISSION_DEFINITIONS,
+  SENSITIVE_PERMISSIONS,
+  SYSTEM_ROLES,
+  type SystemRoleCode,
+} from '@polaris/contracts';
+import { LocalKeyWrapper, sealSecrets } from '../modules/shared/infrastructure/secrets';
 import { buildZip } from '../modules/reporting/infrastructure/zip';
 
 export const DEMO_PASSWORD = 'Polaris-demo-2026';
+/**
+ * Secret TOTP de démonstration (base32) des comptes qui exigent la MFA : super admin et rôles détenant une
+ * permission sensible (administrateur, finance). Les tests calculent le code courant depuis ce secret.
+ */
+export const DEMO_MFA_SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+
+const masterWrapper = () =>
+  new LocalKeyWrapper(
+    process.env['APP_MASTER_KEY'] ??
+      process.env['PAYMENT_MASTER_KEY'] ??
+      'dev-master-key-change-me-0123456789abcdef',
+  );
 
 export interface SeededAcademic {
   yearId: string;
@@ -68,12 +86,17 @@ export interface SeededTenant {
   id: string;
   code: string;
   roleIds: Record<SystemRoleCode, string>;
-  users: Record<SystemRoleCode, { userId: string; membershipId: string; email: string }>;
+  users: Record<
+    SystemRoleCode,
+    { userId: string; membershipId: string; email: string; mfaEnrolled: boolean }
+  >;
   academic: SeededAcademic;
 }
 export interface SeedResult {
-  platformAdmin: { userId: string; membershipId: string; email: string };
+  platformAdmin: { userId: string; membershipId: string; email: string; mfaEnrolled: boolean };
   tenants: Record<'lycee' | 'univ', SeededTenant>;
+  /** Durcissement (Phase 7) : une session de support clôturée et une alerte résolue, pour les tests. */
+  platform: { impersonationSessionId: string; alertId: string };
 }
 
 const ARGON = { type: argon2.argon2id, memoryCost: 8 * 1024, timeCost: 2, parallelism: 1 } as const; // léger : seed uniquement
@@ -94,6 +117,7 @@ export async function seedDatabase(
       email: 'admin@polaris.local',
       displayName: 'Super Admin',
       passwordHash,
+      mfaSecret: DEMO_MFA_SECRET,
     });
     const platformMembershipId = await createMembership(client, {
       userId: platformAdmin,
@@ -113,17 +137,31 @@ export async function seedDatabase(
       type: 'UNIVERSITY',
       passwordHash,
     });
+    const impersonationSessionId = randomUUID();
+    await client.query(
+      `insert into impersonation_sessions (id, platform_user_id, tenant_id, reason, started_at, expires_at, ended_at)
+       values ($1, $2, $3, 'Démonstration : vérification de la configuration initiale', now() - interval '2 days', now() - interval '2 days' + interval '30 minutes', now() - interval '2 days' + interval '12 minutes')`,
+      [impersonationSessionId, platformAdmin, lycee.id],
+    );
+    const alertId = randomUUID();
+    await client.query(
+      `insert into platform_alerts (id, key, severity, title, detail, tenant_id, opened_at, last_seen_at, resolved_at, notified_at)
+       values ($1, 'seed:demo', 'WARNING', 'Alerte de démonstration (résolue)', '{"demo":true}'::jsonb, $2, now() - interval '1 day', now() - interval '23 hours', now() - interval '22 hours', now() - interval '1 day')`,
+      [alertId, lycee.id],
+    );
     await client.query('commit');
     log(
-      `✔ seed : plateforme (admin@polaris.local), ${lycee.code}, ${univ.code} — mot de passe ${DEMO_PASSWORD}`,
+      `✔ seed : plateforme (admin@polaris.local), ${lycee.code}, ${univ.code} — mot de passe ${DEMO_PASSWORD}, TOTP ${DEMO_MFA_SECRET} (admin, finance, super admin)`,
     );
     return {
       platformAdmin: {
         userId: platformAdmin,
         membershipId: platformMembershipId,
         email: 'admin@polaris.local',
+        mfaEnrolled: true,
       },
       tenants: { lycee, univ },
+      platform: { impersonationSessionId, alertId },
     };
   } catch (e) {
     await client.query('rollback');
@@ -147,12 +185,28 @@ export async function syncPermissions(client: PoolClient) {
 
 async function createUser(
   client: PoolClient,
-  u: { email: string; displayName: string; passwordHash: string; phone?: string },
+  u: {
+    email: string;
+    displayName: string;
+    passwordHash: string;
+    phone?: string;
+    /** Secret TOTP (base32) : le compte est créé avec la MFA déjà activée. */
+    mfaSecret?: string;
+  },
 ) {
   const id = randomUUID();
   await client.query(
-    `insert into users (id, email, phone_e164, password_hash, display_name) values ($1, $2, $3, $4, $5)`,
-    [id, u.email, u.phone ?? null, u.passwordHash, u.displayName],
+    `insert into users (id, email, phone_e164, password_hash, display_name, mfa_enabled, mfa_secret_encrypted, mfa_enrolled_at)
+     values ($1, $2, $3, $4, $5, $6, $7, case when $6 then now() end)`,
+    [
+      id,
+      u.email,
+      u.phone ?? null,
+      u.passwordHash,
+      u.displayName,
+      Boolean(u.mfaSecret),
+      u.mfaSecret ? sealSecrets(masterWrapper(), { secret: u.mfaSecret }) : null,
+    ],
   );
   return id;
 }
@@ -207,17 +261,21 @@ async function createTenant(
     roleIds[code] = roleId;
 
     const email = `${code.toLowerCase().replace('_', '-')}@${t.code}.local`;
+    const mfaEnrolled = def.permissions.some((p) =>
+      (SENSITIVE_PERMISSIONS as readonly string[]).includes(p),
+    );
     const userId = await createUser(client, {
       email,
       displayName: `${def.name} (${t.code})`,
       passwordHash: t.passwordHash,
+      mfaSecret: mfaEnrolled ? DEMO_MFA_SECRET : undefined,
     });
     const membershipId = await createMembership(client, { userId, tenantId: id, kind: 'STAFF' });
     await client.query(
       `insert into membership_roles (tenant_id, membership_id, role_id) values ($1, $2, $3)`,
       [id, membershipId, roleId],
     );
-    users[code] = { userId, membershipId, email };
+    users[code] = { userId, membershipId, email, mfaEnrolled };
   }
   const academic = await seedAcademic(client, {
     tenantId: id,
@@ -549,9 +607,7 @@ async function seedAcademic(
   );
 
   // --- Phase 5 : compte marchand de démonstration (Option A), actif en sandbox ---
-  const wrapper = new LocalKeyWrapper(
-    process.env['PAYMENT_MASTER_KEY'] ?? 'dev-master-key-change-me-0123456789abcdef',
-  );
+  const wrapper = masterWrapper();
   const configId = ids();
   const webhookToken = `seed-${a.code.toLowerCase()}-${randomUUID().slice(0, 8)}`;
   const webhookSecret = `whsec-${a.code.toLowerCase()}-demo`;
@@ -638,8 +694,14 @@ if (require.main === module) {
     console.error('DATABASE_URL_PLATFORM requis');
     process.exit(1);
   }
-  seedDatabase(cs).catch((e: unknown) => {
-    console.error(e);
-    process.exit(1);
-  });
+  seedDatabase(cs)
+    .then((result) => {
+      // SEED_OUTPUT=chemin.json : identifiants et jetons du seed pour les tests de charge (load/k6).
+      const out = process.env['SEED_OUTPUT'];
+      if (out) writeFileSync(out, JSON.stringify(result, null, 2));
+    })
+    .catch((e: unknown) => {
+      console.error(e);
+      process.exit(1);
+    });
 }

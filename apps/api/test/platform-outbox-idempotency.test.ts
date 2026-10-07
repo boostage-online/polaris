@@ -19,7 +19,8 @@ describe('Plateforme, outbox, idempotence', () => {
 
   it('un administrateur tenant ne voit pas les routes plateforme (404)', async () => {
     const a = await loginAs(ctx, 'lycee', 'ADMIN');
-    expect((await ctx.http.get('/api/v1/platform/tenants').set(bearer(a))).status).toBe(404);
+    const res = await ctx.http.get('/api/v1/platform/tenants').set(bearer(a));
+    expect(res.status, JSON.stringify({ body: res.body, membershipId: a.membershipId })).toBe(404);
   });
 
   it('création de tenant : rôles système copiés, audit, événement outbox, invitation admin', async () => {

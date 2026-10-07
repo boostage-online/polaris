@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit';
 import { AuthService } from './application/auth.service';
+import { MfaService } from './application/mfa.service';
 import { InvitationService } from './application/invitation.service';
 import { LockoutService } from './application/lockout.service';
 import { PasswordService } from './application/password.service';
@@ -26,6 +27,7 @@ import { ScopeGuard } from './infrastructure/scope.guard';
     RefreshTokenService,
     LockoutService,
     SessionService,
+    MfaService,
     AuthService,
     RoleService,
     InvitationService,
@@ -44,6 +46,9 @@ import { ScopeGuard } from './infrastructure/scope.guard';
     PasswordService,
     TokenService,
     IdentityRepository,
+    SessionService,
+    MfaService,
+    PermissionCache,
   ],
 })
 export class IdentityModule {}

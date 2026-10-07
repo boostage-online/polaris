@@ -386,7 +386,10 @@ describe('Paiements électroniques', () => {
       ),
     );
     for (const r of results) expect(r.status, JSON.stringify(r.body)).toBe(200);
-    expect(results.every((r) => r.body.data.status === 'SUCCEEDED')).toBe(true);
+    expect(
+      results.map((r) => r.body.data.status),
+      JSON.stringify(results.map((r) => r.body.data)),
+    ).toEqual(['SUCCEEDED', 'SUCCEEDED', 'SUCCEEDED', 'SUCCEEDED', 'SUCCEEDED']);
     expect(await paymentsOfAttempt(a.id)).toBe(1);
     const acc = (await ctx.http.get(`/api/v1/students/${studentId}/fees`).set(bearer(finance))).body
       .data;

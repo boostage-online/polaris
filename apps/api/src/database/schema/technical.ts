@@ -36,3 +36,19 @@ export const idempotencyKeys = pgTable(
   },
   (t) => [primaryKey({ columns: [t.scope, t.key] })],
 );
+
+/** Alertes de supervision (plateforme, hors tenant) : une ligne ouverte par clé. */
+export const platformAlerts = pgTable('platform_alerts', {
+  id: uuid('id').primaryKey(),
+  key: text('key').notNull(),
+  severity: text('severity').$type<'WARNING' | 'CRITICAL'>().notNull(),
+  title: text('title').notNull(),
+  detail: jsonb('detail').$type<Record<string, unknown>>().notNull(),
+  tenantId: uuid('tenant_id'),
+  openedAt: timestamp('opened_at', { withTimezone: true }).notNull(),
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull(),
+  resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  notifiedAt: timestamp('notified_at', { withTimezone: true }),
+  acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
+  acknowledgedBy: uuid('acknowledged_by'),
+});

@@ -1,6 +1,13 @@
 import { type CanActivate, type ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ALL_PERMISSIONS, type Permission } from '@polaris/contracts';
+import {
+  ALL_PERMISSIONS,
+  ErrorCodes,
+  IMPERSONATION_EXCLUDED,
+  SENSITIVE_PERMISSIONS,
+  SYSTEM_ROLES,
+  type Permission,
+} from '@polaris/contracts';
 import { META_PERMISSION, META_PUBLIC } from '../../../common/decorators';
 import { AppError } from '../../../common/errors/app-error';
 import { DatabaseService } from '../../../database/database.service';
@@ -9,6 +16,11 @@ import { IdentityRepository } from './identity.repository';
 import { PermissionCache } from './permission.cache';
 
 const PLATFORM_PERMISSIONS = ALL_PERMISSIONS.filter((p) => p.startsWith('PLATFORM_'));
+/** Session de support Super Admin : l'administrateur sans aucune action financière ni sensible (Partie 11). */
+const IMPERSONATION_PERMISSIONS = SYSTEM_ROLES.ADMIN.permissions.filter(
+  (p) => !(IMPERSONATION_EXCLUDED as readonly string[]).includes(p),
+);
+const SENSITIVE = new Set<string>(SENSITIVE_PERMISSIONS);
 
 /** Question 2 : as-tu la permission ? (la question 3, « sur cette ressource », vit dans les policies des cas d'usage). */
 @Injectable()
@@ -38,10 +50,31 @@ export class PermissionGuard implements CanActivate {
       actor.kind,
       actor.tenantId ?? ctx.tenantId,
       actor.permissionsVersion,
+      actor.impersonatedBy ?? null,
     );
     actor.permissions = permissions;
-    if (required && !required.some((p) => permissions.includes(p)))
-      throw AppError.forbidden(`Permission requise : ${required.join(' ou ')}`);
+    if (required) {
+      const granted = required.filter((p) => permissions.includes(p));
+      if (granted.length === 0)
+        throw AppError.forbidden(`Permission requise : ${required.join(' ou ')}`);
+      // MFA (ADR-0008) : une action accessible uniquement par une permission sensible exige une session MFA.
+      if (!actor.mfa && granted.every((p) => SENSITIVE.has(p)))
+        throw AppError.forbidden(
+          'Cette action exige une session avec authentification à deux facteurs (MFA)',
+          ErrorCodes.MFA_REQUIRED,
+        );
+    }
+    // Super Admin : la MFA est obligatoire sur toute route plateforme (hors /me, portée identité).
+    if (
+      actor.kind === 'PLATFORM' &&
+      !actor.impersonatedBy &&
+      !actor.mfa &&
+      ctx.scope === 'platform'
+    )
+      throw AppError.forbidden(
+        'Le compte plateforme exige une session MFA : activez-la depuis votre profil',
+        ErrorCodes.MFA_REQUIRED,
+      );
     return true;
   }
 
@@ -50,7 +83,9 @@ export class PermissionGuard implements CanActivate {
     kind: string | null,
     tenantId: string | null,
     pv: number,
+    impersonatedBy: string | null = null,
   ): Promise<string[]> {
+    if (impersonatedBy) return [...IMPERSONATION_PERMISSIONS];
     if (!membershipId) return [];
     if (kind === 'PLATFORM') return [...PLATFORM_PERMISSIONS];
     const cached = await this.cache.get(membershipId, pv);

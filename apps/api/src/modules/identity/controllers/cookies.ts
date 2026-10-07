@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { AppError } from '../../../common/errors/app-error';
 import type { Env } from '../../../config/env';
 
 export const REFRESH_COOKIE = 'polaris_rt';
@@ -26,4 +27,15 @@ export function clearRefreshCookie(res: Response, env: Env) {
 export function readRefresh(req: Request, bodyToken?: string): string | null {
   const cookies = (req as { cookies?: unknown }).cookies as Record<string, string> | undefined;
   return bodyToken ?? cookies?.[REFRESH_COOKIE] ?? null;
+}
+
+/**
+ * Anti-CSRF (Partie 11) pour les routes authentifiées par le cookie de refresh : le cookie est `SameSite=Strict`,
+ * et en défense en profondeur l'en-tête `Origin` (toujours envoyé par les navigateurs sur un POST cross-origin)
+ * doit être celui du web. Les clients non-navigateur n'envoient pas d'Origin : rien à vérifier.
+ */
+export function assertTrustedOrigin(req: Request, env: Env) {
+  const origin = req.headers.origin;
+  if (!origin) return;
+  if (origin !== env.WEB_ORIGIN) throw AppError.forbidden('Origine non autorisée');
 }

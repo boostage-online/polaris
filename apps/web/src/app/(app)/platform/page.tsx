@@ -1,5 +1,6 @@
 'use client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import type { PlatformOverview } from '@polaris/contracts';
 import { useCan } from '@/components/app-shell';
@@ -22,7 +23,8 @@ import {
   Tabs,
 } from '@/components/ui';
 import { fmtDateTime, fmtXof, PROVIDER_LABELS } from '@/lib/format';
-import { platform, type PlatformTenant } from '@/lib/resources';
+import { startImpersonation } from '@/lib/api';
+import { platform, platformOps, type PlatformTenant } from '@/lib/resources';
 
 const TENANT_STATUS: Record<string, { label: string; tone: 'green' | 'blue' | 'red' | 'slate' }> = {
   ACTIVE: { label: 'Actif', tone: 'green' },
@@ -42,7 +44,7 @@ const QUEUE_LABELS: Record<string, string> = {
   maintenance: 'Maintenance',
 };
 
-type Tab = 'overview' | 'tenants' | 'health';
+type Tab = 'overview' | 'tenants' | 'health' | 'alerts' | 'support';
 
 /** Super Admin : parc d'établissements, volumétrie, transactions, erreurs et santé technique. */
 export default function PlatformPage() {
@@ -57,7 +59,9 @@ export default function PlatformPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: "Vue d'ensemble" },
     { id: 'tenants', label: 'Établissements' },
+    { id: 'alerts', label: 'Alertes' },
     { id: 'health', label: 'Santé technique' },
+    { id: 'support', label: 'Sessions de support' },
   ];
   return (
     <>
@@ -80,6 +84,8 @@ export default function PlatformPage() {
       {tab === 'overview' && q.data && <Overview d={q.data} />}
       {tab === 'tenants' && <TenantsTab overview={q.data ?? null} />}
       {tab === 'health' && q.data && <HealthTab d={q.data} />}
+      {tab === 'alerts' && <AlertsTab />}
+      {tab === 'support' && <SupportTab />}
     </>
   );
 }
@@ -270,6 +276,7 @@ function TenantsTab({ overview }: { overview: PlatformOverview | null }) {
   const [creating, setCreating] = useState(false);
   const [inviting, setInviting] = useState<PlatformTenant | null>(null);
   const [suspending, setSuspending] = useState<PlatformTenant | null>(null);
+  const [supporting, setSupporting] = useState<PlatformTenant | null>(null);
   const invalidate = () => qc.invalidateQueries({ queryKey: ['platform'] });
   const activate = useMutation({
     mutationFn: (t: PlatformTenant) => platform.setStatus(t.id, 'ACTIVE'),
@@ -328,6 +335,11 @@ function TenantsTab({ overview }: { overview: PlatformOverview | null }) {
                   <td className="text-right tabular-nums">{m?.studentsActive ?? '—'}</td>
                   <td className="text-xs text-slate-500">{t.timezone}</td>
                   <td className="whitespace-nowrap text-right">
+                    {can('PLATFORM_IMPERSONATE') && t.status !== 'SUSPENDED' && (
+                      <Button size="sm" variant="ghost" onClick={() => setSupporting(t)}>
+                        Support
+                      </Button>
+                    )}
                     <Button size="sm" variant="ghost" onClick={() => setInviting(t)}>
                       Inviter un admin
                     </Button>
@@ -354,6 +366,7 @@ function TenantsTab({ overview }: { overview: PlatformOverview | null }) {
       {creating && <CreateTenantModal onClose={() => setCreating(false)} />}
       {inviting && <InviteAdminModal tenant={inviting} onClose={() => setInviting(null)} />}
       {suspending && <SuspendModal tenant={suspending} onClose={() => setSuspending(null)} />}
+      {supporting && <SupportModal tenant={supporting} onClose={() => setSupporting(null)} />}
     </Card>
   );
 }
@@ -592,5 +605,245 @@ function HealthTab({ d }: { d: PlatformOverview }) {
         )}
       </Card>
     </div>
+  );
+}
+
+// ----------------------------------------------------------------------------------- support
+
+/** Ouvre une session de support (impersonation) : motif obligatoire, 30 min, bannière et journalisation. */
+function SupportModal({ tenant, onClose }: { tenant: PlatformTenant; onClose: () => void }) {
+  const router = useRouter();
+  const qc = useQueryClient();
+  const [reason, setReason] = useState('');
+  const start = useMutation({
+    mutationFn: () => platformOps.impersonate(tenant.id, reason.trim()),
+    onSuccess: async (grant) => {
+      startImpersonation(grant.accessToken);
+      await qc.invalidateQueries();
+      router.replace('/dashboard');
+    },
+  });
+  return (
+    <Modal open title={`Session de support · ${tenant.name}`} onClose={onClose}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          start.mutate();
+        }}
+        className="space-y-3"
+      >
+        <Alert tone="info">
+          Vous verrez l&apos;application comme un administrateur de l&apos;établissement, pendant 30
+          minutes,
+          <strong> sans aucune action financière</strong>. Chaque action est journalisée à votre nom
+          et visible par l&apos;établissement dans son journal d&apos;audit.
+        </Alert>
+        <Field label="Motif (communiqué à l'établissement)">
+          <Input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            minLength={5}
+            required
+            placeholder="Ex. : ticket #123 — import des élèves bloqué"
+          />
+        </Field>
+        <ErrorAlert error={start.error} />
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button type="submit" disabled={start.isPending || reason.trim().length < 5}>
+            Ouvrir la session
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function SupportTab() {
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ['platform', 'impersonations'],
+    queryFn: platformOps.impersonations,
+  });
+  const end = useMutation({
+    mutationFn: platformOps.endImpersonation,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['platform', 'impersonations'] }),
+  });
+  if (q.isPending) return <Loading />;
+  if (q.isError) return <ErrorAlert error={q.error} />;
+  return (
+    <Card title="Sessions de support (100 dernières)">
+      <ErrorAlert error={end.error} />
+      {q.data.length === 0 ? (
+        <Empty>Aucune session de support.</Empty>
+      ) : (
+        <Table
+          head={
+            <>
+              <th>Établissement</th>
+              <th>Par</th>
+              <th>Motif</th>
+              <th>Début</th>
+              <th>Fin</th>
+              <th></th>
+            </>
+          }
+        >
+          {q.data.map((s) => (
+            <tr key={s.id}>
+              <td className="font-medium">{s.tenantName}</td>
+              <td>{s.platformUserName ?? s.platformUserId.slice(0, 8)}</td>
+              <td className="max-w-xs truncate text-sm" title={s.reason}>
+                {s.reason}
+              </td>
+              <td className="whitespace-nowrap text-xs text-slate-500">
+                {fmtDateTime(s.startedAt)}
+              </td>
+              <td className="whitespace-nowrap text-xs text-slate-500">
+                {s.active ? (
+                  <Badge tone="amber">active · expire {fmtDateTime(s.expiresAt)}</Badge>
+                ) : (
+                  fmtDateTime(s.endedAt ?? s.expiresAt)
+                )}
+              </td>
+              <td className="text-right">
+                {s.active && (
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    disabled={end.isPending}
+                    onClick={() => end.mutate(s.id)}
+                  >
+                    Clôturer
+                  </Button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </Table>
+      )}
+    </Card>
+  );
+}
+
+// ----------------------------------------------------------------------------------- alertes
+
+const SEVERITY: Record<string, 'red' | 'amber'> = { CRITICAL: 'red', WARNING: 'amber' };
+
+function AlertsTab() {
+  const qc = useQueryClient();
+  const [status, setStatus] = useState<'open' | 'resolved' | 'all'>('open');
+  const q = useQuery({
+    queryKey: ['platform', 'alerts', status],
+    queryFn: () => platformOps.alerts(status),
+    refetchInterval: 60_000,
+  });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['platform', 'alerts'] });
+  const evaluate = useMutation({ mutationFn: platformOps.evaluateAlerts, onSuccess: invalidate });
+  const ack = useMutation({ mutationFn: platformOps.ackAlert, onSuccess: invalidate });
+  return (
+    <Card
+      title="Alertes de supervision"
+      actions={
+        <>
+          <div className="w-40">
+            <Select value={status} onChange={(e) => setStatus(e.target.value as typeof status)}>
+              <option value="open">Ouvertes</option>
+              <option value="resolved">Résolues</option>
+              <option value="all">Toutes</option>
+            </Select>
+          </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={evaluate.isPending}
+            onClick={() => evaluate.mutate()}
+          >
+            {evaluate.isPending ? 'Évaluation…' : 'Évaluer maintenant'}
+          </Button>
+        </>
+      }
+    >
+      <p className="mb-3 text-sm text-slate-600">
+        Le worker évalue toutes les 5 minutes : Redis, outbox, files et DLQ, agrégats périmés,
+        transactions à vérifier, quotas SMS, rapports planifiés, intégrité du grand-livre,
+        disjoncteurs provider. Une alerte se résout d&apos;elle-même quand la condition disparaît ;
+        l&apos;acquittement suspend les rappels e-mail.
+      </p>
+      <ErrorAlert error={evaluate.error ?? ack.error} />
+      {evaluate.data && (
+        <div className="mb-3">
+          <Alert tone="info">
+            {evaluate.data.opened} ouverte(s), {evaluate.data.resolved} résolue(s),{' '}
+            {evaluate.data.stillOpen} condition(s) active(s), {evaluate.data.notified}{' '}
+            notification(s).
+          </Alert>
+        </div>
+      )}
+      {q.isPending && <Loading />}
+      <ErrorAlert error={q.error} />
+      {q.data &&
+        (q.data.length === 0 ? (
+          <Empty>Aucune alerte {status === 'open' ? 'ouverte' : ''}.</Empty>
+        ) : (
+          <Table
+            head={
+              <>
+                <th>Sévérité</th>
+                <th>Alerte</th>
+                <th>Établissement</th>
+                <th>Depuis</th>
+                <th>Vue</th>
+                <th>État</th>
+                <th></th>
+              </>
+            }
+          >
+            {q.data.map((a) => (
+              <tr key={a.id}>
+                <td>
+                  <Badge tone={SEVERITY[a.severity] ?? 'slate'}>{a.severity}</Badge>
+                </td>
+                <td>
+                  <span className="font-medium">{a.title}</span>
+                  <span className="ml-1 font-mono text-xs text-slate-400">{a.key}</span>
+                </td>
+                <td className="text-sm">{a.tenantName ?? '—'}</td>
+                <td className="whitespace-nowrap text-xs text-slate-500">
+                  {fmtDateTime(a.openedAt)}
+                </td>
+                <td className="whitespace-nowrap text-xs text-slate-500">
+                  {fmtDateTime(a.lastSeenAt)}
+                </td>
+                <td className="text-xs">
+                  {a.resolvedAt ? (
+                    <Badge tone="green">résolue {fmtDateTime(a.resolvedAt)}</Badge>
+                  ) : a.acknowledgedAt ? (
+                    <Badge>
+                      acquittée{a.acknowledgedByName ? ` · ${a.acknowledgedByName}` : ''}
+                    </Badge>
+                  ) : (
+                    <Badge tone="amber">ouverte</Badge>
+                  )}
+                </td>
+                <td className="text-right">
+                  {!a.resolvedAt && !a.acknowledgedAt && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={ack.isPending}
+                      onClick={() => ack.mutate(a.id)}
+                    >
+                      Acquitter
+                    </Button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </Table>
+        ))}
+    </Card>
   );
 }

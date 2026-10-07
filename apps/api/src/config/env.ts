@@ -33,6 +33,10 @@ const EnvSchema = z.object({
   API_PUBLIC_URL: z.string().url().default('http://localhost:4000'),
   /** Clé maître (base64, 32 octets) du chiffrement d'enveloppe des secrets provider (ADR-0010) ; KMS à terme. */
   PAYMENT_MASTER_KEY: z.string().min(16).default('dev-master-key-change-me-0123456789abcdef'),
+  /** Clé maître des autres secrets applicatifs (secrets TOTP) ; par défaut la même que PAYMENT_MASTER_KEY. */
+  APP_MASTER_KEY: z.string().min(16).optional(),
+  /** Durée d'une session d'impersonation Super Admin (Partie 11 : 30 min). */
+  IMPERSONATION_TTL_MINUTES: z.coerce.number().int().min(5).max(120).default(30),
   /** Provider de démonstration (états pilotables) : jamais en production. */
   PAYMENT_FAKE_PROVIDER_ENABLED: bool.default('true'),
   FEDAPAY_API_BASE_SANDBOX: z.string().url().default('https://sandbox-api.fedapay.com/v1'),
