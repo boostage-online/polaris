@@ -7,6 +7,7 @@ import type {
   AttendanceHistoryItem,
   AttendanceSheet,
   AttendanceSummary,
+  AttemptTimeline,
   ChildAttendanceSummary,
   ChildFinanceSummary,
   ChildSummary,
@@ -36,9 +37,14 @@ import type {
   NotificationKind,
   NotificationUsage,
   Payment,
+  PaymentAttempt,
+  PaymentConfig,
   PaymentMethod,
+  PaymentOptions,
+  PendingPayments,
   Program,
   Receipt,
+  ReconciliationRun,
   RecordInput,
   RecordManualPaymentInput,
   RecordRevision,
@@ -52,9 +58,21 @@ import type {
   Term,
   TodaySession,
   UnpaidByGroup,
+  UpsertPaymentConfigInput,
   WatchlistItem,
 } from '@polaris/contracts';
-import { api, apiEnvelope, del, downloadFile, json, patch, put, qs, type PageMeta } from './api';
+import {
+  api,
+  apiEnvelope,
+  apiPublic,
+  del,
+  downloadFile,
+  json,
+  patch,
+  put,
+  qs,
+  type PageMeta,
+} from './api';
 
 /** Fonctions d'accès aux ressources Phase 2, une par route, typées par les contrats. */
 
@@ -356,6 +374,7 @@ export interface TenantInfo {
       reminderDaysBefore?: number[];
       overdueReminderEveryDays?: number;
     };
+    payments?: { minAmount?: number; allowOverpayment?: boolean };
   };
 }
 export const tenant = {
@@ -472,4 +491,83 @@ export const parentFinance = {
       `/me/children/${studentId}/payments/${paymentId}/receipt.pdf`,
       `recu-${number}.pdf`,
     ),
+};
+
+// ----------------------------------------------------------------------------- Phase 5 : paiements électroniques
+
+export const payments = {
+  /** Espace parent */
+  options: (studentId: string) => api<PaymentOptions>(`/me/children/${studentId}/payment-options`),
+  start: (
+    studentId: string,
+    idempotencyKey: string,
+    b: { amount: number; installmentIds?: string[]; payerPhone?: string },
+  ) =>
+    api<PaymentAttempt>(`/me/children/${studentId}/payment-attempts`, {
+      ...json(b),
+      headers: { 'Idempotency-Key': idempotencyKey },
+    }),
+  myAttempts: (studentId: string) =>
+    api<PaymentAttempt[]>(`/me/children/${studentId}/payment-attempts`),
+  myAttempt: (studentId: string, attemptId: string) =>
+    api<PaymentAttempt>(`/me/children/${studentId}/payment-attempts/${attemptId}`),
+  confirm: (studentId: string, attemptId: string, externalId?: string) =>
+    api<PaymentAttempt>(
+      `/me/children/${studentId}/payment-attempts/${attemptId}/confirm`,
+      json({ externalId }),
+    ),
+
+  /** Finance */
+  attempts: (
+    q: {
+      status?: string;
+      studentId?: string;
+      review?: 'OPEN' | 'RESOLVED';
+      from?: string;
+      to?: string;
+      limit?: number;
+      cursor?: string;
+    } = {},
+  ) => apiEnvelope<PaymentAttempt[], PageMeta>(`/payment-attempts${qs(q)}`),
+  pending: () => api<PendingPayments>('/payment-attempts/pending'),
+  timeline: (id: string) => api<AttemptTimeline>(`/payment-attempts/${id}`),
+  reverify: (id: string) => api<PaymentAttempt>(`/payment-attempts/${id}/reverify`, json({})),
+  resolve: (id: string, note: string) =>
+    api<PaymentAttempt>(`/payment-attempts/${id}/resolve`, json({ note })),
+  reconciliations: () => api<ReconciliationRun[]>('/payment-reconciliation'),
+  runReconciliation: (day?: string) =>
+    api<ReconciliationRun>('/payment-reconciliation/run', json({ day })),
+  resolveOrphan: (runId: string, externalId: string, note: string) =>
+    api<ReconciliationRun>(
+      `/payment-reconciliation/${runId}/orphans/resolve`,
+      json({ externalId, note }),
+    ),
+
+  /** Configuration du compte marchand (administrateur) */
+  configs: () => api<PaymentConfig[]>('/payment-config'),
+  upsertConfig: (b: UpsertPaymentConfigInput) => api<PaymentConfig>('/payment-config', put(b)),
+  testConfig: (provider: string) =>
+    api<PaymentConfig>(`/payment-config/${provider}/test`, json({})),
+  setConfigStatus: (provider: string, status: 'ACTIVE' | 'DISABLED') =>
+    api<PaymentConfig>(`/payment-config/${provider}/status`, patch({ status })),
+  setFakeOutage: (on: boolean) =>
+    api<{ outage: boolean }>('/dev/fake-provider/outage', json({ on })),
+
+  /** Caisse factice (démo, sans authentification) */
+  fakeTransaction: (externalId: string) =>
+    apiPublic<{ externalId: string; amount: number; status: string }>(
+      `/dev/fake-provider/transactions/${externalId}`,
+    ),
+  fakeComplete: (externalId: string, status: 'SUCCESS' | 'FAILED' | 'CANCELLED') =>
+    fetch(
+      `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1/dev/fake-provider/transactions/${externalId}/complete`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Client': 'web/fake-checkout' },
+        body: JSON.stringify({ status }),
+      },
+    ).then(async (r) => {
+      if (!r.ok) throw new Error(`Caisse factice : ${r.status}`);
+      return (await r.json()) as { data: { status: string; webhook: string } };
+    }),
 };

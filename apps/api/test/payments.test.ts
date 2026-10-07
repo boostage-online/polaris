@@ -19,7 +19,8 @@ describe('Paiements électroniques', () => {
   let parent: Session;
   let studentId: string;
   let installmentIds: string[];
-  const T = () => seed.tenants.lycee;
+  // Tenant « univ » : les comptes des élèves seedés du lycée sont figés par d'autres suites (effectifs, liens).
+  const T = () => seed.tenants.univ;
   const ac = () => T().academic;
   const key = () => ({ 'Idempotency-Key': randomUUID() });
   const sign = (body: string) =>
@@ -79,9 +80,9 @@ describe('Paiements électroniques', () => {
     ctx = await startApp();
     worker = await NestFactory.createApplicationContext(WorkerModule, { logger: false });
     await worker.init();
-    admin = await loginAs(ctx, 'lycee', 'ADMIN');
-    finance = await loginAs(ctx, 'lycee', 'FINANCE');
-    direction = await loginAs(ctx, 'lycee', 'DIRECTION');
+    admin = await loginAs(ctx, 'univ', 'ADMIN');
+    finance = await loginAs(ctx, 'univ', 'FINANCE');
+    direction = await loginAs(ctx, 'univ', 'DIRECTION');
     parent = await login(ctx, ac().parentUser.email);
     // Un élève dédié à cette suite (les autres suites font bouger les comptes de S1/S2) : inscrit en 6e A,
     // rattaché au parent de démonstration avec le droit de payer, grille SCOL-6E affectée (3 × 50 000).
@@ -108,7 +109,7 @@ describe('Paiements électroniques', () => {
       .post(`/api/v1/students/${studentId}/fees`)
       .set(bearer(finance))
       .send({ feeStructureIds: [ac().billing.structureId] });
-    expect(assigned.status, JSON.stringify(assigned.body)).toBe(201);
+    expect(assigned.status, JSON.stringify(assigned.body)).toBe(200);
     const fee = (
       assigned.body.data.fees as {
         feeStructureId: string;
@@ -117,6 +118,13 @@ describe('Paiements électroniques', () => {
     ).find((f) => f.feeStructureId === ac().billing.structureId)!;
     installmentIds = fee.installments.sort((a, b) => a.seq - b.seq).map((i) => i.id);
     await ctx.app.get(ProviderRegistry).resetCircuit(T().id, 'FAKE');
+    // La matrice de permissions touche la configuration de ce tenant : on repart d'un provider de démonstration actif.
+    await ctx.http
+      .put('/api/v1/payment-config')
+      .set(bearer(admin))
+      .send({ provider: 'FAKE', environment: 'SANDBOX', credentials: {} });
+    const activated = await ctx.http.post('/api/v1/payment-config/FAKE/test').set(bearer(admin));
+    expect(activated.body.data.status).toBe('ACTIVE');
   }, 60_000);
   afterAll(async () => {
     await worker.close();
@@ -255,7 +263,7 @@ describe('Paiements électroniques', () => {
     const done = await waitFor(a.id, ['SUCCEEDED', 'FAILED', 'UNKNOWN']);
     expect(done.status).toBe('SUCCEEDED');
     expect(done.paymentId).toBeTruthy();
-    expect(done.receiptNumber).toMatch(/^LYCEE-DEMO-\d{4}-\d{6}$/);
+    expect(done.receiptNumber).toMatch(/^[A-Z0-9-]+-\d{4}-\d{6}$/);
     expect(await paymentsOfAttempt(a.id)).toBe(1);
     succeeded = { id: a.id, externalId: a.externalId };
 

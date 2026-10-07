@@ -130,7 +130,7 @@ export class ReconciliationService {
     const to = new Date(from.getTime() + 86_400_000);
     const config = await this.db.withTenantTx(tenantId, (tx) => this.configs.active(tx, tenantId));
     if (!config) return null;
-    const provider = this.registry.get(config.provider as ProviderCode);
+    const provider = this.registry.get(config.provider);
     const runId = randomUUID();
     const base = {
       id: runId,

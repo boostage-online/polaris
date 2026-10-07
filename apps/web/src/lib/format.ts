@@ -106,3 +106,21 @@ export const ADJUSTMENT_KINDS: Record<string, string> = {
   PENALTY: 'Pénalité',
   CORRECTION: 'Correction',
 };
+export const ATTEMPT_STATUS: Record<
+  string,
+  { label: string; tone: 'slate' | 'green' | 'amber' | 'red' | 'blue' }
+> = {
+  CREATED: { label: 'Créée', tone: 'slate' },
+  PENDING: { label: 'En attente du paiement', tone: 'amber' },
+  PROCESSING: { label: 'En cours de vérification', tone: 'blue' },
+  SUCCEEDED: { label: 'Payé', tone: 'green' },
+  FAILED: { label: 'Échoué', tone: 'red' },
+  CANCELLED: { label: 'Annulé', tone: 'slate' },
+  EXPIRED: { label: 'Expiré', tone: 'slate' },
+  UNKNOWN: { label: 'À vérifier', tone: 'red' },
+};
+export const PROVIDER_LABELS: Record<string, string> = {
+  FEDAPAY: 'FedaPay',
+  KKIAPAY: 'KKiaPay',
+  FAKE: 'Provider de démonstration',
+};

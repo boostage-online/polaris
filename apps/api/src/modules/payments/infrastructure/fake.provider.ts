@@ -159,12 +159,13 @@ export class FakeProvider implements PaymentProvider {
     } catch {
       return 'UNPARSEABLE';
     }
-    const status = String(body['status'] ?? '');
+    const status = typeof body['status'] === 'string' ? body['status'] : '';
     return {
-      externalEventId: String(body['id'] ?? ''),
-      externalTransactionId: body['transactionId'] ? String(body['transactionId']) : null,
+      externalEventId: typeof body['id'] === 'string' ? body['id'] : '',
+      externalTransactionId:
+        typeof body['transactionId'] === 'string' ? body['transactionId'] : null,
       hintStatus: status === 'SUCCESS' ? 'SUCCEEDED' : status === 'FAILED' ? 'FAILED' : null,
-      attemptId: body['attemptId'] ? String(body['attemptId']) : null,
+      attemptId: typeof body['attemptId'] === 'string' ? body['attemptId'] : null,
       raw: body,
     };
   }

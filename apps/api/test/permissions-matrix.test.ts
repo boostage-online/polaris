@@ -42,7 +42,7 @@ const bodies: Record<string, () => object> = {
     environment: 'SANDBOX',
     credentials: {},
   }),
-  'PATCH /api/v1/payment-config/:provider/status': () => ({ status: 'DISABLED' }),
+  'PATCH /api/v1/payment-config/:provider/status': () => ({ status: 'ACTIVE' }),
   'POST /api/v1/payment-attempts/:id/resolve': () => ({ note: 'Matrice de permissions' }),
   'POST /api/v1/payment-reconciliation/run': () => ({}),
   'POST /api/v1/payment-reconciliation/:id/orphans/resolve': () => ({

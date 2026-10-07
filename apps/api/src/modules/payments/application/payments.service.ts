@@ -39,12 +39,7 @@ import {
   type AttemptStatus,
 } from '../domain/attempts';
 import { paymentAttemptFailed, paymentReviewNeeded } from '../domain/events';
-import {
-  PROVIDER_LABELS,
-  ProviderError,
-  type ProviderCode,
-  type VerifyResult,
-} from '../domain/provider';
+import { PROVIDER_LABELS, ProviderError, type VerifyResult } from '../domain/provider';
 import { ProviderRegistry } from '../infrastructure/provider-registry';
 import { PaymentConfigService } from './payment-config.service';
 import { PaymentsQueue } from './payments.queue';
@@ -91,7 +86,7 @@ export class PaymentsService {
     return this.db.withTenantTx(this.tenantId, async (tx) => {
       const link = await this.guardiansSvc.assertGuardianAccess(studentId, 'finance', tx);
       const tenant = (await tx.query.tenants.findFirst({ where: eq(tenants.id, this.tenantId) }))!;
-      const rules = paymentRulesFrom(tenant.settings as Record<string, unknown>);
+      const rules = paymentRulesFrom(tenant.settings);
       const config = await this.configs.active(tx);
       const account = await this.ledger.account(studentId);
       const max = Math.max(0, account.totals.balance);
@@ -120,7 +115,7 @@ export class PaymentsService {
     const prepared = await this.db.withTenantTx(tenantId, async (tx) => {
       const link = await this.guardiansSvc.assertGuardianAccess(studentId, 'pay', tx);
       const tenant = (await tx.query.tenants.findFirst({ where: eq(tenants.id, tenantId) }))!;
-      const rules = paymentRulesFrom(tenant.settings as Record<string, unknown>);
+      const rules = paymentRulesFrom(tenant.settings);
       const config = await this.configs.active(tx);
       if (!config)
         throw new AppError(
@@ -207,7 +202,7 @@ export class PaymentsService {
             email: prepared.guardian?.email ?? null,
             phone: prepared.phone,
           },
-          callbackUrl: `${this.env.WEB_ORIGIN}/pay/${prepared.id}/return`,
+          callbackUrl: `${this.env.WEB_ORIGIN}/pay/${prepared.id}/return?s=${studentId}`,
           webhookUrl: this.configs.webhookUrl(
             prepared.config.provider,
             prepared.config.webhookToken,
@@ -400,7 +395,7 @@ export class PaymentsService {
           studentId: current.studentId,
           amount: current.amount,
           method: verified.method ?? 'MOBILE_MONEY',
-          provider: PROVIDER_LABELS[current.provider as ProviderCode] ?? current.provider,
+          provider: PROVIDER_LABELS[current.provider] ?? current.provider,
           reference: current.externalId,
           payerUserId: current.payerUserId,
           payerName: payer?.displayName ?? `${student.firstName} ${student.lastName}`,

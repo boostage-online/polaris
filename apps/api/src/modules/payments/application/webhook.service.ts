@@ -60,8 +60,10 @@ export class WebhookService {
       return { outcome: 'UNPARSEABLE' };
     }
     const kept: Record<string, string> = {};
-    for (const h of KEPT_HEADERS)
-      if (headers[h]) kept[h] = h.includes('signature') ? '[présent]' : headers[h]!;
+    for (const h of KEPT_HEADERS) {
+      const v = headers[h];
+      if (v) kept[h] = h.includes('signature') ? '[présent]' : v;
+    }
 
     const stored = await this.db.withTenantTx(config.tenantId, async (tx) => {
       // Rapprochement : attempt_id transmis en métadonnée, sinon transaction provider déjà connue.
