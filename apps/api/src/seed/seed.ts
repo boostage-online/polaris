@@ -30,6 +30,14 @@ export interface SeededAcademic {
   enrollmentIds: { s1Class: string; s1Sub: string };
   guardianIds: { parent: string; other: string };
   linkIds: { parentS1: string; parentS2: string; otherS3: string };
+  /** Assiduité (Phase 3) : la séance seedée a un appel soumis (S1 absent, S2 en retard), un justificatif en attente, une alerte. */
+  attendance: {
+    sheetId: string;
+    recordIds: { s1: string; s2: string; s3: string };
+    justificationId: string;
+    alertId: string;
+    notificationId: string;
+  };
   /** Compte parent activé : connexion par e-mail + mot de passe de démo (OTP en réel). */
   parentUser: { userId: string; membershipId: string; email: string; phone: string };
 }
@@ -358,6 +366,57 @@ async function seedAcademic(
     ],
   );
 
+  // --- Phase 3 : appel soumis sur la séance seedée, justificatif, alerte, notification ---
+  const sheetId = ids();
+  await q(
+    `insert into attendance_sheets (id, tenant_id, session_id, status, version, submitted_by, submitted_at) values ($1, $2, $3, 'SUBMITTED', 2, null, '2026-10-12T09:05:00Z')`,
+    [sheetId, t, sessionId],
+  );
+  await q(`update sessions set status = 'HELD' where id = $1`, [sessionId]);
+  const recordIds = { s1: ids(), s2: ids(), s3: ids() };
+  await q(
+    `insert into attendance_records (id, tenant_id, sheet_id, session_id, student_id, status, excuse_status, late_minutes) values
+       ($1, $2, $3, $4, $5, 'ABSENT', 'PENDING', null),
+       ($6, $2, $3, $4, $7, 'LATE', 'NONE', 10),
+       ($8, $2, $3, $4, $9, 'PRESENT', 'NONE', null)`,
+    [
+      recordIds.s1,
+      t,
+      sheetId,
+      sessionId,
+      studentIds[0],
+      recordIds.s2,
+      studentIds[1],
+      recordIds.s3,
+      studentIds[2],
+    ],
+  );
+  const justificationId = ids();
+  await q(
+    `insert into absence_justifications (id, tenant_id, student_id, from_date, to_date, reason, status, submitted_by, submitted_by_kind) values ($1, $2, $3, '2026-10-12', '2026-10-12', 'Rendez-vous médical', 'PENDING', $4, 'GUARDIAN')`,
+    [justificationId, t, studentIds[0], parentUserId],
+  );
+  await q(
+    `insert into justification_records (tenant_id, justification_id, record_id) values ($1, $2, $3)`,
+    [t, justificationId, recordIds.s1],
+  );
+  await q(
+    `insert into attendance_daily_stats (tenant_id, student_id, day, sessions, present, absent, late, excused, unjustified) values
+       ($1, $2, '2026-10-12', 1, 0, 1, 0, 0, 1), ($1, $3, '2026-10-12', 1, 0, 0, 1, 0, 0), ($1, $4, '2026-10-12', 1, 1, 0, 0, 0, 0)`,
+    [t, studentIds[0], studentIds[1], studentIds[2]],
+  );
+  const alertId = ids();
+  await q(
+    `insert into attendance_alerts (id, tenant_id, student_id, kind, window_from, window_to, count) values ($1, $2, $3, 'REPEATED_ABSENCES', '2026-09-15', '2026-10-12', 3)`,
+    [alertId, t, studentIds[0]],
+  );
+  const notificationId = ids();
+  await q(
+    `insert into notifications (id, tenant_id, event_id, kind, channel, status, recipient_user_id, student_id, title, body, action_url, sent_at) values
+       ($1, $2, 'seed:absent', 'STUDENT_ABSENT', 'INAPP', 'SENT', $3, $4, 'Absence signalée', 'Aïcha absente en Mathématiques le 12/10.', '/children', now())`,
+    [notificationId, t, parentUserId, studentIds[0]],
+  );
+
   return {
     yearId: a.yearId,
     programId,
@@ -379,6 +438,7 @@ async function seedAcademic(
       email: parentEmail,
       phone: parentPhone,
     },
+    attendance: { sheetId, recordIds, justificationId, alertId, notificationId },
   };
 }
 

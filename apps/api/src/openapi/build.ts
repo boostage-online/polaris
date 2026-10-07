@@ -59,7 +59,9 @@ export function collectRoutes(app: INestApplication): RouteInfo[] {
         path: `/api/v1${basePath}${subPath}`.replace(/\/+/g, '/').replace(/\/$/, '') || '/',
         isPublic: reflector.getAllAndOverride<boolean>(META_PUBLIC, [handler, target]) ?? false,
         scope: reflector.getAllAndOverride<string>(META_SCOPE, [handler, target]) ?? 'tenant',
-        permission: reflector.getAllAndOverride<string>(META_PERMISSION, [handler, target]),
+        permission: reflector
+          .getAllAndOverride<string[] | undefined>(META_PERMISSION, [handler, target])
+          ?.join(' | '),
         doc: reflector.getAllAndOverride<ApiDocOptions | undefined>(META_API_DOC, [
           handler,
           target,

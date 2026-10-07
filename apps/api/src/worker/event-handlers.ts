@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ENV, type Env } from '../config/env';
+import { NotificationPlanner } from '../modules/notifications';
 import { EMAIL_GATEWAY, EventTypes, type EmailGateway } from '../modules/shared';
 
 export interface QueuedEvent {
@@ -66,6 +67,19 @@ export class TenantLifecycleHandler implements EventHandler {
   private readonly logger = new Logger(TenantLifecycleHandler.name);
   async handle(event: QueuedEvent) {
     this.logger.log({ msg: event.type, tenantId: event.tenantId, payload: event.payload });
+  }
+}
+
+/** Pont vers le moteur de notifications (module `notifications`) : un handler, tous les événements d'assiduité. */
+@Injectable()
+export class NotificationsEventHandler implements EventHandler {
+  readonly name = 'notifications';
+  readonly eventTypes: readonly string[];
+  constructor(private readonly planner: NotificationPlanner) {
+    this.eventTypes = planner.handledTypes;
+  }
+  handle(event: QueuedEvent) {
+    return this.planner.handle(event);
   }
 }
 
