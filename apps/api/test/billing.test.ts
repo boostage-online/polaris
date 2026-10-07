@@ -191,7 +191,8 @@ describe('Frais et paiements', () => {
       .set(bearer(finance))
       .send({ studentFeeId: s1Fee, amount: -30000, kind: 'DISCOUNT', reason: 'Remise fratrie' });
     expect(ok.status).toBe(201);
-    expect(ok.body.data.totals).toMatchObject({ due: 120000, paid: 60000, balance: 60000 });
+    // 150 000 (scolarité) + 30 000 (cantine affectée plus haut) − 30 000 de remise
+    expect(ok.body.data.totals).toMatchObject({ due: 150000, paid: 60000, balance: 90000 });
   });
 
   it("l'annulation compensatoire contre-passe les allocations, émet un reçu d'annulation, et est définitive", async () => {

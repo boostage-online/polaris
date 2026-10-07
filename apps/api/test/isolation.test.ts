@@ -105,6 +105,11 @@ describe('Isolation inter-tenant', () => {
       toDate: '2026-10-12',
       reason: 'Isolation',
     }),
+    'PATCH /api/v1/fee-categories/:id': () => ({ name: 'Isolation' }),
+    'PATCH /api/v1/fee-structures/:id': () => ({ name: 'Isolation' }),
+    'POST /api/v1/students/:id/fees': () => ({ feeStructureIds: [B().billing.structureId] }),
+    'POST /api/v1/students/:id/payments/manual': () => ({ amount: 1000, method: 'CASH' }),
+    'POST /api/v1/payments/:id/reverse': () => ({ reason: 'Isolation' }),
   };
 
   it('toutes les routes tenant avec identifiant répondent 404 pour une ressource du tenant A', async () => {

@@ -444,10 +444,11 @@ export class UnpaidService {
   }
 }
 
-export function csv(head: string[], lines: unknown[][]): string {
-  const cell = (v: unknown) => {
+export function csv(head: string[], lines: (string | number | null | undefined)[][]): string {
+  const cell = (v: string | number | null | undefined) => {
     const s = v === null || v === undefined ? '' : String(v);
     return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  return `﻿${[head, ...lines].map((l) => l.map(cell).join(';')).join('\n')}\n`;
+  const bom = '\uFEFF';
+  return `${bom}${[head, ...lines].map((l) => l.map(cell).join(';')).join('\n')}\n`;
 }

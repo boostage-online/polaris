@@ -32,10 +32,10 @@ export function billingRulesFrom(
   settings: Record<string, unknown> | null | undefined,
 ): BillingRules {
   const b = (settings?.['billing'] ?? {}) as Partial<BillingRules>;
-  return {
-    ...DEFAULT_BILLING_RULES,
-    ...Object.fromEntries(Object.entries(b).filter(([, v]) => v !== undefined)),
-  } as BillingRules;
+  const defined = Object.fromEntries(
+    Object.entries(b).filter(([, v]) => v !== undefined),
+  ) as Partial<BillingRules>;
+  return { ...DEFAULT_BILLING_RULES, ...defined };
 }
 
 export interface InstallmentAmounts {
@@ -160,4 +160,5 @@ export function reminderKindFor(
     : null;
 }
 
-export const formatXof = (n: number) => `${n.toLocaleString('fr-FR').replace(/ | /g, ' ')} FCFA`;
+export const formatXof = (n: number) =>
+  `${n.toLocaleString('fr-FR').replace(/[\u202f\u00a0]/g, ' ')} FCFA`;

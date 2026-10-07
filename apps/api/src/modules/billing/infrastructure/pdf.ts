@@ -25,8 +25,8 @@ function toWinAnsi(s: string): string {
     .replace(/[“”«»]/g, '"')
     .replace(/[–—]/g, '-')
     .replace(/…/g, '...')
-    .replace(/ | /g, ' ')
-    .replace(/[^\x20-\x7E -ÿ]/g, '?');
+    .replace(/[\u202f\u00a0]/g, ' ')
+    .replace(/[^\x20-\x7E\u00a1-\u00ff]/g, '?');
 }
 
 export function buildPdf(lines: PdfLine[]): Buffer {

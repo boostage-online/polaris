@@ -321,10 +321,11 @@ export class PaymentsController {
     summary: "Reçu d'un paiement (instantané figé, URL de vérification)",
     tags: T,
     params: Id,
+    query: ReceiptKindQuery,
     response: ReceiptSchema,
   })
-  receipt(@ZodParams(Id) p: IdP) {
-    return this.receipts.byPayment(p.id);
+  receipt(@ZodParams(Id) p: IdP, @ZodQuery(ReceiptKindQuery) q: z.infer<typeof ReceiptKindQuery>) {
+    return this.receipts.byPayment(p.id, q.kind);
   }
 
   @Get(':id/receipt.pdf')
