@@ -99,23 +99,7 @@ export class ReportsController {
     return this.refresh.refresh(tenantId);
   }
 
-  @Get(':key')
-  @RequirePermission('VIEW_REPORTS', 'VIEW_ATTENDANCE_REPORTS', 'VIEW_FINANCIAL_REPORTS')
-  @ApiDoc({
-    summary: 'Exécuter un rapport (aperçu JSON, 5 000 lignes max.)',
-    tags: T,
-    params: KeyP,
-    query: ReportPeriodSchema,
-    response: ReportResultSchema,
-  })
-  run(
-    @ZodParams(KeyP) p: z.infer<typeof KeyP>,
-    @ZodQuery(ReportPeriodSchema) q: z.infer<typeof ReportPeriodSchema>,
-  ) {
-    this.assertAllowed(p.key);
-    return this.reports.run(p.key, q);
-  }
-
+  /** Déclaré avant `:key` : Express fait correspondre `:key` à « clé.csv » sinon. */
   @Get(':key.csv')
   @RequirePermission('VIEW_REPORTS', 'VIEW_ATTENDANCE_REPORTS', 'VIEW_FINANCIAL_REPORTS')
   @ApiDoc({
@@ -135,6 +119,23 @@ export class ReportsController {
       .type('text/csv; charset=utf-8')
       .setHeader('Content-Disposition', `attachment; filename="${out.filename}"`);
     return raw(out.content);
+  }
+
+  @Get(':key')
+  @RequirePermission('VIEW_REPORTS', 'VIEW_ATTENDANCE_REPORTS', 'VIEW_FINANCIAL_REPORTS')
+  @ApiDoc({
+    summary: 'Exécuter un rapport (aperçu JSON, 5 000 lignes max.)',
+    tags: T,
+    params: KeyP,
+    query: ReportPeriodSchema,
+    response: ReportResultSchema,
+  })
+  run(
+    @ZodParams(KeyP) p: z.infer<typeof KeyP>,
+    @ZodQuery(ReportPeriodSchema) q: z.infer<typeof ReportPeriodSchema>,
+  ) {
+    this.assertAllowed(p.key);
+    return this.reports.run(p.key, q);
   }
 
   /** La permission du rapport prime sur la permission d'entrée du contrôleur (un pédagogue ne voit pas la finance). */

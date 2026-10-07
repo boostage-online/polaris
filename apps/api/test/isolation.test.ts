@@ -128,13 +128,14 @@ describe('Isolation inter-tenant', () => {
   };
 
   it('toutes les routes tenant avec identifiant répondent 404 pour une ressource du tenant A', async () => {
-    // `:provider` n'est pas l'identifiant d'une ressource (FAKE, FEDAPAY…) : hors du périmètre de ce test.
+    // `:provider` (FAKE, FEDAPAY…) et `:key` (clé de rapport) ne sont pas des identifiants de ressource : hors périmètre.
     const routes = collectRoutes(ctx.app).filter(
       (r) =>
         !r.isPublic &&
         r.scope === 'tenant' &&
         r.path.includes(':') &&
-        !r.path.includes(':provider'),
+        !r.path.includes(':provider') &&
+        !r.path.includes(':key'),
     );
     expect(routes.length).toBeGreaterThan(0);
     const failures: string[] = [];

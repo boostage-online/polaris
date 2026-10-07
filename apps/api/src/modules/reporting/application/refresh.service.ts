@@ -62,16 +62,20 @@ export class ReportRefreshService {
     });
   }
 
-  /** Rafraîchissement complet depuis le début de l'année scolaire courante (ou 400 jours). */
+  /** Rafraîchissement complet : de la première séance (ou 400 jours) à aujourd'hui, séances planifiées incluses. */
   async refreshAll(tenantId: string) {
     return this.db
       .withTenantTx(tenantId, async (tx) => {
         const tenant = (await tx.query.tenants.findFirst({ where: eq(tenants.id, tenantId) }))!;
         const today = localDateParts(new Date(), tenant.timezone).date;
-        const first = await tx.execute<{ d: string | null }>(
-          sql`select min((s.starts_at at time zone ${tenant.timezone})::date)::text as d from sessions s`,
+        const bounds = await tx.execute<{ first: string | null; last: string | null }>(
+          sql`select min((s.starts_at at time zone ${tenant.timezone})::date)::text as first,
+                     max((s.starts_at at time zone ${tenant.timezone})::date)::text as last
+              from sessions s`,
         );
-        return { from: first.rows[0]?.d ?? addDays(today, -400), to: today };
+        const b = bounds.rows[0];
+        const last = b?.last ?? today;
+        return { from: b?.first ?? addDays(today, -400), to: last > today ? last : today };
       })
       .then((r) => this.refresh(tenantId, r));
   }
