@@ -50,7 +50,7 @@ Branche `feat/phase-7-hardening`, empilée sur `feat/phase-6-reporting` (PR #7 �
 
 ## État de vérification (CI GitHub Actions, PR #7)
 
-Voir la section « Vérification » de la PR #7 pour le commit vert final. Corrections apportées pendant la boucle :
+**CI verte** au commit `e3fcbf3` (7 octobre 2026) — lint type-checked, typecheck (api, web, contrats), frontières de modules, migrations up → down → up, tests unitaires, **132 tests d'intégration** (dont 8 nouveaux pour le durcissement), exercice de restauration, audit des dépendances (critique), gitleaks, OpenAPI. Corrections apportées pendant la boucle :
 
 | Problème rencontré                                                                                                                                                                                                                    | Correction                                                                                                    |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
