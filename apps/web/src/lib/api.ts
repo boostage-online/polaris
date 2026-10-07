@@ -150,6 +150,55 @@ export async function api<T>(path: string, init: RequestInit = {}, retry = true)
   return (body as { data: T }).data;
 }
 
+/** Téléchargement binaire ou texte (PDF de reçu, export CSV) avec le jeton courant. */
+export async function apiBlob(
+  path: string,
+  retry = true,
+): Promise<{ blob: Blob; filename: string | null }> {
+  const res = await rawFetch(path);
+  if (res.status === 401 && retry && (await refreshSession())) return apiBlob(path, false);
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as ProblemDetails | null;
+    throw new ApiError(
+      res.status,
+      body ?? { type: 'about:blank', title: res.statusText, status: res.status, code: 'INTERNAL' },
+    );
+  }
+  const disposition = res.headers.get('Content-Disposition') ?? '';
+  const m = /filename="?([^";]+)"?/.exec(disposition);
+  return { blob: await res.blob(), filename: m?.[1] ?? null };
+}
+
+/** Ouvre ou enregistre un fichier téléchargé via `apiBlob`. */
+export async function downloadFile(path: string, fallbackName: string) {
+  const { blob, filename } = await apiBlob(path);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename ?? fallbackName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+/** Requête publique (sans jeton ni cookie) : vérification de reçu. */
+export async function apiPublic<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_URL}/api/v1${path}`, { headers: { 'X-Client': CLIENT } });
+  const body = (await res.json().catch(() => null)) as { data?: T } | ProblemDetails | null;
+  if (!res.ok)
+    throw new ApiError(
+      res.status,
+      (body as ProblemDetails | null) ?? {
+        type: 'about:blank',
+        title: res.statusText,
+        status: res.status,
+        code: 'INTERNAL',
+      },
+    );
+  return (body as { data: T }).data;
+}
+
 export const auth = {
   login: (identifier: string, password: string) =>
     api<TokenPair>('/auth/login', {

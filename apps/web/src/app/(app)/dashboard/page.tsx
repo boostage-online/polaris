@@ -13,9 +13,9 @@ import {
   Stat,
   Table,
 } from '@/components/ui';
-import { fmtDateTime, todayIso, addDaysIso } from '@/lib/format';
+import { fmtDateTime, fmtXof, todayIso, addDaysIso } from '@/lib/format';
 import { SheetState } from '@/components/attendance';
-import { attendance, dashboards, sessions } from '@/lib/resources';
+import { attendance, billing, dashboards, sessions } from '@/lib/resources';
 
 /** Tableau de bord selon le profil : scolarité, administrateur, enseignant, parent. */
 export default function DashboardPage() {
@@ -44,6 +44,7 @@ export default function DashboardPage() {
       <div className="space-y-6">
         {can('TAKE_ATTENDANCE', 'TAKE_ATTENDANCE_ANY') && <TeacherBlock />}
         {can('VIEW_ATTENDANCE_ANY', 'VIEW_ATTENDANCE_REPORTS') && <StudentLifeBlock />}
+        {can('VIEW_FINANCIAL_REPORTS') && <FinanceBlock />}
         {can('VIEW_STUDENTS') && <RegistrarBlock />}
         {can('MANAGE_TENANT_SETTINGS') && <AdminBlock />}
         {me.membership?.kind === 'STAFF' && !can('TAKE_ATTENDANCE', 'TAKE_ATTENDANCE_ANY') && (
@@ -258,6 +259,62 @@ function RegistrarBlock() {
             ))}
           </Table>
         </Card>
+      )}
+    </section>
+  );
+}
+
+/** Bloc finance (direction, comptabilité) : recouvrement, caisse du jour, retards, échéances à 7 jours. */
+function FinanceBlock() {
+  const q = useQuery({ queryKey: ['dashboards', 'finance'], queryFn: billing.dashboard });
+  if (q.isPending) return <Loading />;
+  if (q.isError) return <ErrorAlert error={q.error} />;
+  const d = q.data;
+  return (
+    <section>
+      <h2 className="mb-3 flex items-center justify-between text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Finance
+        <Link
+          href="/finance"
+          className="text-xs font-normal normal-case text-[var(--color-brand)] underline"
+        >
+          Tableau de bord complet →
+        </Link>
+      </h2>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        <Stat
+          label="Recouvrement"
+          value={d.year.recoveryRate === null ? '—' : `${d.year.recoveryRate} %`}
+        />
+        <Stat label="Caisse du jour" value={fmtXof(d.today.amount)} />
+        <Stat
+          label="Reste à recouvrer"
+          value={fmtXof(d.year.outstanding)}
+          tone={d.year.outstanding > 0 ? 'amber' : undefined}
+        />
+        <Stat
+          label="En retard"
+          value={fmtXof(d.year.overdue)}
+          tone={d.year.overdue > 0 ? 'red' : undefined}
+        />
+        <Stat label="Échéances à 7 jours" value={fmtXof(d.upcoming7d.amount)} />
+      </div>
+      {(d.integrity.mismatches > 0 || d.studentsWithoutFees > 0) && (
+        <div className="mt-3 space-y-2">
+          {d.integrity.mismatches > 0 && (
+            <Alert tone="error">
+              Contrôle d&apos;intégrité : {d.integrity.mismatches} écart(s) détecté(s).
+            </Alert>
+          )}
+          {d.studentsWithoutFees > 0 && (
+            <Alert tone="warning">
+              {d.studentsWithoutFees} élève(s) actif(s) sans créance.{' '}
+              <Link href="/finance/assign" className="underline">
+                Affecter des frais →
+              </Link>
+            </Alert>
+          )}
+        </div>
       )}
     </section>
   );

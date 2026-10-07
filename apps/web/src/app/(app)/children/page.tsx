@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useMe } from '@/components/app-shell';
 import { StatusBadge } from '@/components/attendance';
+import { ChildFinanceBadges } from '@/components/parent-finance';
 import { Badge, Button, Card, Empty, ErrorAlert, Loading, PageHeader } from '@/components/ui';
 import { fmtTime } from '@/lib/format';
 import { guardians, parent } from '@/lib/resources';
@@ -20,7 +21,7 @@ export default function ChildrenPage() {
     <>
       <PageHeader
         title="Mes enfants"
-        subtitle="Assiduité du jour, tendance sur 30 jours, alertes et justificatifs."
+        subtitle="Assiduité du jour, tendance sur 30 jours, frais, alertes et justificatifs."
       />
       {kids.isPending && <Loading />}
       {kids.isError && <ErrorAlert error={kids.error} />}
@@ -37,10 +38,10 @@ export default function ChildrenPage() {
               key={c.linkId}
               title={`${c.student.firstName} ${c.student.lastName}`}
               actions={
-                c.rights.attendance && (
+                (c.rights.attendance || c.rights.finance) && (
                   <Link href={`/children/${c.student.id}`}>
                     <Button size="sm" variant="secondary">
-                      Historique
+                      Détail
                     </Button>
                   </Link>
                 )
@@ -50,6 +51,7 @@ export default function ChildrenPage() {
                 {c.currentGroup?.name ?? 'Non inscrit cette année'} ·{' '}
                 <span className="font-mono text-xs">{c.student.matricule}</span>
               </p>
+              {c.rights.finance && <ChildFinanceBadges studentId={c.student.id} />}
               {!c.rights.attendance && (
                 <p className="mt-2 text-sm text-slate-500">
                   Vous n&apos;avez pas la vue assiduité sur cet enfant.

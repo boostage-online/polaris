@@ -65,3 +65,44 @@ export const SESSION_STATUS: Record<string, string> = {
   HELD: 'Tenue',
   CANCELLED: 'Annulée',
 };
+
+/** Montants XOF entiers : `60 000 FCFA` (espace insécable fine remplacée par une espace simple). */
+export function fmtXof(n: number | null | undefined): string {
+  if (n === null || n === undefined) return '—';
+  return `${n.toLocaleString('fr-FR').replace(/[\u202f\u00a0]/g, ' ')} FCFA`;
+}
+export const INSTALLMENT_STATUS: Record<
+  string,
+  { label: string; tone: 'slate' | 'green' | 'amber' | 'red' | 'blue' }
+> = {
+  PENDING: { label: 'À venir', tone: 'slate' },
+  DUE: { label: 'Due', tone: 'amber' },
+  OVERDUE: { label: 'En retard', tone: 'red' },
+  PARTIALLY_PAID: { label: 'Partiel', tone: 'blue' },
+  PAID: { label: 'Payée', tone: 'green' },
+  CANCELLED: { label: 'Annulée', tone: 'slate' },
+};
+export const FEE_STATUS: Record<
+  string,
+  { label: string; tone: 'slate' | 'green' | 'amber' | 'red' | 'blue' }
+> = {
+  OPEN: { label: 'Ouverte', tone: 'amber' },
+  PARTIALLY_PAID: { label: 'Partiel', tone: 'blue' },
+  PAID: { label: 'Soldée', tone: 'green' },
+  CANCELLED: { label: 'Annulée', tone: 'slate' },
+};
+export const PAYMENT_METHODS: Record<string, string> = {
+  CASH: 'Espèces',
+  BANK_TRANSFER: 'Virement',
+  CHEQUE: 'Chèque',
+  MOBILE_MONEY_OFFLINE: 'Mobile money (hors ligne)',
+  MOBILE_MONEY: 'Mobile money',
+  CARD: 'Carte',
+};
+export const ADJUSTMENT_KINDS: Record<string, string> = {
+  DISCOUNT: 'Remise',
+  SCHOLARSHIP: 'Bourse',
+  WAIVER: 'Exonération',
+  PENALTY: 'Pénalité',
+  CORRECTION: 'Correction',
+};

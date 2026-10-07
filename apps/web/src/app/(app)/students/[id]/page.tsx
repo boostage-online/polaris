@@ -14,6 +14,7 @@ import {
   ErrorAlert,
   Field,
   Input,
+  LinkButton,
   Loading,
   Modal,
   PageHeader,
@@ -60,6 +61,9 @@ export default function StudentPage() {
         }
         actions={
           <>
+            {can('VIEW_FEES') && (
+              <LinkButton href={`/finance/students/${s.id}`}>Frais et paiements</LinkButton>
+            )}
             {can('EDIT_STUDENT') && (
               <Button variant="secondary" onClick={() => setModal('edit')}>
                 Modifier

@@ -66,6 +66,20 @@ const NAV: { title: string; items: NavItem[] }[] = [
     ],
   },
   {
+    title: 'Finance',
+    items: [
+      { href: '/finance', label: 'Tableau de bord finance', any: ['VIEW_FINANCIAL_REPORTS'] },
+      { href: '/finance/cash', label: 'Journal de caisse', any: ['VIEW_PAYMENTS'] },
+      { href: '/finance/unpaid', label: 'Impayés et rappels', any: ['VIEW_FEES'] },
+      { href: '/finance/assign', label: 'Affecter des frais', any: ['ASSIGN_FEES'] },
+      {
+        href: '/finance/catalog',
+        label: 'Catalogue de frais',
+        any: ['MANAGE_FEE_STRUCTURES', 'VIEW_FEES'],
+      },
+    ],
+  },
+  {
     title: 'Scolarité',
     items: [
       { href: '/students', label: 'Élèves', any: ['VIEW_STUDENTS'] },
