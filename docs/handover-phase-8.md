@@ -55,6 +55,10 @@ Branche `feat/phase-8-launch`, empilée sur `feat/phase-7-hardening` (PR #8 → 
 
 Tests : intégration `test/launch.test.ts` — mise en production (points bloquants, checklist, 409, bascule, e-mail, 409 si déjà en production, 404 pour un rôle tenant), adoption (parc, par établissement, 8 semaines, égalité avec la base), revue quotidienne (génération, e-mail unique, liste, acquittement, 404, génération à la demande), disponibilité (sonde réelle sur le serveur de test, échec 404, statistiques, page publique sans donnée d'établissement), consommation (idempotence, égalité avec les tables sources, liste, CSV, RLS), support N1 (verrouillage visible et levé, recherche, réinitialisation MFA par le support puis par l'administrateur, refus sur soi-même, 404 hors établissement, 403 sans permission, audit) ; matrice (+17 routes) et isolation étendues.
 
+## Fusion dans `main`
+
+Le 7 octobre 2026, les huit pull requests empilées (#1 → #8) ont été fusionnées dans `main` dans l'ordre, chacune par un commit de fusion (historique conservé). La CI de `main` ajoute la construction et la publication des **images Docker** (`ghcr.io/boostage-online/polaris/api:main` et `worker:main`, taguées aussi par SHA) : elle est verte au commit `0e6fe9a` après deux correctifs — `pnpm deploy --legacy` (pnpm 10 exige le drapeau ou `inject-workspace-packages`) et la construction en sortie détaillée via `run-step.sh` avec cache de registre (`:buildcache`). Les extraits d'échec des étapes de `main` sont publiés dans l'issue #9 (pas de pull request pour les recevoir). Le job « Déploiement staging » reste un gabarit à câbler sur le PaaS retenu (décision « avant production » n° 8).
+
 ## Prochaines étapes
 
 1. Nommer l'astreinte et tenir la première relève (`docs/runbooks/astreinte.md`) ; former le support N1.
