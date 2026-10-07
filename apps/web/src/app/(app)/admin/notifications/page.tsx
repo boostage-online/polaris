@@ -108,6 +108,13 @@ export default function NotificationsJournalPage() {
               <option value="JUSTIFICATION_SUBMITTED">Justificatif déposé</option>
               <option value="REPEATED_ABSENCES">Absences répétées</option>
               <option value="ATTENDANCE_SHEET_MISSING">Appel non fait</option>
+              <option value="PAYMENT_RECEIVED">Paiement reçu</option>
+              <option value="PAYMENT_REVERSED">Paiement annulé</option>
+              <option value="PAYMENT_FAILED">Paiement non abouti</option>
+              <option value="INSTALLMENT_DUE_SOON">Échéance à venir</option>
+              <option value="INSTALLMENT_OVERDUE">Échéance en retard</option>
+              <option value="PAYMENT_REVIEW_NEEDED">Transaction à traiter</option>
+              <option value="LEDGER_INTEGRITY">Intégrité du grand-livre</option>
             </Select>
           </Field>
           <Field label="Identifiant élève">

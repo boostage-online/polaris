@@ -305,6 +305,8 @@ export const NotificationKindSchema = z.enum([
   'INSTALLMENT_DUE_SOON',
   'INSTALLMENT_OVERDUE',
   'LEDGER_INTEGRITY',
+  'PAYMENT_FAILED',
+  'PAYMENT_REVIEW_NEEDED',
 ]);
 export const NotificationSchema = z.object({
   id: UuidSchema,

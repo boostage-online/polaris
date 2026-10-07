@@ -2,7 +2,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { FeesTable, PaymentsTable, ReceiptModal } from '@/components/billing';
-import { Alert, Badge, Card, ErrorAlert, Loading, Stat } from '@/components/ui';
+import { AttemptsHistory, PayModal } from '@/components/pay';
+import { Alert, Badge, Button, Card, ErrorAlert, Loading, Stat } from '@/components/ui';
 import { fmtDate, fmtXof } from '@/lib/format';
 import { parentFinance } from '@/lib/resources';
 import { ApiError } from '@/lib/api';
@@ -16,6 +17,7 @@ export function ChildFinanceSection({ studentId }: { studentId: string }) {
   });
   const summary = useQuery({ queryKey: ['parent', 'finance'], queryFn: parentFinance.children });
   const [receipt, setReceipt] = useState<string | null>(null);
+  const [paying, setPaying] = useState(false);
   if (q.isPending) return <Loading />;
   if (q.isError) {
     if (q.error instanceof ApiError && q.error.status === 403) return null;
@@ -26,7 +28,12 @@ export function ChildFinanceSection({ studentId }: { studentId: string }) {
   const next = s?.nextInstallment ?? null;
   return (
     <section className="space-y-4">
-      <h2 className="text-lg font-semibold">Frais de scolarité</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-lg font-semibold">Frais de scolarité</h2>
+        {s?.canPay && a.totals.balance > 0 && (
+          <Button onClick={() => setPaying(true)}>Payer en ligne</Button>
+        )}
+      </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Total de l'année" value={fmtXof(a.totals.due)} />
         <Stat label="Déjà payé" value={fmtXof(a.totals.paid)} />
@@ -48,10 +55,10 @@ export function ChildFinanceSection({ studentId }: { studentId: string }) {
           {next.status === 'OVERDUE' ? 'Échéance en retard' : 'Prochaine échéance'} : {next.feeName}{' '}
           · {next.label} — <strong>{fmtXof(Math.max(0, next.balance))}</strong> pour le{' '}
           {fmtDate(next.dueDate)}.
-          {s?.canPay && (
+          {!s?.canPay && (
             <span className="block text-xs">
-              Le paiement en ligne (Mobile Money, carte) arrive dans la prochaine version ; réglez à
-              la caisse de l&apos;établissement en attendant.
+              Réglez à la caisse de l&apos;établissement (vous n&apos;avez pas le droit de payer en
+              ligne pour cet enfant).
             </span>
           )}
         </Alert>
@@ -67,7 +74,11 @@ export function ChildFinanceSection({ studentId }: { studentId: string }) {
       </Card>
       <Card title="Paiements et reçus">
         <PaymentsTable payments={a.payments} onReceipt={(p) => setReceipt(p.id)} />
+        <AttemptsHistory studentId={studentId} />
       </Card>
+      {paying && (
+        <PayModal open studentId={studentId} account={a} onClose={() => setPaying(false)} />
+      )}
       <ReceiptModal
         paymentId={receipt}
         onClose={() => setReceipt(null)}

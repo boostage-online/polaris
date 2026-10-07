@@ -8,3 +8,4 @@ export * from './schemas/academic';
 export * from './schemas/students';
 export * from './schemas/attendance';
 export * from './schemas/billing';
+export * from './schemas/payments';

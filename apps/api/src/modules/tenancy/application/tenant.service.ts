@@ -35,6 +35,14 @@ export const TenantSettingsSchema = z
       })
       .partial()
       .default({}),
+    payments: z
+      .object({
+        /** Montant minimal d'un paiement en ligne (frais fixes des providers). */
+        minAmount: z.number().int().min(0).max(1_000_000).default(100),
+        allowOverpayment: z.boolean().default(false),
+      })
+      .partial()
+      .default({}),
   })
   .partial();
 export type TenantSettings = z.infer<typeof TenantSettingsSchema>;

@@ -10,9 +10,16 @@ const KINDS: { kind: NotificationKind; label: string; guardian: boolean }[] = [
   { kind: 'STUDENT_LATE', label: 'Retard de mon enfant', guardian: true },
   { kind: 'JUSTIFICATION_REVIEWED', label: 'Décision sur un justificatif', guardian: true },
   { kind: 'REPEATED_ABSENCES', label: 'Absences répétées', guardian: true },
+  { kind: 'PAYMENT_RECEIVED', label: 'Paiement reçu (reçu)', guardian: true },
+  { kind: 'PAYMENT_REVERSED', label: 'Paiement annulé', guardian: true },
+  { kind: 'PAYMENT_FAILED', label: 'Paiement en ligne non abouti', guardian: true },
+  { kind: 'INSTALLMENT_DUE_SOON', label: 'Échéance à venir', guardian: true },
+  { kind: 'INSTALLMENT_OVERDUE', label: 'Échéance en retard', guardian: true },
   { kind: 'JUSTIFICATION_SUBMITTED', label: 'Justificatif déposé par un parent', guardian: false },
   { kind: 'ATTENDANCE_SHEET_MISSING', label: 'Appel non fait', guardian: false },
   { kind: 'SMS_CAP_WARNING', label: 'Quota SMS', guardian: false },
+  { kind: 'LEDGER_INTEGRITY', label: 'Contrôle du grand-livre', guardian: false },
+  { kind: 'PAYMENT_REVIEW_NEEDED', label: 'Transaction de paiement à traiter', guardian: false },
 ];
 const CHANNELS: { id: NotificationChannel; label: string }[] = [
   { id: 'SMS', label: 'SMS' },

@@ -70,6 +70,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
     items: [
       { href: '/finance', label: 'Tableau de bord finance', any: ['VIEW_FINANCIAL_REPORTS'] },
       { href: '/finance/cash', label: 'Journal de caisse', any: ['VIEW_PAYMENTS'] },
+      { href: '/finance/payments', label: 'Paiements en ligne', any: ['VIEW_PAYMENTS'] },
       { href: '/finance/unpaid', label: 'Impayés et rappels', any: ['VIEW_FEES'] },
       { href: '/finance/assign', label: 'Affecter des frais', any: ['ASSIGN_FEES'] },
       {
@@ -99,6 +100,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
         label: 'Journal des notifications',
         any: ['MANAGE_TENANT_SETTINGS', 'VIEW_AUDIT_LOG'],
       },
+      { href: '/settings/payments', label: 'Paiement en ligne', any: ['MANAGE_PAYMENT_PROVIDER'] },
       { href: '/settings', label: 'Paramètres', any: ['MANAGE_TENANT_SETTINGS'] },
     ],
   },

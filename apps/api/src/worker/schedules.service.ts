@@ -6,6 +6,7 @@ import { tenants } from '../database/schema';
 import { SessionService } from '../modules/academic';
 import { LedgerService, UnpaidService } from '../modules/billing';
 import { NotificationPlanner } from '../modules/notifications';
+import { ReconciliationService } from '../modules/payments';
 import { RedisService } from '../modules/shared';
 
 export const SCHEDULES_QUEUE = 'schedules';
@@ -29,6 +30,7 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
     private readonly notifications: NotificationPlanner,
     private readonly ledger: LedgerService,
     private readonly unpaid: UnpaidService,
+    private readonly reconciliation: ReconciliationService,
   ) {}
 
   async onModuleInit() {
@@ -53,6 +55,21 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
       { pattern: '0 6 * * *', tz: 'Africa/Porto-Novo' },
       { name: 'billing-daily' },
     );
+    await this.queue.upsertJobScheduler(
+      'payments-reconcile-pending',
+      { every: 5 * 60_000 },
+      { name: 'payments-reconcile-pending' },
+    );
+    await this.queue.upsertJobScheduler(
+      'payments-expire-stale',
+      { every: 15 * 60_000 },
+      { name: 'payments-expire-stale' },
+    );
+    await this.queue.upsertJobScheduler(
+      'payments-daily-reconciliation',
+      { pattern: '30 5 * * *', tz: 'Africa/Porto-Novo' },
+      { name: 'payments-daily-reconciliation' },
+    );
     this.worker = new Worker(SCHEDULES_QUEUE, async (job) => this.run(job.name), {
       connection: this.redis.duplicate(),
       concurrency: 1,
@@ -68,6 +85,9 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
     if (name === 'missing-sheets') return this.missingSheetsAll();
     if (name === 'dispatch-notifications') return this.dispatchAll();
     if (name === 'billing-daily') return this.billingDaily();
+    if (name === 'payments-reconcile-pending') return this.paymentsJob('pending');
+    if (name === 'payments-expire-stale') return this.paymentsJob('stale');
+    if (name === 'payments-daily-reconciliation') return this.paymentsJob('daily');
     return this.generateAll();
   }
 
@@ -124,6 +144,28 @@ export class SchedulesService implements OnModuleInit, OnModuleDestroy {
       }
     }
     this.logger.log({ msg: 'billing daily done', results });
+    return results;
+  }
+
+  /** Réconciliation des paiements (Partie 10) : tenant par tenant, avec les clés de chacun. */
+  async paymentsJob(kind: 'pending' | 'stale' | 'daily') {
+    const results: Record<string, unknown> = {};
+    for (const id of await this.reconciliation.tenantsWithActiveConfig()) {
+      try {
+        results[id] =
+          kind === 'pending'
+            ? await this.reconciliation.reconcilePending(id)
+            : kind === 'stale'
+              ? await this.reconciliation.expireStale(id)
+              : await this.reconciliation.daily(id);
+      } catch (e) {
+        this.logger.error({
+          msg: `payments ${kind} failed`,
+          tenantId: id,
+          err: (e as Error).message,
+        });
+      }
+    }
     return results;
   }
 

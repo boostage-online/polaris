@@ -7,3 +7,4 @@ export * from './academic';
 export * from './students';
 export * from './attendance';
 export * from './billing';
+export * from './payments';

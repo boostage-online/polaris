@@ -32,9 +32,26 @@ const params: Record<string, () => string> = {
   membershipId: () => T().users.TEACHER.membershipId,
   studentId: () => T().academic.studentIds[0]!,
   paymentId: () => T().academic.billing.paymentId,
+  attemptId: () => T().academic.payments.cancelledAttemptId,
+  provider: () => 'FAKE',
   familyId: () => '00000000-0000-0000-0000-000000000000',
 };
 const bodies: Record<string, () => object> = {
+  'PUT /api/v1/payment-config': () => ({
+    provider: 'FAKE',
+    environment: 'SANDBOX',
+    credentials: {},
+  }),
+  'PATCH /api/v1/payment-config/:provider/status': () => ({ status: 'ACTIVE' }),
+  'POST /api/v1/payment-attempts/:id/resolve': () => ({ note: 'Matrice de permissions' }),
+  'POST /api/v1/payment-reconciliation/run': () => ({}),
+  'POST /api/v1/payment-reconciliation/:id/orphans/resolve': () => ({
+    externalId: 'x',
+    note: 'Matrice',
+  }),
+  'POST /api/v1/dev/fake-provider/outage': () => ({ on: false }),
+  'POST /api/v1/me/children/:studentId/payment-attempts': () => ({ amount: 1000 }),
+  'POST /api/v1/me/children/:studentId/payment-attempts/:attemptId/confirm': () => ({}),
   'PATCH /api/v1/tenant/settings': () => ({ attendance: { lateToAbsentMinutes: 30 } }),
   'PATCH /api/v1/roles/:id/permissions': () => ({
     permissions: ['VIEW_ATTENDANCE', 'TAKE_ATTENDANCE', 'EDIT_ATTENDANCE', 'VIEW_STUDENTS'],

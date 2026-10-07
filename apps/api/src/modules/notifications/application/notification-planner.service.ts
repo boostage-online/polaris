@@ -25,6 +25,7 @@ import {
 } from '../../../database/schema';
 import { AttendanceEvents, rulesFrom, type MarkedStudent } from '../../attendance';
 import { BillingEvents, type ReminderItem } from '../../billing';
+import { PaymentEvents } from '../../payments';
 import { EMAIL_GATEWAY, SMS_GATEWAY, type EmailGateway, type SmsGateway } from '../../shared';
 import {
   Templates,
@@ -82,6 +83,8 @@ export class NotificationPlanner {
     BillingEvents.InstallmentsDueSoon,
     BillingEvents.InstallmentsOverdue,
     BillingEvents.LedgerIntegrityMismatch,
+    PaymentEvents.PaymentAttemptFailed,
+    PaymentEvents.PaymentReviewNeeded,
   ];
 
   /** Point d'entrée du worker : planifie puis envoie, dans le tenant de l'événement. */
@@ -316,6 +319,48 @@ export class NotificationPlanner {
           studentId: null,
           rendered: Templates.ledgerIntegrity({ mismatches: p.mismatches }),
           payload: { checkId: event.aggregateId },
+        }));
+      }
+      case PaymentEvents.PaymentAttemptFailed: {
+        const p = event.payload as {
+          studentId: string;
+          payerUserId: string | null;
+          amount: number;
+          status: 'FAILED' | 'CANCELLED' | 'EXPIRED';
+        };
+        const s = await this.student(tx, p.studentId);
+        // Au payeur s'il est connu, sinon aux tuteurs avec le droit finance.
+        const links = await this.guardiansOf(tx, [p.studentId], 'finance');
+        const recipients = dedupe(links.map((l) => l.recipient)).filter(
+          (r) => !p.payerUserId || r.userId === p.payerUserId,
+        );
+        const rendered = Templates.paymentFailed({
+          tenantName: tenant.name,
+          firstName: s.firstName,
+          amount: p.amount,
+          status: p.status,
+        });
+        return recipients.map((recipient) => ({
+          kind: 'PAYMENT_FAILED' as const,
+          recipient,
+          studentId: p.studentId,
+          rendered,
+          payload: { attemptId: event.aggregateId, status: p.status },
+        }));
+      }
+      case PaymentEvents.PaymentReviewNeeded: {
+        const p = event.payload as {
+          reason: 'UNKNOWN_STATUS' | 'AMOUNT_MISMATCH' | 'ORPHAN_TRANSACTION' | 'PROVIDER_MUTE';
+          amount: number | null;
+          externalId: string | null;
+        };
+        const staff = await this.membersWithPermission(tx, 'VIEW_PAYMENTS');
+        return staff.map((recipient) => ({
+          kind: 'PAYMENT_REVIEW_NEEDED' as const,
+          recipient,
+          studentId: null,
+          rendered: Templates.paymentReviewNeeded(p),
+          payload: { attemptId: event.aggregateId, reason: p.reason },
         }));
       }
       default:

@@ -185,3 +185,23 @@ routes:
   'GET /api/v1/me/children/:studentId/fees': { scope: identity }
   'GET /api/v1/me/children/:studentId/payments/:paymentId/receipt': { scope: identity }
   'GET /api/v1/me/children/:studentId/payments/:paymentId/receipt.pdf': { scope: identity }
+
+  # --- Phase 5 : paiements électroniques ---
+  'GET /api/v1/me/children/:studentId/payment-options': { scope: identity }
+  'POST /api/v1/me/children/:studentId/payment-attempts': { scope: identity }
+  'GET /api/v1/me/children/:studentId/payment-attempts': { scope: identity }
+  'GET /api/v1/me/children/:studentId/payment-attempts/:attemptId': { scope: identity }
+  'POST /api/v1/me/children/:studentId/payment-attempts/:attemptId/confirm': { scope: identity }
+  'GET /api/v1/payment-attempts': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'GET /api/v1/payment-attempts/pending': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'GET /api/v1/payment-attempts/:id': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'POST /api/v1/payment-attempts/:id/reverify': { allow: [ADMIN, FINANCE] }
+  'POST /api/v1/payment-attempts/:id/resolve': { allow: [ADMIN, FINANCE] }
+  'GET /api/v1/payment-reconciliation': { allow: [ADMIN, DIRECTION, FINANCE] }
+  'POST /api/v1/payment-reconciliation/run': { allow: [ADMIN, FINANCE] }
+  'POST /api/v1/payment-reconciliation/:id/orphans/resolve': { allow: [ADMIN, FINANCE] }
+  'GET /api/v1/payment-config': { allow: [ADMIN] }
+  'PUT /api/v1/payment-config': { allow: [ADMIN] }
+  'POST /api/v1/payment-config/:provider/test': { allow: [ADMIN] }
+  'PATCH /api/v1/payment-config/:provider/status': { allow: [ADMIN] }
+  'POST /api/v1/dev/fake-provider/outage': { allow: [ADMIN] }
