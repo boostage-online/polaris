@@ -15,7 +15,9 @@ export type NotificationKind =
   | 'PAYMENT_REVERSED'
   | 'INSTALLMENT_DUE_SOON'
   | 'INSTALLMENT_OVERDUE'
-  | 'LEDGER_INTEGRITY';
+  | 'LEDGER_INTEGRITY'
+  | 'PAYMENT_FAILED'
+  | 'PAYMENT_REVIEW_NEEDED';
 
 export type NotificationChannel = 'SMS' | 'EMAIL' | 'PUSH' | 'INAPP';
 
@@ -188,6 +190,44 @@ export const Templates = {
       actionUrl: '/finance',
     };
   },
+  paymentFailed(p: {
+    tenantName: string;
+    firstName: string;
+    amount: number;
+    status: 'FAILED' | 'CANCELLED' | 'EXPIRED';
+  }): Rendered {
+    const why =
+      p.status === 'CANCELLED'
+        ? 'a été annulé'
+        : p.status === 'EXPIRED'
+          ? 'a expiré (délai dépassé)'
+          : "n'a pas abouti";
+    return {
+      title: 'Paiement non abouti',
+      body: clip(
+        `${p.tenantName} : votre paiement de ${xof(p.amount)} pour ${p.firstName} ${why}. Aucun montant n'a été prélevé par Polaris ; vous pouvez réessayer.`,
+        160,
+      ),
+      actionUrl: '/children',
+    };
+  },
+  paymentReviewNeeded(p: {
+    reason: 'UNKNOWN_STATUS' | 'AMOUNT_MISMATCH' | 'ORPHAN_TRANSACTION' | 'PROVIDER_MUTE';
+    amount: number | null;
+    externalId: string | null;
+  }): Rendered {
+    const label: Record<typeof p.reason, string> = {
+      UNKNOWN_STATUS: 'statut provider inconnu',
+      AMOUNT_MISMATCH: 'montant confirmé différent du montant demandé',
+      ORPHAN_TRANSACTION: 'paiement réussi chez le provider sans tentative connue',
+      PROVIDER_MUTE: 'provider muet après expiration',
+    };
+    return {
+      title: 'Transaction à traiter',
+      body: `${label[p.reason]}${p.amount !== null ? ` — ${xof(p.amount)}` : ''}${p.externalId ? ` (réf. ${p.externalId})` : ''}. Voir « Transactions en attente ».`,
+      actionUrl: '/finance/payments/pending',
+    };
+  },
   smsCapWarning(p: { sent: number; cap: number; month: string }): Rendered {
     return {
       title: 'Quota SMS bientôt atteint',
@@ -211,6 +251,8 @@ export const DEFAULT_CHANNELS: Record<NotificationKind, NotificationChannel[]> =
   INSTALLMENT_DUE_SOON: ['SMS', 'INAPP'],
   INSTALLMENT_OVERDUE: ['SMS', 'INAPP'],
   LEDGER_INTEGRITY: ['INAPP', 'EMAIL'],
+  PAYMENT_FAILED: ['INAPP'],
+  PAYMENT_REVIEW_NEEDED: ['INAPP', 'EMAIL'],
 };
 
 /** Résout les canaux effectifs : préférence si présente, sinon défaut ; l'in-app est toujours conservé. */

@@ -31,6 +31,9 @@ export interface ReceiptSnapshot {
     reference: string | null;
     payerName: string | null;
     recordedBy: string | null;
+    /** MANUAL | ELECTRONIC ; `channel` = mention du canal (ex. « via FedaPay »). */
+    source?: string;
+    channel?: string | null;
   };
   lines: { feeName: string; label: string; amount: number }[];
   credit: number;
@@ -104,6 +107,11 @@ export class ReceiptService {
         reference: p.reference,
         payerName: p.payerName,
         recordedBy: by?.displayName ?? null,
+        source: p.source,
+        channel:
+          p.source === 'ELECTRONIC'
+            ? (p.comment?.replace(/^Paiement en ligne /, '') ?? null)
+            : null,
       },
       lines,
       credit: Math.max(0, p.amount - allocated),
@@ -254,7 +262,7 @@ export class ReceiptService {
       { text: `MONTANT : ${formatXof(r.amount)}`, size: 13, bold: true },
       { text: ' ', gap: 10 },
       {
-        text: `Encaissé par ${s.tenant.name}${s.payment.recordedBy ? ` — caisse : ${s.payment.recordedBy}` : ''}`,
+        text: `Encaissé par ${s.tenant.name}${s.payment.channel ? ` ${s.payment.channel}` : ''}${s.payment.recordedBy ? ` — caisse : ${s.payment.recordedBy}` : ''}`,
         size: 9,
       },
       { text: 'Vérification :', size: 8, gap: 8 },

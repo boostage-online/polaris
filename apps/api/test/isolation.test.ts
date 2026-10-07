@@ -25,6 +25,7 @@ describe('Isolation inter-tenant', () => {
     if (name === 'membershipId') return A().users.TEACHER.membershipId;
     if (name === 'studentId') return ac.studentIds[0]!;
     if (name === 'paymentId') return ac.billing.paymentId;
+    if (name === 'attemptId') return ac.payments.cancelledAttemptId;
     if (name === 'familyId') return '00000000-0000-0000-0000-000000000000';
     const byPrefix: [string, string][] = [
       ['/api/v1/academic-years', ac.yearId],
@@ -43,6 +44,8 @@ describe('Isolation inter-tenant', () => {
       ['/api/v1/fee-categories', ac.billing.categoryId],
       ['/api/v1/fee-structures', ac.billing.structureId],
       ['/api/v1/payments', ac.billing.paymentId],
+      ['/api/v1/payment-attempts', ac.payments.cancelledAttemptId],
+      ['/api/v1/payment-reconciliation', ac.payments.reconciliationRunId],
       ['/api/v1/attendance-sheets', ac.attendance.sheetId],
       ['/api/v1/attendance-records', ac.attendance.recordIds.s1],
       ['/api/v1/justifications', ac.attendance.justificationId],
@@ -110,11 +113,23 @@ describe('Isolation inter-tenant', () => {
     'POST /api/v1/students/:id/fees': () => ({ feeStructureIds: [B().billing.structureId] }),
     'POST /api/v1/students/:id/payments/manual': () => ({ amount: 1000, method: 'CASH' }),
     'POST /api/v1/payments/:id/reverse': () => ({ reason: 'Isolation' }),
+    'POST /api/v1/payment-attempts/:id/resolve': () => ({ note: 'Isolation' }),
+    'POST /api/v1/payment-reconciliation/:id/orphans/resolve': () => ({
+      externalId: 'x',
+      note: 'Isolation',
+    }),
+    'POST /api/v1/me/children/:studentId/payment-attempts': () => ({ amount: 1000 }),
+    'POST /api/v1/me/children/:studentId/payment-attempts/:attemptId/confirm': () => ({}),
   };
 
   it('toutes les routes tenant avec identifiant répondent 404 pour une ressource du tenant A', async () => {
+    // `:provider` n'est pas l'identifiant d'une ressource (FAKE, FEDAPAY…) : hors du périmètre de ce test.
     const routes = collectRoutes(ctx.app).filter(
-      (r) => !r.isPublic && r.scope === 'tenant' && r.path.includes(':'),
+      (r) =>
+        !r.isPublic &&
+        r.scope === 'tenant' &&
+        r.path.includes(':') &&
+        !r.path.includes(':provider'),
     );
     expect(routes.length).toBeGreaterThan(0);
     const failures: string[] = [];

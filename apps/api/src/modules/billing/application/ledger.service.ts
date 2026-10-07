@@ -506,6 +506,99 @@ export class LedgerService {
   }
 
   /**
+   * Paiement électronique confirmé (module Payments, Partie 10) : même chemin que la caisse — insertion,
+   * allocation sous verrou, reçu, audit, événements — dans la transaction fournie par l'appelant, qui garantit
+   * l'unicité par `UNIQUE(attempt_id)`.
+   */
+  async recordElectronicPayment(
+    tx: Db,
+    input: {
+      attemptId: string;
+      studentId: string;
+      amount: number;
+      method: 'MOBILE_MONEY' | 'CARD';
+      provider: string;
+      reference: string | null;
+      payerUserId: string | null;
+      payerName: string | null;
+      installmentIds: string[];
+      valueDate?: string;
+    },
+  ) {
+    const paymentId = randomUUID();
+    const valueDate = input.valueDate ?? (await this.today(tx));
+    await tx.insert(payments).values({
+      id: paymentId,
+      tenantId: this.tenantId,
+      studentId: input.studentId,
+      amount: input.amount,
+      currency: 'XOF',
+      source: 'ELECTRONIC',
+      method: input.method,
+      status: 'COMPLETED',
+      payerName: input.payerName,
+      payerUserId: input.payerUserId,
+      valueDate,
+      reference: input.reference,
+      comment: `Paiement en ligne via ${input.provider}`,
+      attemptId: input.attemptId,
+      recordedBy: null,
+      reversedAt: null,
+      reversedBy: null,
+      reversalReason: null,
+      createdAt: new Date(),
+    });
+    const { allocated, credit, creditId } = await this.allocate(
+      tx,
+      paymentId,
+      input.studentId,
+      input.amount,
+      input.installmentIds,
+    );
+    const receipt = await this.receipts.issue(tx, paymentId, 'PAYMENT');
+    await this.audit.record({
+      action: 'payment.recorded',
+      entityType: 'Payment',
+      entityId: paymentId,
+      after: {
+        studentId: input.studentId,
+        amount: input.amount,
+        method: input.method,
+        source: 'ELECTRONIC',
+        provider: input.provider,
+        attemptId: input.attemptId,
+        allocated,
+        credit,
+        receipt: receipt.number,
+      },
+    });
+    await this.outbox.publish(
+      paymentRecorded({
+        tenantId: this.tenantId,
+        paymentId,
+        studentId: input.studentId,
+        amount: input.amount,
+        currency: 'XOF',
+        method: input.method,
+        receiptNumber: receipt.number,
+        allocated,
+        credit,
+      }),
+    );
+    if (creditId)
+      await this.outbox.publish(
+        overpaymentRecorded({
+          tenantId: this.tenantId,
+          creditId,
+          paymentId,
+          studentId: input.studentId,
+          amount: credit,
+        }),
+      );
+    return { paymentId, receiptNumber: receipt.number, allocated, credit };
+  }
+
+  /**
    * Allocation sous verrou : échéances ouvertes de l'élève `FOR UPDATE`, plan (ciblées d'abord, puis les plus
    * anciennes), lignes d'allocation, recalcul ; le reliquat devient un crédit.
    */

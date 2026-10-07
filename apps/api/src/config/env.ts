@@ -29,6 +29,18 @@ const EnvSchema = z.object({
   COOKIE_DOMAIN: z.string().optional(),
   COOKIE_SECURE: bool.default('false'),
 
+  /** URL publique de l'API (URL de webhook communiquée aux providers). */
+  API_PUBLIC_URL: z.string().url().default('http://localhost:4000'),
+  /** Clé maître (base64, 32 octets) du chiffrement d'enveloppe des secrets provider (ADR-0010) ; KMS à terme. */
+  PAYMENT_MASTER_KEY: z.string().min(16).default('dev-master-key-change-me-0123456789abcdef'),
+  /** Provider de démonstration (états pilotables) : jamais en production. */
+  PAYMENT_FAKE_PROVIDER_ENABLED: bool.default('true'),
+  FEDAPAY_API_BASE_SANDBOX: z.string().url().default('https://sandbox-api.fedapay.com/v1'),
+  FEDAPAY_API_BASE_LIVE: z.string().url().default('https://api.fedapay.com/v1'),
+  KKIAPAY_API_BASE_SANDBOX: z.string().url().default('https://api-sandbox.kkiapay.me/api/v1'),
+  KKIAPAY_API_BASE_LIVE: z.string().url().default('https://api.kkiapay.me/api/v1'),
+  /** Délai d'un appel provider (ms) avant abandon ; au-delà, retries puis réconciliation. */
+  PROVIDER_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).default(8000),
   SMS_PROVIDER: z.enum(['log']).default('log'),
   EMAIL_PROVIDER: z.enum(['log']).default('log'),
   SENTRY_DSN: z.string().optional().default(''),
@@ -55,6 +67,10 @@ export function loadEnv(overrides: Partial<Record<keyof Env, string>> = {}): Env
     if (!parsed.data.COOKIE_SECURE) throw new Error('COOKIE_SECURE doit être true en production');
     if (parsed.data.RECEIPT_SECRET === 'dev-receipt-secret-change-me')
       throw new Error('RECEIPT_SECRET doit être défini en production');
+    if (parsed.data.PAYMENT_MASTER_KEY.startsWith('dev-master-key'))
+      throw new Error('PAYMENT_MASTER_KEY doit être défini en production');
+    if (parsed.data.PAYMENT_FAKE_PROVIDER_ENABLED)
+      throw new Error('PAYMENT_FAKE_PROVIDER_ENABLED doit être false en production');
   }
   cached = parsed.data;
   return cached;

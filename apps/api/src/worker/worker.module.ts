@@ -5,6 +5,7 @@ import { ENV, type Env } from '../config/env';
 import { DatabaseModule } from '../database/database.module';
 import { AcademicModule } from '../modules/academic';
 import { BillingModule } from '../modules/billing';
+import { PaymentsModule } from '../modules/payments';
 import { NotificationsModule } from '../modules/notifications';
 import { SharedModule } from '../modules/shared';
 import { DomainEventsProcessor } from './domain-events.processor';
@@ -17,6 +18,7 @@ import {
 } from './event-handlers';
 import { MaintenanceService } from './maintenance.service';
 import { OutboxRelayService } from './outbox-relay.service';
+import { PaymentsProcessor } from './payments.processor';
 import { SchedulesService } from './schedules.service';
 
 @Module({
@@ -30,6 +32,7 @@ import { SchedulesService } from './schedules.service';
     SharedModule,
     AcademicModule,
     BillingModule,
+    PaymentsModule,
     NotificationsModule,
   ],
   providers: [
@@ -51,7 +54,14 @@ import { SchedulesService } from './schedules.service';
     DomainEventsProcessor,
     MaintenanceService,
     SchedulesService,
+    PaymentsProcessor,
   ],
-  exports: [OutboxRelayService, DomainEventsProcessor, MaintenanceService, SchedulesService],
+  exports: [
+    OutboxRelayService,
+    DomainEventsProcessor,
+    MaintenanceService,
+    SchedulesService,
+    PaymentsProcessor,
+  ],
 })
 export class WorkerModule {}

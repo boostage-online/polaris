@@ -10,6 +10,7 @@ import argon2 from 'argon2';
 import { randomUUID } from 'node:crypto';
 import { Pool, type PoolClient } from 'pg';
 import { PERMISSION_DEFINITIONS, SYSTEM_ROLES, type SystemRoleCode } from '@polaris/contracts';
+import { LocalKeyWrapper, sealSecrets } from '../modules/payments/infrastructure/secrets';
 
 export const DEMO_PASSWORD = 'Polaris-demo-2026';
 
@@ -46,6 +47,15 @@ export interface SeededAcademic {
     installmentIds: { s1: string[]; s2: string[] };
     paymentId: string;
     receiptNumber: string;
+  };
+  /** Paiements en ligne (Phase 5) : provider de démonstration actif (sandbox), jeton et secret de webhook. */
+  payments: {
+    configId: string;
+    webhookToken: string;
+    webhookSecret: string;
+    /** Tentative annulée par le parent (historique) et une réconciliation « OK » de la veille. */
+    cancelledAttemptId: string;
+    reconciliationRunId: string;
   };
   /** Compte parent activé : connexion par e-mail + mot de passe de démo (OTP en réel). */
   parentUser: { userId: string; membershipId: string; email: string; phone: string };
@@ -535,6 +545,47 @@ async function seedAcademic(
     ],
   );
 
+  // --- Phase 5 : compte marchand de démonstration (Option A), actif en sandbox ---
+  const wrapper = new LocalKeyWrapper(
+    process.env['PAYMENT_MASTER_KEY'] ?? 'dev-master-key-change-me-0123456789abcdef',
+  );
+  const configId = ids();
+  const webhookToken = `seed-${a.code.toLowerCase()}-${randomUUID().slice(0, 8)}`;
+  const webhookSecret = `whsec-${a.code.toLowerCase()}-demo`;
+  await q(
+    `insert into tenant_payment_configs (id, tenant_id, provider, mode, environment, public_key, credentials_encrypted, webhook_secret_encrypted, webhook_token, status, last_test_at, last_test_result)
+     values ($1, $2, 'FAKE', 'OWN_ACCOUNT', 'SANDBOX', 'pk_fake_demo', $3, $4, $5, 'ACTIVE', now(), 'Provider de démonstration prêt')`,
+    [
+      configId,
+      t,
+      sealSecrets(wrapper, { secrets: {} }),
+      sealSecrets(wrapper, { value: webhookSecret }),
+      webhookToken,
+    ],
+  );
+
+  const cancelledAttemptId = ids();
+  await q(
+    `insert into payment_attempts (id, tenant_id, student_id, guardian_id, payer_user_id, amount, currency, target_installment_ids, provider, status, external_id, checkout, expires_at, failure_code, failure_message, completed_at, metadata)
+     values ($1, $2, $3, $4, $5, 40000, 'XOF', $6, 'FAKE', 'CANCELLED', $7, $8, now() - interval '1 day', 'CANCELLED', 'Vous avez annulé le paiement.', now() - interval '1 day', '{}')`,
+    [
+      cancelledAttemptId,
+      t,
+      studentIds[0],
+      guardianIds.parent,
+      parentUserId,
+      [installmentIds.s1[1]],
+      `fake_seed_${a.code.toLowerCase()}`,
+      JSON.stringify({ kind: 'REDIRECT', url: 'http://localhost:3000/pay/fake/seed' }),
+    ],
+  );
+  const reconciliationRunId = ids();
+  await q(
+    `insert into payment_reconciliation_runs (id, tenant_id, provider, day, status, checked, matched, orphans, mismatches)
+     values ($1, $2, 'FAKE', (now() - interval '1 day')::date, 'OK', 0, 0, '[]', '[]')`,
+    [reconciliationRunId, t],
+  );
+
   return {
     yearId: a.yearId,
     programId,
@@ -558,6 +609,7 @@ async function seedAcademic(
     },
     attendance: { sheetId, recordIds, justificationId, alertId, notificationId },
     billing: { categoryId, structureId, feeIds, installmentIds, paymentId, receiptNumber },
+    payments: { configId, webhookToken, webhookSecret, cancelledAttemptId, reconciliationRunId },
   };
 }
 
