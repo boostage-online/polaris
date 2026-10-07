@@ -46,7 +46,7 @@ Branche `feat/phase-8-launch`, empilée sur `feat/phase-7-hardening` (PR #8 → 
 
 ## État de vérification (CI GitHub Actions, PR #8)
 
-Voir la section « Vérification » de la PR #8 pour le commit vert final. Corrections apportées pendant la boucle :
+**CI verte** au commit `7377813` (7 octobre 2026) — lint type-checked, typecheck (api, web, contrats), frontières de modules, migrations up → down → up, tests unitaires, **138 tests d'intégration** (dont 6 nouveaux pour le lancement), exercice de restauration, audit des dépendances, gitleaks, OpenAPI. Corrections apportées pendant la boucle :
 
 | Problème rencontré                                                                     | Correction                                          |
 | -------------------------------------------------------------------------------------- | --------------------------------------------------- |
