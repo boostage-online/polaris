@@ -11,3 +11,4 @@ export * from './schemas/billing';
 export * from './schemas/payments';
 export * from './schemas/reporting';
 export * from './schemas/hardening';
+export * from './schemas/launch';

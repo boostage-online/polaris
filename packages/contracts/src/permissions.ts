@@ -29,6 +29,12 @@ export const PERMISSION_DEFINITIONS = [
     description: 'Inviter et gérer les membres du personnel',
   },
   {
+    code: 'RESET_USER_MFA',
+    module: 'identity',
+    description: "Réinitialiser la double authentification d'un membre (identité vérifiée)",
+    sensitive: true,
+  },
+  {
     code: 'MANAGE_ROLES',
     module: 'identity',
     description: 'Attribuer des rôles et modifier leurs permissions',

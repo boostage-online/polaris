@@ -18,7 +18,9 @@ import {
 } from '../domain/totp';
 import { hashToken } from '../domain/tokens';
 import { IdentityRepository } from '../infrastructure/identity.repository';
+import { PermissionCache } from '../infrastructure/permission.cache';
 import { LockoutService } from './lockout.service';
+import { RefreshTokenService } from './refresh-token.service';
 import { SessionService, type DeviceInfo, type IssuedSession } from './session.service';
 import { TokenService } from './token.service';
 
@@ -43,6 +45,8 @@ export class MfaService {
     private readonly sessions: SessionService,
     private readonly lockout: LockoutService,
     private readonly audit: AuditService,
+    private readonly refreshTokens: RefreshTokenService,
+    private readonly permCache: PermissionCache,
     @Inject(ENV) env: Env,
   ) {
     this.wrapper = new LocalKeyWrapper(env.APP_MASTER_KEY ?? env.PAYMENT_MASTER_KEY);
@@ -165,6 +169,56 @@ export class MfaService {
       });
     });
     return { enabled: false as const };
+  }
+
+  /**
+   * Réinitialisation par un tiers habilité (administrateur de l'établissement avec `RESET_USER_MFA`, ou support
+   * plateforme) après vérification d'identité hors ligne : la MFA est désactivée, les codes de récupération
+   * supprimés, **toutes les sessions révoquées** (l'utilisateur se reconnecte et ré-enrôle). Journalisé avec le motif.
+   * Passe `membershipId` pour restreindre à un membre du tenant courant (route tenant) ; `userId` seul pour la plateforme.
+   */
+  async resetByAdmin(
+    target: { userId: string } | { membershipId: string; tenantId: string },
+    reason: string,
+  ): Promise<{ userId: string; mfaEnabled: false; sessionsRevoked: number }> {
+    const actor = RequestContextStore.get()?.actor;
+    const run = async (tx: Db) => {
+      let userId: string;
+      if ('membershipId' in target) {
+        const m = await tx.execute<{ user_id: string }>(
+          sql`select user_id from memberships where id = ${target.membershipId} and tenant_id = ${target.tenantId}::uuid and kind = 'STAFF'`,
+        );
+        if (!m.rows[0]) throw AppError.notFound('Membre');
+        userId = m.rows[0].user_id;
+      } else {
+        userId = target.userId;
+      }
+      if (actor?.userId === userId)
+        throw AppError.conflict('Utilisez « Désactiver » pour votre propre MFA');
+      const user = await this.repo.findUserById(tx, userId);
+      if (!user) throw AppError.notFound('Utilisateur');
+      await tx
+        .update(users)
+        .set({ mfaEnabled: false, mfaSecretEncrypted: null, mfaEnrolledAt: null })
+        .where(eq(users.id, userId));
+      await tx.delete(mfaRecoveryCodes).where(eq(mfaRecoveryCodes.userId, userId));
+      const active = await tx.execute<{ n: number }>(
+        sql`select count(distinct family_id)::int as n from refresh_tokens where user_id = ${userId} and revoked_at is null and expires_at > now()`,
+      );
+      const revoked = active.rows[0]?.n ?? 0;
+      const tv = await this.refreshTokens.revokeAllForUser(tx, userId, 'mfa_reset');
+      await this.permCache.setTokenVersion(userId, tv);
+      await this.redis.client.del(`mfa:pending:${userId}`);
+      await this.audit.record({
+        action: 'auth.mfa_reset',
+        entityType: 'User',
+        entityId: userId,
+        tenantId: 'tenantId' in target ? target.tenantId : null,
+        after: { reason, by: actor?.userId ?? null, sessionsRevoked: revoked },
+      });
+      return { userId, mfaEnabled: false as const, sessionsRevoked: revoked };
+    };
+    return 'membershipId' in target ? run(this.db.current()) : this.db.withIdentityTx(run);
   }
 
   /** Régénère les codes de récupération (les anciens sont invalidés) après preuve d'un facteur. */

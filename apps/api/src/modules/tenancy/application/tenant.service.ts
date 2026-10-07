@@ -122,6 +122,9 @@ export class TenantService {
       country: row.country,
       settings: row.settings,
       createdAt: row.createdAt.toISOString(),
+      plan: row.plan,
+      liveAt: row.liveAt?.toISOString() ?? null,
+      hypercareUntil: row.hypercareUntil?.toISOString() ?? null,
     };
   }
 }

@@ -25,6 +25,14 @@ import {
 import { fmtDateTime, fmtXof, PROVIDER_LABELS } from '@/lib/format';
 import { startImpersonation } from '@/lib/api';
 import { platform, platformOps, type PlatformTenant } from '@/lib/resources';
+import {
+  AdoptionTab,
+  HypercareTab,
+  LaunchBadge,
+  LaunchModal,
+  SupportLookup,
+  UsageTab,
+} from '@/components/platform-launch';
 
 const TENANT_STATUS: Record<string, { label: string; tone: 'green' | 'blue' | 'red' | 'slate' }> = {
   ACTIVE: { label: 'Actif', tone: 'green' },
@@ -44,7 +52,15 @@ const QUEUE_LABELS: Record<string, string> = {
   maintenance: 'Maintenance',
 };
 
-type Tab = 'overview' | 'tenants' | 'health' | 'alerts' | 'support';
+type Tab =
+  | 'overview'
+  | 'tenants'
+  | 'adoption'
+  | 'hypercare'
+  | 'health'
+  | 'alerts'
+  | 'support'
+  | 'usage';
 
 /** Super Admin : parc d'établissements, volumétrie, transactions, erreurs et santé technique. */
 export default function PlatformPage() {
@@ -59,9 +75,12 @@ export default function PlatformPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: "Vue d'ensemble" },
     { id: 'tenants', label: 'Établissements' },
+    { id: 'adoption', label: 'Adoption' },
+    { id: 'hypercare', label: 'Hypercare' },
     { id: 'alerts', label: 'Alertes' },
     { id: 'health', label: 'Santé technique' },
-    { id: 'support', label: 'Sessions de support' },
+    { id: 'support', label: 'Support' },
+    { id: 'usage', label: 'Consommation' },
   ];
   return (
     <>
@@ -84,8 +103,16 @@ export default function PlatformPage() {
       {tab === 'overview' && q.data && <Overview d={q.data} />}
       {tab === 'tenants' && <TenantsTab overview={q.data ?? null} />}
       {tab === 'health' && q.data && <HealthTab d={q.data} />}
+      {tab === 'adoption' && <AdoptionTab />}
+      {tab === 'hypercare' && <HypercareTab />}
       {tab === 'alerts' && <AlertsTab />}
-      {tab === 'support' && <SupportTab />}
+      {tab === 'support' && (
+        <div className="space-y-4">
+          <SupportLookup />
+          <SupportTab />
+        </div>
+      )}
+      {tab === 'usage' && <UsageTab />}
     </>
   );
 }
@@ -277,6 +304,7 @@ function TenantsTab({ overview }: { overview: PlatformOverview | null }) {
   const [inviting, setInviting] = useState<PlatformTenant | null>(null);
   const [suspending, setSuspending] = useState<PlatformTenant | null>(null);
   const [supporting, setSupporting] = useState<PlatformTenant | null>(null);
+  const [launching, setLaunching] = useState<PlatformTenant | null>(null);
   const invalidate = () => qc.invalidateQueries({ queryKey: ['platform'] });
   const activate = useMutation({
     mutationFn: (t: PlatformTenant) => platform.setStatus(t.id, 'ACTIVE'),
@@ -311,6 +339,7 @@ function TenantsTab({ overview }: { overview: PlatformOverview | null }) {
                 <th>Établissement</th>
                 <th>Type</th>
                 <th>État</th>
+                <th>Lancement</th>
                 <th className="text-right">Membres actifs</th>
                 <th className="text-right">Élèves</th>
                 <th>Fuseau</th>
@@ -331,6 +360,9 @@ function TenantsTab({ overview }: { overview: PlatformOverview | null }) {
                   <td>
                     <Badge tone={st.tone}>{st.label}</Badge>
                   </td>
+                  <td>
+                    <LaunchBadge t={t} />
+                  </td>
                   <td className="text-right tabular-nums">{t.activeMembers}</td>
                   <td className="text-right tabular-nums">{m?.studentsActive ?? '—'}</td>
                   <td className="text-xs text-slate-500">{t.timezone}</td>
@@ -343,6 +375,11 @@ function TenantsTab({ overview }: { overview: PlatformOverview | null }) {
                     <Button size="sm" variant="ghost" onClick={() => setInviting(t)}>
                       Inviter un admin
                     </Button>
+                    {t.status !== 'SUSPENDED' && (
+                      <Button size="sm" variant="ghost" onClick={() => setLaunching(t)}>
+                        {t.liveAt ? 'Production' : 'Mise en production'}
+                      </Button>
+                    )}
                     {t.status === 'SUSPENDED' ? (
                       <Button
                         size="sm"
@@ -367,6 +404,7 @@ function TenantsTab({ overview }: { overview: PlatformOverview | null }) {
       {inviting && <InviteAdminModal tenant={inviting} onClose={() => setInviting(null)} />}
       {suspending && <SuspendModal tenant={suspending} onClose={() => setSuspending(null)} />}
       {supporting && <SupportModal tenant={supporting} onClose={() => setSupporting(null)} />}
+      {launching && <LaunchModal tenant={launching} onClose={() => setLaunching(null)} />}
     </Card>
   );
 }

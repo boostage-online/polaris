@@ -1,7 +1,10 @@
 'use client';
 import type {
   AcademicYear,
+  AdoptionOverview,
   AnonymizationResult,
+  Availability,
+  DailyReview,
   AuditLog,
   AuditQuery,
   Adjustment,
@@ -46,6 +49,9 @@ import type {
   NotificationKind,
   NotificationTrace,
   NotificationUsage,
+  GoLiveInput,
+  LaunchChecklist,
+  LaunchReadiness,
   OnboardingStatus,
   Payment,
   PaymentAttempt,
@@ -57,6 +63,9 @@ import type {
   PlatformAlert,
   PendingPayments,
   PlatformOverview,
+  PublicStatus,
+  SupportLookup,
+  UsageMonth,
   PrivacyRequest,
   Program,
   Receipt,
@@ -78,6 +87,7 @@ import type {
   Subject,
   TeacherDashboard,
   TenantExport,
+  TenantPlan,
   Term,
   TodaySession,
   UnpaidByGroup,
@@ -640,6 +650,9 @@ export interface PlatformTenant {
   timezone: string;
   activeMembers: number;
   createdAt?: string;
+  plan?: TenantPlan;
+  liveAt?: string | null;
+  hypercareUntil?: string | null;
 }
 export const platform = {
   overview: () => api<PlatformOverview>('/platform/overview'),
@@ -712,4 +725,51 @@ export const onboarding = {
 
 export const audit = {
   list: (q: Partial<AuditQuery> = {}) => apiEnvelope<AuditLog[], PageMeta>(`/audit-logs${qs(q)}`),
+};
+
+// ----------------------------------------------------------------------------- Phase 8 : lancement et hypercare
+
+export const launch = {
+  readiness: (tenantId: string) => api<LaunchReadiness>(`/platform/tenants/${tenantId}/launch`),
+  checklist: (tenantId: string, checklist: LaunchChecklist) =>
+    api<LaunchReadiness>(`/platform/tenants/${tenantId}/launch/checklist`, patch(checklist)),
+  goLive: (tenantId: string, input: GoLiveInput) =>
+    api<LaunchReadiness>(`/platform/tenants/${tenantId}/launch/go-live`, json(input)),
+  adoption: () => api<AdoptionOverview>('/platform/adoption'),
+  reviews: (limit = 30) => api<DailyReview[]>(`/platform/reviews${qs({ limit })}`),
+  generateReview: () => api<DailyReview>('/platform/reviews/generate', json({})),
+  ackReview: (day: string, notes?: string) =>
+    api<DailyReview>(`/platform/reviews/${day}/ack`, json({ notes })),
+  availability: (days = 30) => api<Availability>(`/platform/availability${qs({ days })}`),
+  probe: () =>
+    api<{ ok: boolean; latencyMs: number; detail: string | null }>(
+      '/platform/availability/probe',
+      json({}),
+    ),
+  usage: (month?: string) => api<UsageMonth[]>(`/platform/usage${qs({ month })}`),
+  usageCsv: (month?: string) =>
+    downloadFile(`/platform/usage/export.csv${qs({ month })}`, `consommation_${month ?? ''}.csv`),
+  snapshotUsage: () =>
+    api<{ tenants: number; months: string[] }>('/platform/usage/snapshot', json({})),
+  publicStatus: () => apiPublic<PublicStatus>('/status'),
+};
+
+export const support = {
+  lookup: (q: string) => api<SupportLookup>(`/platform/support/lookup${qs({ q })}`),
+  unlock: (identifier: string) =>
+    api<{ identifier: string; wasLocked: boolean }>(
+      '/platform/support/unlock',
+      json({ identifier }),
+    ),
+  resetMfa: (userId: string, reason: string) =>
+    api<{ userId: string; mfaEnabled: false; sessionsRevoked: number }>(
+      `/platform/support/users/${userId}/mfa-reset`,
+      json({ reason }),
+    ),
+  /** Côté établissement (permission RESET_USER_MFA). */
+  resetMemberMfa: (membershipId: string, reason: string) =>
+    api<{ userId: string; mfaEnabled: false; sessionsRevoked: number }>(
+      `/members/${membershipId}/mfa-reset`,
+      json({ reason }),
+    ),
 };

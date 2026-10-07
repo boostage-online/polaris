@@ -72,6 +72,7 @@ describe('Isolation inter-tenant', () => {
     'PATCH /api/v1/roles/:id/permissions': () => ({ permissions: ['VIEW_STUDENTS'] }),
     'POST /api/v1/roles/:id/duplicate': () => ({ name: `Copie ${Date.now()}` }),
     'PUT /api/v1/members/:membershipId/roles': () => ({ roleIds: [A().roleIds.TEACHER] }),
+    'POST /api/v1/members/:membershipId/mfa-reset': () => ({ reason: 'Isolation (test)' }),
     'PATCH /api/v1/academic-years/:id': () => ({ label: 'Isolation' }),
     'POST /api/v1/academic-years/:id/terms': () => ({
       label: 'T1',

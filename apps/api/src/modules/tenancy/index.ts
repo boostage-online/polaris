@@ -4,3 +4,4 @@ export {
   TenantSettingsSchema,
   type TenantSettings,
 } from './application/tenant.service';
+export { OnboardingService } from './application/onboarding.service';
