@@ -30,7 +30,7 @@ Après l'e-mail et le mot de passe, saisissez le code de l'application. Le code 
 
 ### Téléphone perdu
 
-Connectez-vous avec un **code de récupération** à la place du code à 6 chiffres, puis : Sécurité du compte → **Régénérer les codes** (les anciens sont annulés) et, si vous avez un nouveau téléphone, **Désactiver** puis **Activer** la MFA pour l'enrôler. Plus de codes de récupération : votre administrateur (ou le support Polaris pour un administrateur) vérifie votre identité et réinitialise votre MFA ; l'opération est journalisée.
+Connectez-vous avec un **code de récupération** à la place du code à 6 chiffres, puis : Sécurité du compte → **Régénérer les codes** (les anciens sont annulés) et, si vous avez un nouveau téléphone, **Désactiver** puis **Activer** la MFA pour l'enrôler. Plus de codes de récupération : votre administrateur (Personnel → **Réinitialiser la MFA**, ou le support Polaris pour un administrateur) vérifie votre identité et réinitialise votre MFA ; toutes vos sessions sont fermées, vous vous reconnectez avec votre mot de passe et réactivez la MFA ; l'opération est journalisée.
 
 ### Désactiver
 

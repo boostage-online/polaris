@@ -1,0 +1,62 @@
+# Passation — Phase 8 (lancement production et hypercare)
+
+Branche `feat/phase-8-launch`, empilée sur `feat/phase-7-hardening` (PR #8 → PR #7 → … → PR #1). Backlog : `docs/backlog/phase-8-launch.md` ; document directeur, section « Phase 8 » et Partie 18 (MVP / V1). ADR mises en œuvre : 0001 (RLS), 0003 (worker), 0007 (permissions), 0008 (MFA).
+
+**Règle d'or de la phase** : le lancement n'est pas un déploiement, c'est une **routine** — une bascule outillée par établissement, une revue chaque matin, une mesure de disponibilité honnête, et un support qui peut répondre sans développeur. Tout ce qui est livré ici sert à faire tourner le service avec peu de monde, pas à ajouter des fonctions métier.
+
+## Ce qui est livré
+
+**Base (migration `0008_launch`)** — `tenants.plan` (`PILOT | STANDARD | PREMIUM`, défaut `PILOT`), `live_at`, `hypercare_until`, `launch_checklist` (jsonb) ; `platform_daily_reviews` (une ligne par jour : résumé, détail par établissement, acquittement) ; `availability_checks` (sondes) ; `tenant_usage_monthly` (table **tenant sous RLS forcée**, clé `tenant, mois`) ; permission **`RESET_USER_MFA`** (sensible → session MFA exigée) ajoutée au catalogue et accordée aux rôles `ADMIN` existants ; exemptions RLS déclarées pour les deux tables plateforme. Validée up → down → up.
+
+**Module `launch`** (couche 4, nouveau) — il lit tout, n'écrit que ses tables et les colonnes de lancement, et s'appuie sur `OnboardingService` (tenancy, désormais exporté), `PlatformService` (platform), `MfaService` (identity).
+
+- **Mise en production** (`LaunchService`) : `GET /platform/tenants/:id/launch` calcule la préparation — assistant de démarrage (relu dans une transaction tenant imbriquée), MFA de **chaque** administrateur, provider en mode réel ou désactivé (un provider encore en bac à sable bloque), plafond SMS explicite, alertes ouvertes (avertissement), premier appel (avertissement) — et la checklist humaine (`contractSigned`, `smsBudgetValidated`, `onCallInformed`, `dataValidatedByTenant`, `PATCH …/launch/checklist`). `POST …/launch/go-live` **refuse (409)** tant qu'un point bloquant manque ou si l'établissement est déjà en production ; sinon offre, `live_at`, `hypercare_until` (28 jours par défaut, 7–60), statut `ACTIVE` via `PlatformService.updateStatus` (audit, outbox, invalidation des sessions), audit `tenant.live`, e-mail aux administrateurs de l'établissement (`tenant-live`).
+- **Adoption** (`AdoptionService`, `GET /platform/adoption`) : par établissement — parents activés (`activationRate`, `meetsG8` ≥ 70 %), enseignants ayant soumis un appel sur 7 jours / enseignants affectés à un cours, appels soumis / séances tenues sur 7 jours (agrégats `report_attendance_daily`), part du paiement en ligne (30 j), SMS du mois vs plafond, alertes ouvertes, jours depuis la bascule, hypercare ; parc — totaux et établissements au seuil G8 ; tendance **8 semaines** (parents activés cumulés, taux d'appels, paiements en ligne).
+- **Revue quotidienne** (`HypercareService`, cron `hypercare-digest` **07:00**) : résumé (disponibilité 24 h, alertes et critiques, UNKNOWN, réconciliations avec écarts, écarts du grand-livre, établissements ≥ 80 % du quota SMS, imports et notifications en échec, établissements en hypercare, établissements signalés, `healthy`) + une ligne par établissement actif avec des **drapeaux lisibles** (« 2 tentative(s) UNKNOWN à traiter », « quota SMS à 92 % »…). Une ligne par jour (`upsert`) ; **e-mail aux administrateurs plateforme à la première génération seulement** ; `GET /platform/reviews`, `GET /platform/reviews/:day`, `POST /platform/reviews/generate`, `POST /platform/reviews/:day/ack { notes }` (qui, quand, quoi).
+- **Disponibilité** (`AvailabilityService`, cron `availability-probe` **chaque minute**) : `fetch` de `API_PUBLIC_URL/api/v1/health/ready` (5 s), ligne `ok / latence / motif` ; purge > 90 jours une fois par heure ; `GET /platform/availability?days` (par jour : sondes, échecs, disponibilité, p95 ; objectif `99.5`, `meetsTarget`) ; `POST /platform/availability/probe` ; **`GET /api/v1/status` public** (30 req/min/IP) : état (`OPERATIONAL` si les 3 dernières sondes passent, `DEGRADED`, `OUTAGE`, `UNKNOWN`), disponibilité 30 jours, série quotidienne — sans aucune donnée d'établissement.
+- **Consommation** (`UsageService`, cron `usage-snapshot` **04:15**) : instantané du mois courant pour chaque établissement (élèves actifs, tuteurs et activés, personnel actif, appels soumis, SMS et e-mails envoyés, paiements en ligne et en caisse, montants) écrit dans une **transaction tenant** ; les 1er et 2 du mois, le mois précédent est recalculé une dernière fois (figé) ; `GET /platform/usage?month`, `GET /platform/usage/export.csv` (`;`, BOM), `POST /platform/usage/snapshot`.
+- **Support niveau 1** (`SupportService`) : `GET /platform/support/lookup?q` (e-mail, téléphone ou nom, ≥ 3 caractères) → jusqu'à 10 comptes avec statut, MFA, dernière connexion, **verrouillage en cours** (TTL Redis des deux identifiants), sessions actives, appartenances et rôles par établissement, invitations en attente, enfants rattachés ; plus les **tuteurs sans compte** correspondant au téléphone ou au nom (jamais invités ou invités il y a longtemps). `POST /platform/support/unlock { identifier }` lève le verrouillage. `POST /platform/support/users/:id/mfa-reset { reason }` (permission `PLATFORM_IMPERSONATE`) et, côté établissement, `POST /members/:membershipId/mfa-reset` (**`RESET_USER_MFA`**, administrateur avec session MFA) : `MfaService.resetByAdmin` désactive la MFA, supprime les codes de récupération, **révoque toutes les sessions** (`token_version`), refuse la réinitialisation de soi-même (409) et un membre d'un autre établissement (404), audit `auth.mfa_reset` avec motif. Chaque recherche est auditée (`support.lookup`).
+
+**Web** — vue plateforme : onglets **Adoption** (KPI du parc, trois tendances, tableau par établissement avec barres), **Hypercare** (disponibilité 30 j, liste des revues, détail et acquittement avec note, génération à la demande), **Support** (recherche support N1 avec déverrouillage et réinitialisation MFA, puis sessions de support), **Consommation** (mois, totaux, recalcul, CSV) ; bouton **Mise en production** par établissement (préparation avec points bloquants, checklist cochable, offre, durée d'hypercare, notes, bascule) et badge « Production depuis… / Hypercare jusqu'au… » ; **Personnel** : « Réinitialiser la MFA » (permission `RESET_USER_MFA`) avec motif et avertissement ; page publique **`/status`** (état, disponibilité 30 jours jour par jour).
+
+**Seed** — le lycée est en production depuis 10 jours (offre STANDARD, hypercare 18 jours restants, checklist complète) ; l'université reste en préparation ; 180 sondes de disponibilité (une en échec) ; une revue de la veille acquittée.
+
+## Permissions et routes
+
+17 routes nouvelles dans `test/permissions-matrix.yaml` : tout `/platform/*` en portée plateforme (le compte plateforme doit les atteindre ; la bascule renvoie 409 dans la matrice, ce qui est le comportement attendu sur un établissement non prêt) ; `POST /members/:membershipId/mfa-reset` réservé à `ADMIN`. La matrice crée un **compte jetable** (utilisateur + appartenance STAFF dans l'université) pour les deux routes de réinitialisation, afin de ne révoquer les sessions d'aucun rôle joué par la matrice. L'isolation joue `/members/:membershipId/mfa-reset` avec un membre du tenant A depuis le tenant B (404).
+
+## Décisions d'implémentation à connaître
+
+- **La bascule est refusée, pas avertie** : un provider en bac à sable, un administrateur sans MFA ou une checklist incomplète donnent un 409 avec la liste des points — le support ne peut pas « forcer » ; il corrige ou fait corriger. Les alertes ouvertes et l'absence de premier appel ne bloquent pas (avertissements).
+- **Hypercare = date, pas statut** : `hypercare_until` évite un nouvel état de tenant ; la revue et l'adoption calculent `inHypercare` à la volée ; prolonger l'hypercare = modifier la date.
+- **Revue en table, e-mail une seule fois** : régénérer (bouton) met à jour la ligne sans renvoyer d'e-mail ; l'acquittement survit à la régénération. Le jour est celui de la génération (UTC) : la revue de 07:00 Porto-Novo porte la date du jour et décrit les dernières 24 h.
+- **Disponibilité mesurée de l'intérieur** : honnête mais partielle (ne voit pas une coupure réseau en amont) ; la page publique le dit. Une sonde externe (PaaS/tiers) doit raconter la même histoire ; `OPERATIONAL` repose sur les trois dernières sondes pour ne pas afficher « incident » sur une sonde isolée.
+- **Consommation sous RLS** : la table est tenant (ADR-0001) même si seule la plateforme la lit aujourd'hui ; un futur écran « ma consommation » côté établissement n'exigera aucune migration.
+- **Support : qui et quel état, jamais quoi** : la recherche ne touche ni présences ni paiements ; pour voir un écran, la session de support reste la seule voie, avec accord et bannière.
+- **Réinitialisation MFA = révocation totale** : désactiver la MFA sans fermer les sessions laisserait une session MFA valide à un éventuel voleur de téléphone ; l'utilisateur se reconnecte et ré-enrôle. La permission est sensible : l'administrateur qui réinitialise doit lui-même être en session MFA.
+- **Tableau d'identifiants en littéral** : `any($1::uuid[])` reçoit `'{a,b}'` construit à la main — Drizzle sérialise un tableau JavaScript d'une façon que PostgreSQL ne lit pas comme un `uuid[]` (découvert en CI).
+
+## Non couvert (reporté ou hors code)
+
+- **Exploitation réelle (E8)** : bascule des pilotes, hypercare de quatre semaines, premiers établissements payants, mesure de G8 — avec les établissements, à partir des outils livrés.
+- **Facturation SaaS automatique** à partir de la consommation (V1, Partie 18) : la mesure et le CSV suffisent à facturer à la main.
+- **Sonde externe** et page d'état avec incidents rédigés (texte libre, historique) : infrastructure et V1.
+- **Vidéos de formation** ; formation du support N1 (½ journée) à tenir avec `docs/support/playbook-n1.md` et les guides utilisateur.
+- Lien « État du service » depuis la page de connexion (une ligne, à ajouter avec la charte définitive).
+
+## État de vérification (CI GitHub Actions, PR #8)
+
+Voir la section « Vérification » de la PR #8 pour le commit vert final. Corrections apportées pendant la boucle :
+
+| Problème rencontré                                                                     | Correction                                          |
+| -------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `malformed array literal` : tableau JavaScript passé en paramètre de `any($1::uuid[])` | littéral PostgreSQL `'{…}'` construit explicitement |
+| `totp()` prend le secret base32 et une `Date` (test)                                   | appel corrigé                                       |
+
+Tests : intégration `test/launch.test.ts` — mise en production (points bloquants, checklist, 409, bascule, e-mail, 409 si déjà en production, 404 pour un rôle tenant), adoption (parc, par établissement, 8 semaines, égalité avec la base), revue quotidienne (génération, e-mail unique, liste, acquittement, 404, génération à la demande), disponibilité (sonde réelle sur le serveur de test, échec 404, statistiques, page publique sans donnée d'établissement), consommation (idempotence, égalité avec les tables sources, liste, CSV, RLS), support N1 (verrouillage visible et levé, recherche, réinitialisation MFA par le support puis par l'administrateur, refus sur soi-même, 404 hors établissement, 403 sans permission, audit) ; matrice (+17 routes) et isolation étendues.
+
+## Prochaines étapes
+
+1. Nommer l'astreinte et tenir la première relève (`docs/runbooks/astreinte.md`) ; former le support N1.
+2. Basculer le premier pilote : checklist, go-live, annonce (`docs/communication/annonce-lancement.md`) ; acquitter la revue chaque matin pendant quatre semaines.
+3. Mesurer G8 fin août : disponibilité, incidents, réconciliation, activation des parents ; ouvrir la V1 (remboursements, routage multi-provider, apps mobiles) une fois l'adoption observée.

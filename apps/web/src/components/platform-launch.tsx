@@ -108,10 +108,10 @@ export function LaunchModal({ tenant, onClose }: { tenant: PlatformTenant; onClo
                 <label key={k} className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
-                    checked={q.data!.checklist[k]}
-                    disabled={checklist.isPending || q.data!.live}
+                    checked={q.data.checklist[k]}
+                    disabled={checklist.isPending || q.data.live}
                     onChange={(e) =>
-                      checklist.mutate({ ...q.data!.checklist, [k]: e.target.checked })
+                      checklist.mutate({ ...q.data.checklist, [k]: e.target.checked })
                     }
                   />
                   {CHECKLIST_LABELS[k]}
