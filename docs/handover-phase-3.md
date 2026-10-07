@@ -45,9 +45,18 @@ Branche `feat/phase-3-assiduite`, empilée sur `feat/phase-2-academique` (PR #3 
 
 E2-S05 rapport des corrections par utilisateur (les révisions sont indexées par auteur, l'écran manque), E3-S01 upload, E3-S07 rattachement a posteriori automatique (le rattachement se fait au dépôt), E4-S02 taux par classe sous seuil hebdomadaire, E5-S03 adaptateurs SMS/e-mail réels et DLR, E5-S05 repli, E5-S09 templates versionnés en fichiers, E5-S10 web push, E6-S05/S06, E7 (charge, E2E, formation, plan de pilote).
 
-## État de vérification
+## État de vérification (CI GitHub Actions, PR #3)
 
-Voir la PR #3 : CI (lint type-checked, typecheck, frontières, migrations up → down → up, tests unitaires, tests d'intégration dont matrice et isolation étendues, OpenAPI). Les corrections de la boucle sont consignées dans les commits `fix(phase-3): …`.
+**CI verte** au commit `b1db090` (7 octobre 2026) : lint type-checked, typecheck (api, web, contrats), frontières de modules, migrations up → down → up, tests unitaires (politiques d'assiduité, gabarits de notification), **94 tests d'intégration** (dont 23 nouveaux : feuilles d'appel, justificatifs et espace parent, notifications ; matrice et isolation étendues aux 34 nouvelles routes), OpenAPI.
+
+Corrections apportées pendant la boucle :
+
+| Problème rencontré                                                                                           | Correction                                                   |
+| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| `GROUP BY` sur une expression paramétrée (`at time zone $1`) refusé par PostgreSQL (paramètres distincts)    | sous-requête calculant `day` une fois, agrégat par-dessus    |
+| test d'idempotence du worker perturbé par le worker BullMQ réel qui traite d'autres événements en parallèle  | comptage par référence (`invitation:<id>`) plutôt que global |
+| test de la liste de surveillance dépendant de l'ordre des fichiers (alerte seedée résolue par un autre test) | alerte posée par le test lui-même                            |
+| `string \| 'all'` redondant, assertion de type inutile côté web                                              | types simplifiés                                             |
 
 ## Prochaines étapes
 

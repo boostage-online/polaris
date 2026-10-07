@@ -17,6 +17,8 @@
 
 Capacité ≈ 125 pts : E3-S06 (demande d'informations), E5-S09 (quiet hours) et E6-S06 (historique parent étendu) sont les premières à glisser ; le back peut démarrer E1/E5 pendant que le front termine la Phase 2.
 
+> **État (PR #3, octobre 2026)** : E1 (S01–S05, S07, S08 ; S06 en version `localStorage` + envoi périodique), E2 (S01–S04), E3 (S02–S06 sans dépôt de fichier), E4 (S01, S03 ; S02 pour les absences répétées), E5 (S01, S02, S04 partiel, S06–S08 ; passerelles « log » uniquement), E6 (S01–S04) livrés avec leurs écrans et testés en CI. Reporté : E2-S05, E3-S01/S07, E4-S02 taux par classe, E5-S03/S05/S09/S10, E6-S05/S06, E7. Détail : `docs/handover-phase-3.md`.
+
 ---
 
 ## E1 — Feuille d'appel et enregistrements
