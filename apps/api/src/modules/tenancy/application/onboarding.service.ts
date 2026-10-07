@@ -6,7 +6,7 @@ import { RequestContextStore } from '../../../database/request-context';
 import { tenants } from '../../../database/schema';
 import { AuditService } from '../../audit';
 
-interface Counts {
+type Counts = {
   years_current: number;
   levels: number;
   groups: number;
@@ -25,7 +25,7 @@ interface Counts {
   payment_active: number;
   admin_mfa: number;
   sheets_submitted: number;
-}
+};
 
 /**
  * Assistant de démarrage d'un établissement (Phase 7, G7 : onboardé par le support en moins de 2 h sans

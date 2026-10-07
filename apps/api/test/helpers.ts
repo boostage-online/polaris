@@ -27,6 +27,7 @@ export interface TestContext {
   sms: LogSmsGateway;
   email: LogEmailGateway;
   owner: Pool;
+  redis: RedisService;
   close(): Promise<void>;
 }
 
@@ -44,6 +45,7 @@ export async function startApp(): Promise<TestContext> {
     sms: app.get(LogSmsGateway),
     email: app.get(LogEmailGateway),
     owner,
+    redis,
     close: async () => {
       await owner.end();
       await app.close();
@@ -96,12 +98,20 @@ export async function solveMfa(
   challenge: string,
   secret = DEMO_MFA_SECRET,
 ) {
-  const key = Buffer.from(secret).toString('base64');
   const used = usedTotpCounters.get(email) ?? new Set<number>();
   usedTotpCounters.set(email, used);
+  const userId = userIdOf(email);
+  const tried: string[] = [];
   for (let attempt = 0; attempt < 6; attempt++) {
     const now = totpCounter();
-    const candidates = [now, now + 1, now - 1].filter((c) => !used.has(c));
+    let candidates = [now, now + 1, now - 1].filter((c) => !used.has(c));
+    // Compteurs déjà consommés côté API (anti-rejeu, autres fichiers de tests) : on les évite plutôt que d'échouer.
+    if (userId && candidates.length) {
+      const flags = await Promise.all(
+        candidates.map((c) => ctx.redis.client.exists(`mfa:used:${userId}:${c}`)),
+      );
+      candidates = candidates.filter((_, i) => flags[i] === 0);
+    }
     for (const c of candidates) {
       used.add(c);
       const res = await ctx.http
@@ -109,14 +119,24 @@ export async function solveMfa(
         .set('X-Client', 'test/1.0')
         .send({ challenge, code: hotp(base32Decode(secret), c) });
       if (res.status === 200) return res;
+      tried.push(`${c}:${res.status}`);
       if (res.status !== 401)
-        throw new Error(`mfa ${email} (${key}) → ${res.status} ${JSON.stringify(res.body)}`);
+        throw new Error(
+          `mfa ${email} → ${res.status} ${JSON.stringify(res.body)} retry-after=${String(res.headers['retry-after'])} tried=${tried.join(',')}`,
+        );
     }
     // Tous les codes de la fenêtre ont servi : attendre la fenêtre suivante.
     const wait = 30_000 - (Date.now() % 30_000) + 250;
     await new Promise((r) => setTimeout(r, wait));
   }
-  throw new Error(`mfa ${email} : impossible de relever le défi`);
+  throw new Error(`mfa ${email} : impossible de relever le défi (${tried.join(',')})`);
+}
+
+function userIdOf(email: string): string | null {
+  if (email === seed.platformAdmin.email) return seed.platformAdmin.userId;
+  for (const t of Object.values(seed.tenants))
+    for (const u of Object.values(t.users)) if (u.email === email) return u.userId;
+  return null;
 }
 
 export function loginAs(ctx: TestContext, tenant: 'lycee' | 'univ', role: SystemRoleCode) {

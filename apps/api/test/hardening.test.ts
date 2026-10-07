@@ -270,13 +270,10 @@ describe('Durcissement (Phase 7)', () => {
     expect(pay.status).toBe(403);
     expect((await ctx.http.get('/api/v1/platform/overview').set(imp)).status).toBe(404);
     // Une action de configuration est possible et auditée au nom du support.
-    const settings = await ctx.http
-      .patch('/api/v1/tenant/settings')
-      .set(imp)
-      .send({ notifications: { smsMonthlyCap: 2000 } });
+    const settings = await ctx.http.patch('/api/v1/onboarding').set(imp).send({ dismissed: false });
     expect(settings.status, JSON.stringify(settings.body)).toBe(200);
     const audit = await ctx.owner.query<{ impersonated_by: string | null; actor_user_id: string }>(
-      `select impersonated_by, actor_user_id from audit_logs where tenant_id = $1 and action = 'tenant.settings_updated' order by occurred_at desc limit 1`,
+      `select impersonated_by, actor_user_id from audit_logs where tenant_id = $1 and action = 'onboarding.reopened' order by occurred_at desc limit 1`,
       [L().id],
     );
     expect(audit.rows[0]?.impersonated_by).toBe(seed.platformAdmin.userId);

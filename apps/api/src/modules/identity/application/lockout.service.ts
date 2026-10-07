@@ -38,7 +38,11 @@ export class LockoutService {
         );
       }
       if (Number(ipCount ?? 0) >= LockoutPolicy.maxIpFailuresPerHour)
-        throw AppError.rateLimited(3600);
+        throw AppError.rateLimited(
+          3600,
+          "Trop d'échecs d'authentification depuis cette adresse",
+          'ip-lockout',
+        );
       void acct;
     } catch (e) {
       if (e instanceof AppError) throw e; // Redis indisponible : fail-open

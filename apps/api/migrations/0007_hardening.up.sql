@@ -57,6 +57,12 @@ CREATE TABLE platform_alerts (
 CREATE UNIQUE INDEX platform_alerts_open_key ON platform_alerts (key) WHERE resolved_at IS NULL;
 CREATE INDEX platform_alerts_opened_idx ON platform_alerts (opened_at DESC);
 
+-- Tables plateforme (lues par le pool BYPASSRLS ou par l'authentification) : hors RLS, exemption déclarée.
+INSERT INTO rls_exemptions VALUES
+  ('impersonation_sessions', 'Plateforme : sessions de support lues à l''authentification (ScopeGuard) et par le Super Admin'),
+  ('platform_alerts', 'Plateforme : alertes de supervision inter-tenant, écrites par le worker (pool plateforme)')
+ON CONFLICT (table_name) DO NOTHING;
+
 -- ---------------------------------------------------------------------------
 -- Données personnelles : anonymisation et registre des demandes (export, effacement)
 -- ---------------------------------------------------------------------------

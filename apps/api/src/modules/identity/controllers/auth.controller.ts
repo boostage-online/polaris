@@ -77,7 +77,7 @@ export class AuthController {
   @Post('mfa/verify')
   @Public()
   @HttpCode(200)
-  @RateLimit({ points: 10, duration: 60, keyBy: 'ip', name: 'mfa' })
+  @RateLimit({ points: 60, duration: 60, keyBy: 'ip', name: 'mfa' })
   @ApiDoc({
     summary: 'Relever le défi MFA (code TOTP ou code de récupération) et ouvrir la session',
     tags: ['auth'],

@@ -164,7 +164,7 @@ describe('Élèves et inscriptions', () => {
       .post('/api/v1/students')
       .set(bearer(registrar))
       .send({ firstName: 'Un', lastName: 'CAPACITE', groupId: tiny.body.data.id });
-    expect(a.status).toBe(201);
+    expect(a.status, JSON.stringify(a.body)).toBe(201);
     const b = await ctx.http
       .post('/api/v1/students')
       .set(bearer(registrar))
@@ -178,7 +178,7 @@ describe('Élèves et inscriptions', () => {
 
   it('le tableau de bord scolarité agrège effectifs, fiches incomplètes et imports récents', async () => {
     const res = await ctx.http.get('/api/v1/dashboards/registrar').set(bearer(registrar));
-    expect(res.status).toBe(200);
+    expect(res.status, JSON.stringify(res.body)).toBe(200);
     const d = res.body.data as {
       students: { active: number; left: number; withoutGuardian: number; incomplete: number };
       guardians: { total: number; activated: number };

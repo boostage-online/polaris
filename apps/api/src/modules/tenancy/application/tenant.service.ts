@@ -86,7 +86,16 @@ export class TenantService {
   async updateSettings(patch: TenantSettings) {
     const tx = this.db.current();
     const before = await this.current();
-    const merged = { ...before.settings, ...patch } as Record<string, unknown>;
+    // Fusion par section : un PATCH de `notifications` ne réinitialise pas `attendance` (les sections absentes
+    // arrivent vides après validation, et un objet vide ne doit rien écraser).
+    const current = before.settings as Record<string, Record<string, unknown> | undefined>;
+    const merged: Record<string, unknown> = { ...current };
+    for (const [section, value] of Object.entries(patch as Record<string, unknown>)) {
+      merged[section] =
+        value && typeof value === 'object' && !Array.isArray(value)
+          ? { ...(current[section] ?? {}), ...(value as Record<string, unknown>) }
+          : value;
+    }
     const [row] = await tx
       .update(tenants)
       .set({ settings: merged })

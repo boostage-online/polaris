@@ -139,3 +139,4 @@ export const SessionSchema = z.object({
   lastUsedAt: z.string().datetime(),
   current: z.boolean(),
 });
+export type SessionInfo = z.infer<typeof SessionSchema>;

@@ -51,15 +51,10 @@ export class AppError extends Error {
   ) {
     return new AppError(HttpStatus.CONFLICT, code, message, undefined, extra);
   }
-  static rateLimited(retryAfterSeconds: number) {
-    return new AppError(
-      HttpStatus.TOO_MANY_REQUESTS,
-      ErrorCodes.RATE_LIMITED,
-      'Trop de requêtes',
-      undefined,
-      {
-        retryAfterSeconds,
-      },
-    );
+  static rateLimited(retryAfterSeconds: number, message = 'Trop de requêtes', scope?: string) {
+    return new AppError(HttpStatus.TOO_MANY_REQUESTS, ErrorCodes.RATE_LIMITED, message, undefined, {
+      retryAfterSeconds,
+      scope,
+    });
   }
 }

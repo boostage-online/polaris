@@ -1,4 +1,5 @@
 -- contract : rollback (développement et CI uniquement).
+DELETE FROM rls_exemptions WHERE table_name IN ('impersonation_sessions', 'platform_alerts');
 DELETE FROM role_permissions WHERE permission_code = 'MANAGE_PRIVACY';
 DELETE FROM permissions WHERE code = 'MANAGE_PRIVACY';
 DROP TABLE IF EXISTS privacy_requests, platform_alerts, impersonation_sessions, mfa_recovery_codes CASCADE;
