@@ -2,7 +2,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useState } from 'react';
 import { useMe } from '@/components/app-shell';
-import { Button, Card, Empty, ErrorAlert, Field, Input, Loading, PageHeader, Table } from '@/components/ui';
+import {
+  Button,
+  Card,
+  Empty,
+  ErrorAlert,
+  Field,
+  Input,
+  Loading,
+  PageHeader,
+  Table,
+} from '@/components/ui';
 import { fmtDateTime } from '@/lib/format';
 import { audit } from '@/lib/resources';
 
@@ -112,13 +122,21 @@ export default function AuditPage() {
                       <td className="font-mono text-xs">{e.action}</td>
                       <td className="text-xs">
                         {e.entityType}{' '}
-                        {e.entityId && <span className="text-slate-400">{e.entityId.slice(0, 8)}</span>}
+                        {e.entityId && (
+                          <span className="text-slate-400">{e.entityId.slice(0, 8)}</span>
+                        )}
                       </td>
-                      <td className="text-xs">{e.actorUserId ? e.actorUserId.slice(0, 8) : 'système'}</td>
+                      <td className="text-xs">
+                        {e.actorUserId ? e.actorUserId.slice(0, 8) : 'système'}
+                      </td>
                       <td className="text-xs text-slate-500">{e.ip ?? '—'}</td>
                       <td className="text-right">
                         {(e.before !== null || e.after !== null) && (
-                          <Button size="sm" variant="ghost" onClick={() => setOpen(open === e.id ? null : e.id)}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setOpen(open === e.id ? null : e.id)}
+                          >
                             {open === e.id ? 'Masquer' : 'Détail'}
                           </Button>
                         )}

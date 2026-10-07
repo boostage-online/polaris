@@ -470,6 +470,37 @@ describe('Durcissement (Phase 7)', () => {
     expect((await ctx.http.get('/api/v1/onboarding').set(bearer(teacher))).status).toBe(403);
   });
 
+  it('anti-CSRF : un refresh par cookie depuis une origine étrangère est refusé ; les corps > 1 Mo aussi', async () => {
+    const web = await ctx.http
+      .post('/api/v1/auth/login')
+      .set('X-Client', 'web/0.1.0')
+      .set('Origin', 'http://localhost:3000')
+      .send({ identifier: L().users.TEACHER.email, password: DEMO_PASSWORD });
+    expect(web.status).toBe(200);
+    const cookie = (web.headers['set-cookie'] as unknown as string[]).find((c) =>
+      c.startsWith('polaris_rt='),
+    )!;
+    const evil = await ctx.http
+      .post('/api/v1/auth/refresh')
+      .set('X-Client', 'web/0.1.0')
+      .set('Cookie', cookie.split(';')[0]!)
+      .set('Origin', 'https://evil.example')
+      .send({});
+    expect(evil.status).toBe(403);
+    const ok = await ctx.http
+      .post('/api/v1/auth/refresh')
+      .set('X-Client', 'web/0.1.0')
+      .set('Cookie', cookie.split(';')[0]!)
+      .set('Origin', 'http://localhost:3000')
+      .send({});
+    expect(ok.status, JSON.stringify(ok.body)).toBe(200);
+    const big = await ctx.http
+      .post('/api/v1/auth/login')
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ identifier: 'x@y.z', password: 'p'.repeat(1_100_000) }));
+    expect(big.status).toBe(413);
+  });
+
   it('secret TOTP de démonstration : le code courant ouvre bien la session du super admin seedé', async () => {
     const first = await ctx.http
       .post('/api/v1/auth/login')

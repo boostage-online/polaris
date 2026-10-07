@@ -36,7 +36,10 @@ export default function () {
     timestamp: new Date().toISOString(),
   });
   const res = http.post(`${BASE}/api/v1/webhooks/payments/FAKE/${cfg.webhookToken}`, body, {
-    headers: { 'Content-Type': 'application/json', 'x-fake-signature': signFake(cfg.webhookSecret, body) },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-fake-signature': signFake(cfg.webhookSecret, body),
+    },
     tags: { name: 'webhook' },
   });
   check(res, { 'webhook 200': (r) => r.status === 200 });

@@ -68,7 +68,11 @@ function direction(t) {
 function parentFlow(t) {
   group('parent', () => {
     get(t, '/me/children', 'me.children');
-    get(t, `/me/children/${lycee.academic.studentIds[0]}/attendance?limit=30`, 'me.children.attendance');
+    get(
+      t,
+      `/me/children/${lycee.academic.studentIds[0]}/attendance?limit=30`,
+      'me.children.attendance',
+    );
   });
 }
 

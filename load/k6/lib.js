@@ -11,7 +11,10 @@ export function login(email) {
   const res = http.post(
     `${BASE}/api/v1/auth/login`,
     JSON.stringify({ identifier: email, password: PASSWORD, deviceId: `k6-${__VU}-${Date.now()}` }),
-    { headers: { 'Content-Type': 'application/json', 'X-Client': 'k6/1.0' }, tags: { name: 'login' } },
+    {
+      headers: { 'Content-Type': 'application/json', 'X-Client': 'k6/1.0' },
+      tags: { name: 'login' },
+    },
   );
   check(res, { 'login 200': (r) => r.status === 200 });
   const body = res.json('data');
@@ -21,7 +24,11 @@ export function login(email) {
 
 export function authed(token, name) {
   return {
-    headers: { Authorization: `Bearer ${token}`, 'X-Client': 'k6/1.0', 'Content-Type': 'application/json' },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'X-Client': 'k6/1.0',
+      'Content-Type': 'application/json',
+    },
     tags: { name },
   };
 }

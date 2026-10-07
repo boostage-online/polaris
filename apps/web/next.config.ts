@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
   // Le web est un client de l'API comme un autre (ADR-0009) : aucune route serveur ne touche la base.
+  // security.txt (RFC 9116) : le dossier `.well-known` n'est pas inclus par TypeScript, d'où la réécriture.
+  async rewrites() {
+    return [{ source: '/.well-known/security.txt', destination: '/security.txt' }];
+  },
   async headers() {
     return [
       {

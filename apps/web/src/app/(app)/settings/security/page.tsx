@@ -50,15 +50,15 @@ export default function SecurityPage() {
         <div className="space-y-4">
           {mfa.data.required && !mfa.data.enabled && (
             <Alert tone="warning">
-              Votre rôle donne accès à des actions sensibles (finance, plateforme) : l&apos;authentification à
-              deux facteurs est <strong>obligatoire</strong>. Tant qu&apos;elle n&apos;est pas activée, ces actions
-              vous sont refusées.
+              Votre rôle donne accès à des actions sensibles (finance, plateforme) :
+              l&apos;authentification à deux facteurs est <strong>obligatoire</strong>. Tant
+              qu&apos;elle n&apos;est pas activée, ces actions vous sont refusées.
             </Alert>
           )}
           {mfa.data.enabled && !mfa.data.sessionVerified && (
             <Alert tone="info">
-              Cette session a été ouverte sans second facteur. Reconnectez-vous pour accéder aux actions
-              sensibles.
+              Cette session a été ouverte sans second facteur. Reconnectez-vous pour accéder aux
+              actions sensibles.
             </Alert>
           )}
           <MfaCard
@@ -138,9 +138,11 @@ function MfaCard({
   recoveryLeft: number;
   onChanged: () => void;
 }) {
-  const [setup, setSetup] = useState<{ secret: string; otpauthUrl: string; account: string } | null>(
-    null,
-  );
+  const [setup, setSetup] = useState<{
+    secret: string;
+    otpauthUrl: string;
+    account: string;
+  } | null>(null);
   const [code, setCode] = useState('');
   const [codes, setCodes] = useState<string[] | null>(null);
   const [mode, setMode] = useState<'idle' | 'disable' | 'regen'>('idle');
@@ -201,9 +203,9 @@ function MfaCard({
       }
     >
       <p className="mb-3 text-sm text-slate-600">
-        À la connexion, un code à 6 chiffres généré par une application (Google Authenticator, Aegis,
-        FreeOTP, 1Password…) est demandé en plus du mot de passe. Les codes de récupération permettent de se
-        connecter si le téléphone est perdu : conservez-les en lieu sûr.
+        À la connexion, un code à 6 chiffres généré par une application (Google Authenticator,
+        Aegis, FreeOTP, 1Password…) est demandé en plus du mot de passe. Les codes de récupération
+        permettent de se connecter si le téléphone est perdu : conservez-les en lieu sûr.
       </p>
       <ErrorAlert error={start.error ?? enable.error ?? disable.error ?? regen.error} />
 

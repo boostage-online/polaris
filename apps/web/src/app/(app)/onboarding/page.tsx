@@ -13,7 +13,11 @@ import { onboarding } from '@/lib/resources';
 export default function OnboardingPage() {
   const can = useCan();
   const qc = useQueryClient();
-  const q = useQuery({ queryKey: ['onboarding'], queryFn: onboarding.status, refetchInterval: 30_000 });
+  const q = useQuery({
+    queryKey: ['onboarding'],
+    queryFn: onboarding.status,
+    refetchInterval: 30_000,
+  });
   const dismiss = useMutation({
     mutationFn: onboarding.dismiss,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['onboarding'] }),
@@ -42,21 +46,27 @@ export default function OnboardingPage() {
         }
       />
       <div className="mb-4">
-        <Bar value={d.completed} max={d.total} tone={d.ready ? 'green' : 'brand'} label={`${d.completed}/${d.total}`} />
+        <Bar
+          value={d.completed}
+          max={d.total}
+          tone={d.ready ? 'green' : 'brand'}
+          label={`${d.completed}/${d.total}`}
+        />
       </div>
       {d.ready ? (
         <div className="mb-4">
           <Alert tone="success">
-            Les étapes obligatoires sont faites : l&apos;établissement est prêt. Les étapes optionnelles
-            améliorent l&apos;expérience (paiement en ligne, règles d&apos;assiduité, frais).
+            Les étapes obligatoires sont faites : l&apos;établissement est prêt. Les étapes
+            optionnelles améliorent l&apos;expérience (paiement en ligne, règles d&apos;assiduité,
+            frais).
           </Alert>
         </div>
       ) : (
         <div className="mb-4">
           <Alert tone="info">
-            Suivez les étapes dans l&apos;ordre : chaque bouton ouvre l&apos;écran correspondant. Le guide
-            complet (import CSV, invitations, premier appel) est dans le manuel d&apos;onboarding remis par le
-            support.
+            Suivez les étapes dans l&apos;ordre : chaque bouton ouvre l&apos;écran correspondant. Le
+            guide complet (import CSV, invitations, premier appel) est dans le manuel
+            d&apos;onboarding remis par le support.
           </Alert>
         </div>
       )}
@@ -78,7 +88,11 @@ export default function OnboardingPage() {
                   <div>
                     <p className="font-medium">
                       {s.title}{' '}
-                      {s.optional ? <Badge>optionnel</Badge> : !s.done && <Badge tone="amber">à faire</Badge>}
+                      {s.optional ? (
+                        <Badge>optionnel</Badge>
+                      ) : (
+                        !s.done && <Badge tone="amber">à faire</Badge>
+                      )}
                     </p>
                     <p className="text-sm text-slate-600">{s.description}</p>
                     {s.detail && <p className="mt-0.5 text-xs text-slate-500">{s.detail}</p>}

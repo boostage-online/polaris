@@ -36,10 +36,11 @@ export default function PrivacyPage() {
   const [force, setForce] = useState(false);
   const invalidate = () => qc.invalidateQueries({ queryKey: ['privacy'] });
   const exp = useMutation({
-    mutationFn: () => (subject === 'STUDENT' ? privacy.exportStudent(id.trim()) : privacy.exportGuardian(id.trim())),
+    mutationFn: () =>
+      subject === 'STUDENT' ? privacy.exportStudent(id.trim()) : privacy.exportGuardian(id.trim()),
     onSuccess: (data) => {
       downloadExport(data);
-      invalidate();
+      return invalidate();
     },
   });
   const anon = useMutation({
@@ -64,33 +65,58 @@ export default function PrivacyPage() {
           <form onSubmit={submitAnon} className="space-y-3">
             <div className="grid grid-cols-[140px_1fr] gap-3">
               <Field label="Personne">
-                <Select value={subject} onChange={(e) => setSubject(e.target.value as 'STUDENT' | 'GUARDIAN')}>
+                <Select
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value as 'STUDENT' | 'GUARDIAN')}
+                >
                   <option value="STUDENT">Élève</option>
                   <option value="GUARDIAN">Tuteur</option>
                 </Select>
               </Field>
-              <Field label="Identifiant (depuis la fiche)" hint="Les fiches élève et tuteur proposent aussi ces actions directement.">
-                <Input value={id} onChange={(e) => setId(e.target.value)} placeholder="uuid" required />
+              <Field
+                label="Identifiant (depuis la fiche)"
+                hint="Les fiches élève et tuteur proposent aussi ces actions directement."
+              >
+                <Input
+                  value={id}
+                  onChange={(e) => setId(e.target.value)}
+                  placeholder="uuid"
+                  required
+                />
               </Field>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="secondary" disabled={!id.trim() || exp.isPending} onClick={() => exp.mutate()}>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={!id.trim() || exp.isPending}
+                onClick={() => exp.mutate()}
+              >
                 {exp.isPending ? 'Export…' : 'Exporter les données (JSON)'}
               </Button>
             </div>
             <hr className="border-slate-100" />
             <Field label="Motif de l'anonymisation (journalisé)">
-              <Input value={reason} onChange={(e) => setReason(e.target.value)} minLength={5} placeholder="Demande écrite de la famille du …" />
+              <Input
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                minLength={5}
+                placeholder="Demande écrite de la famille du …"
+              />
             </Field>
             {subject === 'STUDENT' && (
               <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={force}
+                  onChange={(e) => setForce(e.target.checked)}
+                />
                 Forcer avant la fin du délai de conservation (demande explicite documentée)
               </label>
             )}
             <Alert tone="warning">
-              Irréversible. Un élève doit avoir quitté l&apos;établissement ; un tuteur ne doit plus avoir
-              d&apos;enfant rattaché.
+              Irréversible. Un élève doit avoir quitté l&apos;établissement ; un tuteur ne doit plus
+              avoir d&apos;enfant rattaché.
             </Alert>
             <ErrorAlert error={exp.error ?? anon.error} />
             {anon.data && (
@@ -102,7 +128,11 @@ export default function PrivacyPage() {
                 .
               </Alert>
             )}
-            <Button type="submit" variant="danger" disabled={!id.trim() || reason.trim().length < 5 || anon.isPending}>
+            <Button
+              type="submit"
+              variant="danger"
+              disabled={!id.trim() || reason.trim().length < 5 || anon.isPending}
+            >
               Anonymiser
             </Button>
           </form>
@@ -127,9 +157,13 @@ export default function PrivacyPage() {
               >
                 {reg.data.map((r) => (
                   <tr key={r.id}>
-                    <td className="whitespace-nowrap text-xs text-slate-500">{fmtDateTime(r.createdAt)}</td>
+                    <td className="whitespace-nowrap text-xs text-slate-500">
+                      {fmtDateTime(r.createdAt)}
+                    </td>
                     <td>
-                      <Badge tone={r.kind === 'ERASURE' ? 'red' : 'blue'}>{KIND[r.kind] ?? r.kind}</Badge>
+                      <Badge tone={r.kind === 'ERASURE' ? 'red' : 'blue'}>
+                        {KIND[r.kind] ?? r.kind}
+                      </Badge>
                     </td>
                     <td className="text-xs">
                       {r.subjectType === 'STUDENT' ? 'Élève' : 'Tuteur'}{' '}

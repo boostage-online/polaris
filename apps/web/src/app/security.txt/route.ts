@@ -1,4 +1,4 @@
-/** security.txt (RFC 9116) : programme de divulgation responsable (Partie 11, gouvernance). */
+/** security.txt (RFC 9116), servi aussi sous /.well-known/security.txt (réécriture) : divulgation responsable. */
 export function GET() {
   const expires = new Date();
   expires.setFullYear(expires.getFullYear() + 1);

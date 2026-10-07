@@ -29,7 +29,13 @@ import { InvitationService } from '../application/invitation.service';
 import { MfaService } from '../application/mfa.service';
 import { TokenService } from '../application/token.service';
 import type { IssuedSession } from '../application/session.service';
-import { clearRefreshCookie, isWebClient, readRefresh, setRefreshCookie } from './cookies';
+import {
+  assertTrustedOrigin,
+  clearRefreshCookie,
+  isWebClient,
+  readRefresh,
+  setRefreshCookie,
+} from './cookies';
 
 const AcceptInvitationSchema = z.object({
   token: z.string().min(32).max(512),
@@ -140,6 +146,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
+    if (!body.refreshToken) assertTrustedOrigin(req, this.env); // refresh par cookie : navigateur
     const raw = readRefresh(req, body.refreshToken);
     if (!raw) {
       clearRefreshCookie(res, this.env);
@@ -183,6 +190,7 @@ export class AuthController {
   @HttpCode(204)
   @ApiDoc({ summary: 'Déconnexion de cet appareil', tags: ['auth'], status: 204 })
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    assertTrustedOrigin(req, this.env);
     await this.auth.logout(
       readRefresh(req, (req.body as { refreshToken?: string } | undefined)?.refreshToken),
     );
