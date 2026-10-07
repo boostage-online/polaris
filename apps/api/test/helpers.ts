@@ -158,3 +158,17 @@ export function loginPlatform(ctx: TestContext) {
 }
 
 export const bearer = (s: Session) => ({ Authorization: `Bearer ${s.accessToken}` });
+
+/**
+ * Date civile (AAAA-MM-JJ) dans le fuseau des établissements seedés (Africa/Porto-Novo, UTC+1), décalée de
+ * `offset` jours. Les services calculent « aujourd'hui » dans le fuseau du tenant : un test qui utiliserait la
+ * date UTC se tromperait d'un jour entre 23 h et minuit UTC (cause d'un échec intermittent en CI).
+ */
+export function localDay(offset = 0, timeZone = 'Africa/Porto-Novo'): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(Date.now() + offset * 86_400_000));
+}
