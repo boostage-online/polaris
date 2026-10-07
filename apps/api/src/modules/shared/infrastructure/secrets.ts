@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 
 /**
- * Chiffrement d'enveloppe des secrets provider (ADR-0010, Partie 11) : une clé de données (DEK) aléatoire
+ * Chiffrement d'enveloppe des secrets applicatifs — clés provider, secrets TOTP (ADR-0010, Partie 11) : une clé de données (DEK) aléatoire
  * par enregistrement chiffre le JSON des secrets (AES-256-GCM) ; la DEK est elle-même enveloppée par la clé
  * maître. Le port `KeyWrapper` permet de remplacer l'enveloppe locale par un KMS sans toucher au reste.
  */

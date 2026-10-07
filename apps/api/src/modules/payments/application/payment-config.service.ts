@@ -9,11 +9,10 @@ import { DatabaseService } from '../../../database/database.service';
 import { RequestContextStore, type Db } from '../../../database/request-context';
 import { tenantPaymentConfigs, tenants } from '../../../database/schema';
 import { AuditService } from '../../audit';
-import { OutboxService } from '../../shared';
 import { paymentProviderConfigured } from '../domain/events';
 import type { ProviderCode, ProviderCredentials } from '../domain/provider';
 import { ProviderRegistry } from '../infrastructure/provider-registry';
-import { LocalKeyWrapper, maskSecret, openSecrets, sealSecrets } from '../infrastructure/secrets';
+import { LocalKeyWrapper, OutboxService, maskSecret, openSecrets, sealSecrets } from '../../shared';
 
 type ConfigRow = typeof tenantPaymentConfigs.$inferSelect;
 interface SealedCredentials {

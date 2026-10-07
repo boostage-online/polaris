@@ -45,8 +45,60 @@ export const TokenPairSchema = z.object({
   refreshToken: z.string().optional(),
   membership: MembershipSummarySchema.nullable(),
   memberships: z.array(MembershipSummarySchema),
+  /** La session a passé la MFA (TOTP ou code de récupération). */
+  mfa: z.boolean().optional(),
 });
 export type TokenPair = z.infer<typeof TokenPairSchema>;
+
+// --- MFA TOTP (ADR-0008, Partie 11) ---
+/** Réponse de connexion quand la MFA est activée : pas de jetons, un défi à relever en 5 minutes. */
+export const MfaChallengeSchema = z.object({
+  mfaRequired: z.literal(true),
+  challenge: z.string(),
+  expiresIn: z.number().int(),
+});
+export type MfaChallenge = z.infer<typeof MfaChallengeSchema>;
+export const LoginResponseSchema = z.union([TokenPairSchema, MfaChallengeSchema]);
+export type LoginResponse = z.infer<typeof LoginResponseSchema>;
+
+export const TotpCodeSchema = z.string().regex(/^\d{6}$/, 'Code à 6 chiffres attendu');
+export const RecoveryCodeSchema = z
+  .string()
+  .regex(/^[A-Z2-7]{5}-[A-Z2-7]{5}$/i, 'Code de récupération XXXXX-XXXXX attendu');
+export const MfaVerifySchema = z
+  .object({
+    challenge: z.string().min(16),
+    code: TotpCodeSchema.optional(),
+    recoveryCode: RecoveryCodeSchema.optional(),
+  })
+  .refine((v) => Boolean(v.code) !== Boolean(v.recoveryCode), {
+    message: 'Fournir un code TOTP ou un code de récupération',
+  });
+export const MfaSetupResponseSchema = z.object({
+  secret: z.string(),
+  otpauthUrl: z.string(),
+  issuer: z.string(),
+  account: z.string(),
+});
+export const MfaEnableSchema = z.object({ code: TotpCodeSchema });
+export const MfaEnableResponseSchema = z.object({
+  enabled: z.literal(true),
+  recoveryCodes: z.array(z.string()),
+});
+export const MfaDisableSchema = z.object({
+  code: TotpCodeSchema.optional(),
+  recoveryCode: RecoveryCodeSchema.optional(),
+});
+export const MfaStatusSchema = z.object({
+  enabled: z.boolean(),
+  enrolledAt: z.string().datetime().nullable(),
+  /** La MFA est exigée pour ce compte (super admin ou permission sensible détenue). */
+  required: z.boolean(),
+  /** La session courante a passé la MFA. */
+  sessionVerified: z.boolean(),
+  recoveryCodesLeft: z.number().int(),
+});
+export type MfaStatus = z.infer<typeof MfaStatusSchema>;
 
 export const PermissionCodeSchema = z.enum(
   PERMISSION_DEFINITIONS.map((p) => p.code) as [string, ...string[]],
@@ -64,6 +116,19 @@ export const MeSchema = z.object({
   memberships: z.array(MembershipSummarySchema),
   permissions: z.array(z.string()),
   tenantTimezone: z.string().nullable(),
+  /** La session courante a passé la MFA. */
+  mfa: z.boolean().optional(),
+  /** Session de support Super Admin (impersonation) : bannière obligatoire côté client. */
+  impersonation: z
+    .object({
+      sessionId: UuidSchema,
+      tenantId: UuidSchema,
+      tenantName: z.string(),
+      reason: z.string(),
+      expiresAt: z.string().datetime(),
+    })
+    .nullable()
+    .optional(),
 });
 export type Me = z.infer<typeof MeSchema>;
 

@@ -37,6 +37,11 @@ export const PERMISSION_DEFINITIONS = [
 
   // --- Élèves et tuteurs ---
   { code: 'VIEW_STUDENTS', module: 'students-guardians', description: 'Consulter les élèves' },
+  {
+    code: 'MANAGE_PRIVACY',
+    module: 'students-guardians',
+    description: 'Exporter ou anonymiser les données personnelles (RGPD)',
+  },
   { code: 'CREATE_STUDENT', module: 'students-guardians', description: 'Créer un élève' },
   { code: 'EDIT_STUDENT', module: 'students-guardians', description: 'Modifier un élève' },
   {
@@ -188,6 +193,19 @@ export const ALL_PERMISSIONS: readonly Permission[] = PERMISSION_DEFINITIONS.map
 export const SENSITIVE_PERMISSIONS: readonly Permission[] = PERMISSION_DEFINITIONS.filter(
   (p): p is typeof p & { sensitive: true } => 'sensitive' in p && p.sensitive === true,
 ).map((p) => p.code);
+
+/**
+ * Permissions d'une session d'impersonation Super Admin (Partie 11) : celles de l'administrateur,
+ * moins toute action financière ou sensible — le support regarde et configure, il n'encaisse pas.
+ */
+export const IMPERSONATION_EXCLUDED: readonly Permission[] = [
+  ...SENSITIVE_PERMISSIONS,
+  'RECORD_MANUAL_PAYMENT',
+  'CANCEL_PAYMENT',
+  'ISSUE_REFUND',
+  'MANAGE_PAYMENT_PROVIDER',
+  'MANAGE_PRIVACY',
+];
 
 export function isPermission(value: string): value is Permission {
   return (ALL_PERMISSIONS as readonly string[]).includes(value);

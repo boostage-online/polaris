@@ -47,6 +47,7 @@ export class RefreshTokenService {
       deviceLabel?: string;
       familyId?: string;
       replaces?: string;
+      mfaVerified?: boolean;
     },
   ): Promise<IssuedRefresh> {
     const ctx = RequestContextStore.get();
@@ -67,6 +68,7 @@ export class RefreshTokenService {
         userAgent: ctx?.userAgent?.slice(0, 512) ?? null,
         expiresAt,
         createdAt: new Date(),
+        mfaVerified: input.mfaVerified ?? false,
       })
       .returning({ id: refreshTokens.id });
     if (input.replaces && row) {

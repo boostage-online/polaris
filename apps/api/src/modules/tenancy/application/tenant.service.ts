@@ -43,6 +43,25 @@ export const TenantSettingsSchema = z
       })
       .partial()
       .default({}),
+    /** Durées de conservation (Partie 11) : anonymisation automatique par le worker. */
+    privacy: z
+      .object({
+        /** Années après le départ d'un élève avant anonymisation (assiduité : 5 ans). */
+        studentRetentionYears: z.number().int().min(1).max(15).default(5),
+        /** Années d'inactivité d'un tuteur sans enfant rattaché avant anonymisation (2 ans). */
+        inactiveGuardianYears: z.number().int().min(1).max(10).default(2),
+        /** Désactive l'anonymisation automatique (une obligation légale particulière, par exemple). */
+        automaticRetentionEnabled: z.boolean().default(true),
+      })
+      .partial()
+      .default({}),
+    onboarding: z
+      .object({
+        /** L'administrateur a masqué l'assistant de démarrage. */
+        dismissedAt: z.string().datetime().nullable().default(null),
+      })
+      .partial()
+      .default({}),
   })
   .partial();
 export type TenantSettings = z.infer<typeof TenantSettingsSchema>;

@@ -9,3 +9,10 @@ export { MetricsInterceptor } from './infrastructure/metrics.interceptor';
 export { LogEmailGateway, LogSmsGateway } from './infrastructure/log-gateways';
 export * from './domain/events';
 export * from './domain/ports';
+export {
+  LocalKeyWrapper,
+  maskSecret,
+  openSecrets,
+  sealSecrets,
+  type KeyWrapper,
+} from './infrastructure/secrets';

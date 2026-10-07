@@ -12,6 +12,7 @@ export const students = pgTable('students', {
   status: text('status').$type<'ACTIVE' | 'LEFT' | 'GRADUATED'>().notNull(),
   leftAt: date('left_at'),
   notes: text('notes'),
+  anonymizedAt: timestamp('anonymized_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
   deletedAt: timestamp('deleted_at', { withTimezone: true }),
@@ -44,6 +45,7 @@ export const guardians = pgTable('guardians', {
     .notNull(),
   locale: text('locale').notNull(),
   invitedAt: timestamp('invited_at', { withTimezone: true }),
+  anonymizedAt: timestamp('anonymized_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
   deletedAt: timestamp('deleted_at', { withTimezone: true }),
@@ -80,4 +82,17 @@ export const importJobs = pgTable('import_jobs', {
   createdBy: uuid('created_by'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
   finishedAt: timestamp('finished_at', { withTimezone: true }),
+});
+
+export const privacyRequests = pgTable('privacy_requests', {
+  id: uuid('id').primaryKey(),
+  tenantId: uuid('tenant_id').notNull(),
+  kind: text('kind').$type<'EXPORT' | 'ERASURE'>().notNull(),
+  subjectType: text('subject_type').$type<'STUDENT' | 'GUARDIAN'>().notNull(),
+  subjectId: uuid('subject_id').notNull(),
+  requestedBy: uuid('requested_by'),
+  reason: text('reason'),
+  source: text('source').$type<'MANUAL' | 'RETENTION' | 'SELF_SERVICE'>().notNull(),
+  summary: jsonb('summary').$type<Record<string, unknown>>().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
 });

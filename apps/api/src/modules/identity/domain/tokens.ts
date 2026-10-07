@@ -7,6 +7,12 @@ export interface AccessTokenClaims {
   kind: 'STAFF' | 'GUARDIAN' | 'PLATFORM' | null;
   pv: number;
   tv: number;
+  /** La session a passé la MFA (TOTP ou code de récupération). */
+  mfa: boolean;
+  /** Impersonation Super Admin : identifiant de l'utilisateur plateforme à l'origine de la session. */
+  imp: string | null;
+  /** Identifiant de la session d'impersonation (traçabilité, fin anticipée). */
+  isid: string | null;
 }
 
 /** Refresh token opaque : 256 bits aléatoires, stocké haché (ADR-0008). */

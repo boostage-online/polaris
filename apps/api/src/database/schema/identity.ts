@@ -12,6 +12,8 @@ export const users = pgTable('users', {
   status: text('status').$type<'ACTIVE' | 'DISABLED'>().notNull(),
   mfaEnabled: boolean('mfa_enabled').notNull(),
   mfaSecretEncrypted: text('mfa_secret_encrypted'),
+  mfaEnrolledAt: timestamp('mfa_enrolled_at', { withTimezone: true }),
+  anonymizedAt: timestamp('anonymized_at', { withTimezone: true }),
   tokenVersion: integer('token_version').notNull(),
   locale: text('locale').notNull(),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
@@ -48,6 +50,27 @@ export const refreshTokens = pgTable('refresh_tokens', {
   revokedAt: timestamp('revoked_at', { withTimezone: true }),
   revokedReason: text('revoked_reason'),
   replacedBy: uuid('replaced_by'),
+  mfaVerified: boolean('mfa_verified').notNull(),
+});
+
+export const mfaRecoveryCodes = pgTable('mfa_recovery_codes', {
+  id: uuid('id').primaryKey(),
+  userId: uuid('user_id').notNull(),
+  codeHash: text('code_hash').notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+});
+
+export const impersonationSessions = pgTable('impersonation_sessions', {
+  id: uuid('id').primaryKey(),
+  platformUserId: uuid('platform_user_id').notNull(),
+  tenantId: uuid('tenant_id').notNull(),
+  reason: text('reason').notNull(),
+  startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  endedAt: timestamp('ended_at', { withTimezone: true }),
+  ip: inet('ip'),
+  userAgent: text('user_agent'),
 });
 
 export const otpCodes = pgTable('otp_codes', {
