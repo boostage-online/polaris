@@ -20,6 +20,7 @@ export const META_SCOPE = 'polaris:scope';
 export const META_PERMISSION = 'polaris:permission';
 export const META_RATE_LIMIT = 'polaris:rate-limit';
 export const META_NO_TX = 'polaris:no-tx';
+export const META_IDEMPOTENCY_REQUIRED = 'polaris:idempotency-required';
 export const META_AUDIT = 'polaris:audit';
 export const META_API_DOC = 'polaris:api-doc';
 
@@ -48,6 +49,9 @@ export interface RateLimitOptions {
   name?: string;
 }
 export const RateLimit = (opts: RateLimitOptions) => SetMetadata(META_RATE_LIMIT, opts);
+
+/** Exige l'en-tête Idempotency-Key (créations financières, ADR-0005). */
+export const RequireIdempotencyKey = () => SetMetadata(META_IDEMPOTENCY_REQUIRED, true);
 
 /** Désactive la transaction automatique (handler qui appelle un service externe). */
 export const NoTransaction = () => SetMetadata(META_NO_TX, true);

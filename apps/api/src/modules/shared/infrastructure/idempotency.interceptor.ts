@@ -4,11 +4,13 @@ import {
   Injectable,
   type NestInterceptor,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import type { Request, Response } from 'express';
 import { createHash } from 'node:crypto';
 import { from, lastValueFrom, of, tap } from 'rxjs';
 import { sql } from 'drizzle-orm';
 import { ErrorCodes } from '@polaris/contracts';
+import { META_IDEMPOTENCY_REQUIRED } from '../../../common/decorators';
 import { AppError } from '../../../common/errors/app-error';
 import { DatabaseService } from '../../../database/database.service';
 import { RequestContextStore } from '../../../database/request-context';
@@ -23,14 +25,30 @@ const TTL_HOURS = 24;
  */
 @Injectable()
 export class IdempotencyInterceptor implements NestInterceptor {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly reflector: Reflector,
+  ) {}
 
   async intercept(context: ExecutionContext, next: CallHandler) {
     const req = context.switchToHttp().getRequest<Request>();
     const res = context.switchToHttp().getResponse<Response>();
     const key = req.headers['idempotency-key'];
-    if (!key || typeof key !== 'string' || !['POST', 'PATCH', 'PUT'].includes(req.method))
+    if (!key || typeof key !== 'string' || !['POST', 'PATCH', 'PUT'].includes(req.method)) {
+      if (
+        this.reflector.getAllAndOverride<boolean>(META_IDEMPOTENCY_REQUIRED, [
+          context.getHandler(),
+          context.getClass(),
+        ])
+      )
+        throw AppError.validation([
+          {
+            path: 'Idempotency-Key',
+            message: 'En-tête Idempotency-Key requis pour cette opération',
+          },
+        ]);
       return next.handle();
+    }
     if (key.length > 128)
       throw AppError.validation([{ path: 'Idempotency-Key', message: 'Clé trop longue' }]);
 

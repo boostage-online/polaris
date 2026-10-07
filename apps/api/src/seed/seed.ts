@@ -38,6 +38,15 @@ export interface SeededAcademic {
     alertId: string;
     notificationId: string;
   };
+  /** Frais (Phase 4) : grille SCOL-6E affectée aux élèves actifs de 6e, S1 a payé 60 000 FCFA en espèces (reçu n° 1). */
+  billing: {
+    categoryId: string;
+    structureId: string;
+    feeIds: { s1: string; s2: string };
+    installmentIds: { s1: string[]; s2: string[] };
+    paymentId: string;
+    receiptNumber: string;
+  };
   /** Compte parent activé : connexion par e-mail + mot de passe de démo (OTP en réel). */
   parentUser: { userId: string; membershipId: string; email: string; phone: string };
 }
@@ -417,6 +426,115 @@ async function seedAcademic(
     [notificationId, t, parentUserId, studentIds[0]],
   );
 
+  // --- Phase 4 : catalogue, créances, un paiement manuel avec reçu ---
+  const categoryId = ids();
+  await q(
+    `insert into fee_categories (id, tenant_id, code, name) values ($1, $2, 'SCOLARITE', 'Scolarité')`,
+    [categoryId, t],
+  );
+  const structureId = ids();
+  await q(
+    `insert into fee_structures (id, tenant_id, academic_year_id, category_id, code, name, total_amount, applies_to) values ($1, $2, $3, $4, 'SCOL-6E', 'Scolarité 6e', 150000, $5)`,
+    [
+      structureId,
+      t,
+      a.yearId,
+      categoryId,
+      JSON.stringify({ programIds: [], levelIds: [levelIds.sixieme], groupIds: [] }),
+    ],
+  );
+  const schedule = [
+    ['Tranche 1', 50000, '2026-10-01'],
+    ['Tranche 2', 50000, '2027-01-10'],
+    ['Tranche 3', 50000, '2027-04-01'],
+  ] as const;
+  for (const [i, [label, amount, due]] of schedule.entries())
+    await q(
+      `insert into fee_schedule_items (id, tenant_id, fee_structure_id, seq, label, amount, due_date) values ($1, $2, $3, $4, $5, $6, $7)`,
+      [ids(), t, structureId, i + 1, label, amount, due],
+    );
+  const assignmentId = ids();
+  await q(
+    `insert into fee_assignments (id, tenant_id, fee_structure_id, target, targeted_count, created_count) values ($1, $2, $3, '{"seed":true}', 4, 4)`,
+    [assignmentId, t, structureId],
+  );
+  const feeIds = { s1: ids(), s2: ids() };
+  const installmentIds: { s1: string[]; s2: string[] } = { s1: [], s2: [] };
+  for (const [idx, sid] of studentIds.slice(0, 4).entries()) {
+    const feeId = idx === 0 ? feeIds.s1 : idx === 1 ? feeIds.s2 : ids();
+    const paidFirst = idx === 0;
+    await q(
+      `insert into student_fees (id, tenant_id, student_id, fee_structure_id, academic_year_id, assignment_id, total_amount, amount_allocated, status) values ($1, $2, $3, $4, $5, $6, 150000, $7, $8)`,
+      [
+        feeId,
+        t,
+        sid,
+        structureId,
+        a.yearId,
+        assignmentId,
+        paidFirst ? 60000 : 0,
+        paidFirst ? 'PARTIALLY_PAID' : 'OPEN',
+      ],
+    );
+    for (const [i, [label, amount, due]] of schedule.entries()) {
+      const instId = ids();
+      if (idx === 0) installmentIds.s1.push(instId);
+      if (idx === 1) installmentIds.s2.push(instId);
+      const allocated = paidFirst ? (i === 0 ? 50000 : i === 1 ? 10000 : 0) : 0;
+      const status =
+        allocated === 50000
+          ? 'PAID'
+          : allocated > 0
+            ? 'PARTIALLY_PAID'
+            : i === 0
+              ? 'OVERDUE'
+              : 'PENDING';
+      await q(
+        `insert into installments (id, tenant_id, student_fee_id, student_id, seq, label, amount_due, amount_allocated, due_date, status) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [instId, t, feeId, sid, i + 1, label, amount, allocated, due, status],
+      );
+    }
+  }
+  const paymentId = ids();
+  await q(
+    `insert into payments (id, tenant_id, student_id, amount, source, method, payer_name, value_date, reference, recorded_by) values ($1, $2, $3, 60000, 'MANUAL', 'CASH', 'Rosine ADJOVI', '2026-10-02', 'BRD-0001', $4)`,
+    [paymentId, t, studentIds[0], null],
+  );
+  await q(
+    `insert into payment_allocations (id, tenant_id, payment_id, installment_id, amount) values ($1, $2, $3, $4, 50000), ($5, $2, $3, $6, 10000)`,
+    [ids(), t, paymentId, installmentIds.s1[0], ids(), installmentIds.s1[1]],
+  );
+  const receiptNumber = `${a.code.toUpperCase()}-2026-000001`;
+  await q(`insert into receipt_sequences (tenant_id, year, last_seq) values ($1, 2026, 1)`, [t]);
+  await q(
+    `insert into receipts (id, tenant_id, payment_id, kind, number, amount, currency, snapshot, verify_hash) values ($1, $2, $3, 'PAYMENT', $4, 60000, 'XOF', $5, 'seed')`,
+    [
+      ids(),
+      t,
+      paymentId,
+      receiptNumber,
+      JSON.stringify({
+        tenant: { name: '', code: a.code },
+        student: { firstName: 'Aïcha', lastName: 'ADJOVI', matricule: '2026-00001' },
+        payment: {
+          id: paymentId,
+          amount: 60000,
+          currency: 'XOF',
+          method: 'CASH',
+          valueDate: '2026-10-02',
+          reference: 'BRD-0001',
+          payerName: 'Rosine ADJOVI',
+          recordedBy: null,
+        },
+        lines: [
+          { feeName: 'Scolarité 6e', label: 'Tranche 1', amount: 50000 },
+          { feeName: 'Scolarité 6e', label: 'Tranche 2', amount: 10000 },
+        ],
+        credit: 0,
+      }),
+    ],
+  );
+
   return {
     yearId: a.yearId,
     programId,
@@ -439,6 +557,7 @@ async function seedAcademic(
       phone: parentPhone,
     },
     attendance: { sheetId, recordIds, justificationId, alertId, notificationId },
+    billing: { categoryId, structureId, feeIds, installmentIds, paymentId, receiptNumber },
   };
 }
 

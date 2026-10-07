@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { collectRoutes } from '../src/openapi/build';
 import { bearer, loginAs, seed, startApp, type Session, type TestContext } from './helpers';
@@ -23,6 +24,7 @@ describe('Isolation inter-tenant', () => {
     const ac = A().academic;
     if (name === 'membershipId') return A().users.TEACHER.membershipId;
     if (name === 'studentId') return ac.studentIds[0]!;
+    if (name === 'paymentId') return ac.billing.paymentId;
     if (name === 'familyId') return '00000000-0000-0000-0000-000000000000';
     const byPrefix: [string, string][] = [
       ['/api/v1/academic-years', ac.yearId],
@@ -38,6 +40,9 @@ describe('Isolation inter-tenant', () => {
       ['/api/v1/guardians', ac.guardianIds.parent],
       ['/api/v1/student-guardians', ac.linkIds.parentS1],
       ['/api/v1/imports', ac.importJobId],
+      ['/api/v1/fee-categories', ac.billing.categoryId],
+      ['/api/v1/fee-structures', ac.billing.structureId],
+      ['/api/v1/payments', ac.billing.paymentId],
       ['/api/v1/attendance-sheets', ac.attendance.sheetId],
       ['/api/v1/attendance-records', ac.attendance.recordIds.s1],
       ['/api/v1/justifications', ac.attendance.justificationId],
@@ -111,7 +116,7 @@ describe('Isolation inter-tenant', () => {
     for (const r of routes) {
       const key = `${r.method.toUpperCase()} ${r.path}`;
       const path = r.path.replace(/:([A-Za-z0-9_]+)/g, (_m, name: string) => idFor(r.path, name));
-      const req = ctx.http[r.method](path).set(bearer(admB));
+      const req = ctx.http[r.method](path).set(bearer(admB)).set('Idempotency-Key', randomUUID());
       const body = bodies[key];
       const res = body ? await req.send(body()) : await req.send();
       if (res.status !== 404) failures.push(`${key} → ${res.status}`);

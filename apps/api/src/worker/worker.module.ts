@@ -4,6 +4,7 @@ import { ConfigModule } from '../config/config.module';
 import { ENV, type Env } from '../config/env';
 import { DatabaseModule } from '../database/database.module';
 import { AcademicModule } from '../modules/academic';
+import { BillingModule } from '../modules/billing';
 import { NotificationsModule } from '../modules/notifications';
 import { SharedModule } from '../modules/shared';
 import { DomainEventsProcessor } from './domain-events.processor';
@@ -28,6 +29,7 @@ import { SchedulesService } from './schedules.service';
     DatabaseModule,
     SharedModule,
     AcademicModule,
+    BillingModule,
     NotificationsModule,
   ],
   providers: [

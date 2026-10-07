@@ -10,7 +10,12 @@ export type NotificationKind =
   | 'JUSTIFICATION_SUBMITTED'
   | 'REPEATED_ABSENCES'
   | 'ATTENDANCE_SHEET_MISSING'
-  | 'SMS_CAP_WARNING';
+  | 'SMS_CAP_WARNING'
+  | 'PAYMENT_RECEIVED'
+  | 'PAYMENT_REVERSED'
+  | 'INSTALLMENT_DUE_SOON'
+  | 'INSTALLMENT_OVERDUE'
+  | 'LEDGER_INTEGRITY';
 
 export type NotificationChannel = 'SMS' | 'EMAIL' | 'PUSH' | 'INAPP';
 
@@ -125,6 +130,64 @@ export const Templates = {
       actionUrl: `/attendance/sessions/${p.sessionId}`,
     };
   },
+  paymentReceived(p: {
+    tenantName: string;
+    firstName: string;
+    amount: number;
+    receiptNumber: string;
+    credit: number;
+  }): Rendered {
+    return {
+      title: 'Paiement reçu',
+      body: clip(
+        `${p.tenantName} : paiement de ${xof(p.amount)} reçu pour ${p.firstName}. Reçu n° ${p.receiptNumber}.${p.credit > 0 ? ` Trop-perçu ${xof(p.credit)} porté en crédit.` : ''}`,
+        160,
+      ),
+      actionUrl: '/children',
+    };
+  },
+  paymentReversed(p: {
+    tenantName: string;
+    firstName: string;
+    amount: number;
+    receiptNumber: string;
+  }): Rendered {
+    return {
+      title: 'Paiement annulé',
+      body: clip(
+        `${p.tenantName} : le paiement de ${xof(p.amount)} pour ${p.firstName} a été annulé (reçu d'annulation ${p.receiptNumber}). Contactez la caisse.`,
+        160,
+      ),
+      actionUrl: '/children',
+    };
+  },
+  /** Un SMS par tuteur : toutes les échéances de ses enfants concernées ce jour. */
+  installmentsReminder(p: {
+    tenantName: string;
+    kind: 'DUE_SOON' | 'OVERDUE';
+    items: { firstName: string; amount: number; dueDate: string; label: string }[];
+    message?: string;
+  }): Rendered {
+    const total = p.items.reduce((s, i) => s + i.amount, 0);
+    const names = [...new Set(p.items.map((i) => i.firstName))].join(', ');
+    const first = p.items[0];
+    const body =
+      p.kind === 'DUE_SOON'
+        ? `${p.tenantName} : ${xof(total)} à régler pour ${names} avant le ${fr(first?.dueDate ?? '')} (${p.items.length} échéance${p.items.length > 1 ? 's' : ''}).`
+        : `${p.tenantName} : ${xof(total)} en retard de paiement pour ${names}${p.message ? ` — ${p.message}` : ''}. Merci de régulariser.`;
+    return {
+      title: p.kind === 'DUE_SOON' ? 'Échéance à venir' : 'Retard de paiement',
+      body: clip(body, 160),
+      actionUrl: '/children',
+    };
+  },
+  ledgerIntegrity(p: { mismatches: number }): Rendered {
+    return {
+      title: 'Contrôle du grand-livre',
+      body: `${p.mismatches} écart(s) détecté(s) entre montants stockés et recalculés : vérifier le journal.`,
+      actionUrl: '/finance',
+    };
+  },
   smsCapWarning(p: { sent: number; cap: number; month: string }): Rendered {
     return {
       title: 'Quota SMS bientôt atteint',
@@ -143,6 +206,11 @@ export const DEFAULT_CHANNELS: Record<NotificationKind, NotificationChannel[]> =
   REPEATED_ABSENCES: ['SMS', 'INAPP'],
   ATTENDANCE_SHEET_MISSING: ['INAPP'],
   SMS_CAP_WARNING: ['INAPP', 'EMAIL'],
+  PAYMENT_RECEIVED: ['SMS', 'INAPP'],
+  PAYMENT_REVERSED: ['SMS', 'INAPP'],
+  INSTALLMENT_DUE_SOON: ['SMS', 'INAPP'],
+  INSTALLMENT_OVERDUE: ['SMS', 'INAPP'],
+  LEDGER_INTEGRITY: ['INAPP', 'EMAIL'],
 };
 
 /** Résout les canaux effectifs : préférence si présente, sinon défaut ; l'in-app est toujours conservé. */
@@ -155,6 +223,8 @@ export function resolveChannels(
   set.add('INAPP');
   return [...set];
 }
+
+const xof = (n: number) => `${n.toLocaleString('fr-FR').replace(/\u202f|\u00a0/g, ' ')} FCFA`;
 
 export function clip(s: string, max: number): string {
   return s.length <= max ? s : `${s.slice(0, max - 1)}…`;

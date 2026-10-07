@@ -6,3 +6,4 @@ export * from './technical';
 export * from './academic';
 export * from './students';
 export * from './attendance';
+export * from './billing';

@@ -203,6 +203,31 @@ describe('Notifications', () => {
     ).toBe(true);
   });
 
+  it('un encaissement prévient les tuteurs ayant la vue finance, avec le numéro de reçu', async () => {
+    const before = ctx.sms.sent.length;
+    await planner.handle({
+      id: 'evt-payment-1',
+      type: 'PaymentRecorded',
+      tenantId: L().id,
+      aggregateType: 'Payment',
+      aggregateId: ac().billing.paymentId,
+      payload: {
+        paymentId: ac().billing.paymentId,
+        studentId: ac().studentIds[0],
+        amount: 60000,
+        currency: 'XOF',
+        method: 'CASH',
+        receiptNumber: ac().billing.receiptNumber,
+        allocated: 60000,
+        credit: 0,
+      },
+      occurredAt: new Date().toISOString(),
+    });
+    expect(ctx.sms.sent.length).toBe(before + 1);
+    expect(ctx.sms.sent.at(-1)?.body).toContain(ac().billing.receiptNumber);
+    expect(ctx.sms.sent.at(-1)?.body).toContain('60 000 FCFA');
+  });
+
   it('une décision de justificatif prévient le tuteur auteur', async () => {
     const before = ctx.sms.sent.length;
     await planner.handle({
