@@ -28,6 +28,9 @@ export default defineConfig({
           include: ['test/**/*.test.ts'],
           environment: 'node',
           globalSetup: ['./test/global-setup.ts'],
+          // Les fichiers partagent une base et un Redis (vidé au démarrage de chaque fichier) : ils doivent
+          // s'exécuter l'un après l'autre. L'option n'est pas honorée au niveau du projet par vitest 3 :
+          // le script `test:integration` passe aussi `--no-file-parallelism`.
           fileParallelism: false,
           // Les options de délai de la racine ne sont pas héritées par les projets.
           testTimeout: 30_000,

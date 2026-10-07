@@ -146,7 +146,7 @@ jobs:
             || { echo "::warning::Vulnérabilités « high » dans les dépendances de production : voir le résumé du job (mise à jour à planifier)"; { echo '### pnpm audit --prod (high)'; echo '```'; tail -n 80 audit-high.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"; }
       - name: Recherche de secrets dans l'historique (gitleaks)
         run: |
-          .github/scripts/run-step.sh "gitleaks" docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect --source /repo --redact --no-banner --exit-code 1
+          .github/scripts/run-step.sh "gitleaks" docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect --source /repo --config /repo/.gitleaks.toml --redact --verbose --no-color --no-banner --exit-code 1
 
   build:
     name: Images Docker
