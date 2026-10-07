@@ -34,9 +34,18 @@ const params: Record<string, () => string> = {
   paymentId: () => T().academic.billing.paymentId,
   attemptId: () => T().academic.payments.cancelledAttemptId,
   provider: () => 'FAKE',
+  key: () => 'attendance-by-group',
   familyId: () => '00000000-0000-0000-0000-000000000000',
 };
 const bodies: Record<string, () => object> = {
+  'POST /api/v1/scheduled-reports': () => ({
+    reportKey: 'attendance-by-group',
+    cadence: 'WEEKLY',
+    dayOfPeriod: 1,
+    recipients: ['direction@example.com'],
+  }),
+  'PATCH /api/v1/scheduled-reports/:id': () => ({ enabled: true }),
+  'POST /api/v1/reports/refresh': () => ({}),
   'PUT /api/v1/payment-config': () => ({
     provider: 'FAKE',
     environment: 'SANDBOX',

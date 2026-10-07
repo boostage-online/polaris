@@ -46,6 +46,10 @@ describe('Isolation inter-tenant', () => {
       ['/api/v1/payments', ac.billing.paymentId],
       ['/api/v1/payment-attempts', ac.payments.cancelledAttemptId],
       ['/api/v1/payment-reconciliation', ac.payments.reconciliationRunId],
+      ['/api/v1/trace/sheets', ac.attendance.sheetId],
+      ['/api/v1/trace/notifications', ac.attendance.notificationId],
+      ['/api/v1/scheduled-reports', ac.reporting.scheduledReportId],
+      ['/api/v1/tenant-exports', ac.reporting.exportId],
       ['/api/v1/attendance-sheets', ac.attendance.sheetId],
       ['/api/v1/attendance-records', ac.attendance.recordIds.s1],
       ['/api/v1/justifications', ac.attendance.justificationId],
@@ -120,6 +124,7 @@ describe('Isolation inter-tenant', () => {
     }),
     'POST /api/v1/me/children/:studentId/payment-attempts': () => ({ amount: 1000 }),
     'POST /api/v1/me/children/:studentId/payment-attempts/:attemptId/confirm': () => ({}),
+    'PATCH /api/v1/scheduled-reports/:id': () => ({ enabled: false }),
   };
 
   it('toutes les routes tenant avec identifiant répondent 404 pour une ressource du tenant A', async () => {
