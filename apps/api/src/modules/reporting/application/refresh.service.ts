@@ -69,7 +69,7 @@ export class ReportRefreshService {
         const tenant = (await tx.query.tenants.findFirst({ where: eq(tenants.id, tenantId) }))!;
         const today = localDateParts(new Date(), tenant.timezone).date;
         const bounds = await tx.execute<{ first: string | null; last: string | null }>(
-          sql`select min((s.starts_at at time zone ${tenant.timezone})::date)::text as first,
+          sql`select least(min((s.starts_at at time zone ${tenant.timezone})::date), (select min(value_date) from payments))::text as first,
                      max((s.starts_at at time zone ${tenant.timezone})::date)::text as last
               from sessions s`,
         );

@@ -72,9 +72,9 @@ export class DashboardsService {
     const atRisk = (await this.reports.studentsAtRisk(tx, { from: from30, to: today })).length;
     const fin = (
       await tx.execute<{ due: number; paid: number; overdue: number }>(sql`
-        select coalesce(sum(greatest(0, amount_due + adjustments_total)), 0)::bigint as due,
-               coalesce(sum(amount_allocated), 0)::bigint as paid,
-               coalesce(sum(case when status = 'OVERDUE' then greatest(0, amount_due + adjustments_total - amount_allocated) else 0 end), 0)::bigint as overdue
+        select coalesce(sum(greatest(0, i.amount_due + i.adjustments_total)), 0)::bigint as due,
+               coalesce(sum(i.amount_allocated), 0)::bigint as paid,
+               coalesce(sum(case when i.status = 'OVERDUE' then greatest(0, i.amount_due + i.adjustments_total - i.amount_allocated) else 0 end), 0)::bigint as overdue
         from installments i join student_fees f on f.id = i.student_fee_id
         join academic_years y on y.id = f.academic_year_id and y.is_current
         where i.status <> 'CANCELLED'`)

@@ -197,7 +197,7 @@ export class TenantExportService {
         const entries: ZipEntry[] = [];
         const manifest: { name: string; rows: number }[] = [];
         for (const q of EXPORT_QUERIES) {
-          const res = await tx.execute<Record<string, Cell>>(sql.raw(q.query));
+          const res = await tx.execute<Record<string, unknown>>(sql.raw(q.query));
           const columns = res.fields.map((f) => ({ key: f.name, label: f.name }));
           const rows = res.rows.map((r) =>
             Object.fromEntries(
