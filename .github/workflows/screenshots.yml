@@ -1,0 +1,96 @@
+name: Captures d'écran
+
+# Démarre l'application complète sur les données de démonstration (PostgreSQL, Redis, API, web) et capture les
+# principaux écrans avec Chromium. Les images sont publiées sur la branche `screenshots` (dossier daté) et
+# résumées dans le job. Manuel, ou à chaque push sur la branche `screenshots-run`.
+on:
+  workflow_dispatch:
+  push:
+    branches: [screenshots-run]
+
+permissions:
+  contents: write
+
+jobs:
+  shots:
+    name: Captures d'écran
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: polaris_owner
+          POSTGRES_PASSWORD: polaris
+          POSTGRES_DB: polaris
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U polaris_owner -d polaris"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+    env:
+      NODE_ENV: development
+      DATABASE_URL: postgres://polaris_app:polaris_app@localhost:5432/polaris
+      DATABASE_URL_PLATFORM: postgres://polaris_owner:polaris@localhost:5432/polaris
+      MIGRATION_DATABASE_URL: postgres://polaris_owner:polaris@localhost:5432/polaris
+      REDIS_URL: redis://localhost:6379
+      WEB_ORIGIN: http://localhost:3000
+      API_PUBLIC_URL: http://localhost:4000
+      COOKIE_DOMAIN: localhost
+      LOG_LEVEL: warn
+      RATE_LIMIT_GLOBAL_PER_MINUTE: '10000'
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Rôles PostgreSQL, migrations, données de démonstration
+        run: |
+          psql "$DATABASE_URL_PLATFORM" -v ON_ERROR_STOP=1 \
+            -c "CREATE ROLE polaris_app LOGIN PASSWORD 'polaris_app' NOBYPASSRLS;" \
+            -c "CREATE ROLE polaris_platform LOGIN PASSWORD 'polaris_platform' BYPASSRLS;"
+          pnpm build --filter=@polaris/contracts
+          cd apps/api
+          pnpm db:migrate
+          SEED_OUTPUT=/tmp/seed.json pnpm db:seed
+      - name: Construire l'API et le web
+        run: |
+          pnpm --filter @polaris/api build
+          pnpm --filter @polaris/web build
+      - name: Démarrer l'API, le worker et le web
+        run: |
+          (cd apps/api && nohup node dist/main.js > /tmp/api.log 2>&1 &)
+          (cd apps/api && nohup node dist/worker/main.js > /tmp/worker.log 2>&1 &)
+          (cd apps/web && nohup pnpm start > /tmp/web.log 2>&1 &)
+          for i in $(seq 1 60); do curl -fsS http://localhost:4000/api/v1/health/ready >/dev/null && curl -fsS -o /dev/null http://localhost:3000/login && break; sleep 2; done
+          curl -fsS http://localhost:4000/api/v1/health/ready
+      - name: Chromium (Playwright)
+        run: |
+          mkdir -p /tmp/pw && cd /tmp/pw && npm init -y >/dev/null
+          npm i --no-audit --no-fund playwright@1.51.1 >/dev/null
+          npx playwright install --with-deps chromium >/dev/null
+          cp "$GITHUB_WORKSPACE/ops/screenshots/screenshots.mjs" /tmp/pw/
+      - name: Captures
+        run: cd /tmp/pw && node screenshots.mjs /tmp/seed.json /tmp/shots
+      - name: Journaux en cas d'échec
+        if: failure()
+        run: tail -n 80 /tmp/api.log /tmp/web.log /tmp/worker.log || true
+      - name: Publier sur la branche `screenshots`
+        run: |
+          STAMP=$(date -u +%Y%m%d-%H%M)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin screenshots 2>/dev/null && git checkout -B screenshots origin/screenshots || git checkout --orphan screenshots
+          git rm -rq --cached . >/dev/null 2>&1 || true
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name shots -exec rm -rf {} +
+          mkdir -p "shots/$STAMP" && cp /tmp/shots/* "shots/$STAMP/"
+          rm -rf shots/latest && cp -r "shots/$STAMP" shots/latest
+          git add shots && git commit -qm "Captures d'écran $STAMP (${GITHUB_SHA::7})" && git push -q origin screenshots
+          echo "### Captures d'écran — $STAMP" >> "$GITHUB_STEP_SUMMARY"
+          echo "Branche \`screenshots\`, dossier \`shots/$STAMP\` ($(ls /tmp/shots/*.png | wc -l) images)" >> "$GITHUB_STEP_SUMMARY"
