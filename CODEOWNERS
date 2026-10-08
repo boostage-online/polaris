@@ -1,0 +1,6 @@
+# Revue obligatoire sur les modules critiques (Partie 11).
+/apps/api/src/modules/identity/   @boostage-online/polaris-leads
+/apps/api/src/modules/tenancy/    @boostage-online/polaris-leads
+/apps/api/src/modules/payments/   @boostage-online/polaris-leads
+/apps/api/migrations/             @boostage-online/polaris-leads
+/docs/adr/                        @boostage-online/polaris-leads

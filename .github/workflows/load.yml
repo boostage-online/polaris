@@ -1,0 +1,105 @@
+name: Charge (k6)
+
+# Profil « smoke » sur l'API démarrée dans le runner : garde-fou hebdomadaire et à la demande (G7 p95 < 400 ms).
+# Les profils « nominal » et « full » se lancent sur staging (voir load/README.md).
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Profil k6 (smoke | nominal)'
+        default: 'smoke'
+  schedule:
+    - cron: '17 4 * * 1' # lundi 04:17 UTC
+
+jobs:
+  k6:
+    name: k6 — ${{ github.event.inputs.profile || 'smoke' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: polaris_owner
+          POSTGRES_PASSWORD: polaris
+          POSTGRES_DB: polaris_load
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U polaris_owner -d polaris_load"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      OWNER_URL: postgres://polaris_owner:polaris@localhost:5432/polaris_load
+      APP_URL: postgres://polaris_app:polaris_app@localhost:5432/polaris_load
+      REDIS_URL: redis://localhost:6379
+      NODE_ENV: development
+      LOG_LEVEL: warn
+      RATE_LIMIT_GLOBAL_PER_MINUTE: '100000'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Rôles PostgreSQL
+        run: |
+          psql "$OWNER_URL" -v ON_ERROR_STOP=1 \
+            -c "CREATE ROLE polaris_app LOGIN PASSWORD 'polaris_app' NOBYPASSRLS;" \
+            -c "CREATE ROLE polaris_platform LOGIN PASSWORD 'polaris_platform' BYPASSRLS;"
+      - run: pnpm build --filter=@polaris/contracts
+      - name: Migrations et seed
+        env:
+          MIGRATION_DATABASE_URL: ${{ env.OWNER_URL }}
+          DATABASE_URL_PLATFORM: ${{ env.OWNER_URL }}
+          SEED_OUTPUT: ${{ github.workspace }}/apps/api/.test-seed.json
+        run: |
+          cd apps/api
+          pnpm db:migrate
+          pnpm db:seed
+      - name: Démarrer l'API et le worker
+        env:
+          DATABASE_URL: ${{ env.APP_URL }}
+          DATABASE_URL_PLATFORM: ${{ env.OWNER_URL }}
+          API_PORT: '4000'
+          WEB_ORIGIN: http://localhost:3000
+          API_PUBLIC_URL: http://localhost:4000
+        run: |
+          cd apps/api
+          (node -r @swc-node/register src/main.ts > ../../api.log 2>&1 &)
+          (node -r @swc-node/register src/worker/main.ts > ../../worker.log 2>&1 &)
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:4000/api/v1/health/ready >/dev/null 2>&1 && break
+            sleep 2
+          done
+          curl -fsS http://localhost:4000/api/v1/health/ready
+      - uses: grafana/setup-k6-action@v1
+      - name: k6 — parcours API
+        run: k6 run -e API_URL=http://localhost:4000 -e PROFILE=${{ github.event.inputs.profile || 'smoke' }} -e SEED_FILE=${{ github.workspace }}/apps/api/.test-seed.json --summary-export=k6-api.json load/k6/api.js
+      - name: k6 — webhooks
+        run: k6 run -e API_URL=http://localhost:4000 -e PROFILE=${{ github.event.inputs.profile || 'smoke' }} -e SEED_FILE=${{ github.workspace }}/apps/api/.test-seed.json --summary-export=k6-webhooks.json load/k6/webhooks.js
+      - name: Résumé
+        if: always()
+        run: |
+          {
+            echo "## Charge k6 (${{ github.event.inputs.profile || 'smoke' }})"
+            for f in k6-api.json k6-webhooks.json; do
+              [ -f "$f" ] || continue
+              echo "### $f"
+              node -e '
+                const s = require(process.argv[1]);
+                const m = s.metrics;
+                const d = m.http_req_duration?.values ?? {};
+                console.log(`- requêtes : ${m.http_reqs?.values?.count ?? "?"}, échecs : ${((m.http_req_failed?.values?.rate ?? 0) * 100).toFixed(2)} %`);
+                console.log(`- durée : p95 ${Math.round(d["p(95)"] ?? 0)} ms, p99 ${Math.round(d["p(99)"] ?? 0)} ms, max ${Math.round(d.max ?? 0)} ms`);
+              ' "$f"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Journaux API/worker (en cas d'échec)
+        if: failure()
+        run: tail -n 100 api.log worker.log || true

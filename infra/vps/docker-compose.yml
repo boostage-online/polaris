@@ -1,0 +1,195 @@
+# Polaris — production sur un VPS unique (Hostinger KVM 1/2, Ubuntu 24.04, Docker Engine).
+# Installé dans /opt/polaris par install.sh ; mis à jour par deploy.sh (appelé par GitHub Actions).
+# Les images sont construites par la CI et publiées sur ghcr.io : rien ne se compile ici.
+#
+#   caddy    : HTTPS automatique (Let's Encrypt), reverse proxy → web (pages) et api (/api/*)
+#   web      : Next.js (appelle l'API en même origine : /api/v1)
+#   api      : NestJS (port interne 4000)
+#   worker   : relais outbox, notifications, réconciliation, crons (platform-alerts, hypercare…)
+#   postgres : PostgreSQL 16, rôles polaris_owner / polaris_app (sans BYPASSRLS) / polaris_platform
+#   redis    : files BullMQ, verrouillages, MFA — persistance AOF
+#   backup   : dump nocturne chiffré dans /opt/polaris/backups, rotation 14 jours
+#   offsite  : copie des sauvegardes vers un stockage distant (rclone), toutes les heures
+
+x-api-env: &api-env
+  NODE_ENV: production
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  API_PORT: '4000'
+  WEB_ORIGIN: https://${APP_DOMAIN}
+  API_PUBLIC_URL: https://${APP_DOMAIN}
+  COOKIE_DOMAIN: ${APP_DOMAIN}
+  COOKIE_SECURE: 'true'
+  DATABASE_URL: postgres://polaris_app:${POSTGRES_APP_PASSWORD}@postgres:5432/polaris
+  DATABASE_URL_PLATFORM: postgres://polaris_platform:${POSTGRES_PLATFORM_PASSWORD}@postgres:5432/polaris
+  MIGRATION_DATABASE_URL: postgres://polaris_owner:${POSTGRES_OWNER_PASSWORD}@postgres:5432/polaris
+  REDIS_URL: redis://redis:6379
+  JWT_KID: ${JWT_KID}
+  JWT_PRIVATE_JWK: ${JWT_PRIVATE_JWK}
+  JWT_PUBLIC_JWK: ${JWT_PUBLIC_JWK}
+  JWT_ISSUER: polaris
+  RECEIPT_SECRET: ${RECEIPT_SECRET}
+  PAYMENT_MASTER_KEY: ${PAYMENT_MASTER_KEY}
+  APP_MASTER_KEY: ${APP_MASTER_KEY}
+  PAYMENT_FAKE_PROVIDER_ENABLED: 'false'
+  SMS_PROVIDER: ${SMS_PROVIDER:-log}
+  EMAIL_PROVIDER: ${EMAIL_PROVIDER:-log}
+  SENTRY_DSN: ${SENTRY_DSN:-}
+  RATE_LIMIT_GLOBAL_PER_MINUTE: ${RATE_LIMIT_GLOBAL_PER_MINUTE:-300}
+  IMPERSONATION_TTL_MINUTES: ${IMPERSONATION_TTL_MINUTES:-30}
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ['80:80', '443:443', '443:443/udp']
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [web, api]
+    logging: &logging
+      driver: json-file
+      options: { max-size: '20m', max-file: '5' }
+
+  web:
+    image: ghcr.io/${GHCR_REPOSITORY:-boostage-online/polaris}/web:${POLARIS_TAG:-main}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: '3000'
+      HOSTNAME: 0.0.0.0
+      CSP_ENFORCE: ${CSP_ENFORCE:-false}
+    expose: ['3000']
+    logging: *logging
+
+  api:
+    image: ghcr.io/${GHCR_REPOSITORY:-boostage-online/polaris}/api:${POLARIS_TAG:-main}
+    restart: unless-stopped
+    environment: *api-env
+    expose: ['4000']
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4000/api/v1/health/ready']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging: *logging
+
+  worker:
+    image: ghcr.io/${GHCR_REPOSITORY:-boostage-online/polaris}/worker:${POLARIS_TAG:-main}
+    restart: unless-stopped
+    environment: *api-env
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      api: { condition: service_healthy }
+    logging: *logging
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: polaris_owner
+      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD}
+      POSTGRES_DB: polaris
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD}
+      POSTGRES_PLATFORM_PASSWORD: ${POSTGRES_PLATFORM_PASSWORD}
+    command:
+      - postgres
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - effective_cache_size=1536MB
+      - -c
+      - work_mem=8MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - max_connections=80
+      - -c
+      - log_min_duration_statement=1000
+      - -c
+      - wal_level=replica
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U polaris_owner -d polaris']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - 'yes'
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - noeviction
+    volumes: ['redisdata:/data']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    logging: *logging
+
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      PGURL: postgres://polaris_owner:${POSTGRES_OWNER_PASSWORD}@postgres:5432/polaris
+      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE}
+      BACKUP_HOUR_UTC: ${BACKUP_HOUR_UTC:-01}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./backups:/backups
+      - ./backup.sh:/usr/local/bin/polaris-backup:ro
+    # openssl (chiffrement) n'est pas garanti dans l'image : installé au démarrage si absent.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - 'command -v openssl >/dev/null || apk add --no-cache openssl >/dev/null; exec /usr/local/bin/polaris-backup loop'
+    depends_on:
+      postgres: { condition: service_healthy }
+    logging: *logging
+
+  offsite:
+    image: rclone/rclone:latest
+    restart: unless-stopped
+    profiles: ['offsite']
+    environment:
+      RCLONE_CONFIG_REMOTE_TYPE: ${RCLONE_TYPE:-s3}
+      RCLONE_CONFIG_REMOTE_PROVIDER: ${RCLONE_PROVIDER:-Cloudflare}
+      RCLONE_CONFIG_REMOTE_ACCESS_KEY_ID: ${RCLONE_ACCESS_KEY_ID:-}
+      RCLONE_CONFIG_REMOTE_SECRET_ACCESS_KEY: ${RCLONE_SECRET_ACCESS_KEY:-}
+      RCLONE_CONFIG_REMOTE_ENDPOINT: ${RCLONE_ENDPOINT:-}
+      RCLONE_CONFIG_REMOTE_ACL: private
+      RCLONE_BUCKET: ${RCLONE_BUCKET:-polaris-backups}
+    volumes: ['./backups:/backups:ro']
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        while true; do
+          rclone sync /backups "remote:$${RCLONE_BUCKET}/$${HOSTNAME}" --min-age 2m --fast-list -q || echo "offsite: échec de synchronisation"
+          sleep 3600
+        done
+    logging: *logging
+
+volumes:
+  pgdata:
+  redisdata:
+  caddy_data:
+  caddy_config:

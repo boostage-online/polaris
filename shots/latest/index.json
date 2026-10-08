@@ -1,0 +1,127 @@
+[
+  {
+    "name": "01-connexion",
+    "title": "Connexion",
+    "path": "/login"
+  },
+  {
+    "name": "02-etat-du-service",
+    "title": "Page publique d’état du service",
+    "path": "/status"
+  },
+  {
+    "name": "03-admin-tableau-de-bord",
+    "title": "Administrateur — tableau de bord",
+    "path": "/dashboard"
+  },
+  {
+    "name": "04-admin-assistant",
+    "title": "Administrateur — assistant de démarrage",
+    "path": "/onboarding"
+  },
+  {
+    "name": "05-eleves",
+    "title": "Scolarité — liste des élèves",
+    "path": "/students"
+  },
+  {
+    "name": "06-fiche-eleve",
+    "title": "Fiche élève",
+    "path": "/students/a39f444e-adda-4f0f-86fe-2d76eb07ff48"
+  },
+  {
+    "name": "07-structure",
+    "title": "Structure académique",
+    "path": "/structure"
+  },
+  {
+    "name": "08-feuille-appel-admin",
+    "title": "Feuille d’appel (vue établissement)",
+    "path": "/attendance/sessions/35217628-192f-4724-b012-9fdc766a9764"
+  },
+  {
+    "name": "09-feuilles-appel",
+    "title": "Vie scolaire — feuilles d’appel",
+    "path": "/attendance/sheets"
+  },
+  {
+    "name": "10-justificatifs",
+    "title": "Vie scolaire — justificatifs",
+    "path": "/justifications"
+  },
+  {
+    "name": "11-direction",
+    "title": "Direction — tableau de bord",
+    "path": "/direction"
+  },
+  {
+    "name": "12-pedagogie",
+    "title": "Pédagogie — assiduité par classe",
+    "path": "/pedagogy"
+  },
+  {
+    "name": "13-finance",
+    "title": "Finance — tableau de bord",
+    "path": "/finance"
+  },
+  {
+    "name": "14-caisse",
+    "title": "Finance — journal de caisse",
+    "path": "/finance/cash"
+  },
+  {
+    "name": "15-impayes",
+    "title": "Finance — impayés et rappels",
+    "path": "/finance/unpaid"
+  },
+  {
+    "name": "16-rapports",
+    "title": "Rapports",
+    "path": "/reports"
+  },
+  {
+    "name": "17-securite-compte",
+    "title": "Sécurité du compte (MFA)",
+    "path": "/settings/security"
+  },
+  {
+    "name": "18-journal-audit",
+    "title": "Journal d’audit",
+    "path": "/admin/audit"
+  },
+  {
+    "name": "19-enseignant-mobile-accueil",
+    "title": "Enseignant (téléphone) — accueil",
+    "path": "/dashboard"
+  },
+  {
+    "name": "20-enseignant-mobile-emploi-du-temps",
+    "title": "Enseignant (téléphone) — emploi du temps",
+    "path": "/schedule"
+  },
+  {
+    "name": "21-enseignant-mobile-appel",
+    "title": "Enseignant (téléphone) — faire l’appel",
+    "path": "/attendance/sessions/35217628-192f-4724-b012-9fdc766a9764"
+  },
+  {
+    "name": "22-parent-mobile-enfants",
+    "title": "Parent (téléphone) — mes enfants",
+    "path": "/children"
+  },
+  {
+    "name": "23-parent-mobile-enfant",
+    "title": "Parent (téléphone) — suivi d’un enfant",
+    "path": "/children/a39f444e-adda-4f0f-86fe-2d76eb07ff48"
+  },
+  {
+    "name": "24-parent-mobile-notifications",
+    "title": "Parent (téléphone) — notifications",
+    "path": "/notifications"
+  },
+  {
+    "name": "25-plateforme",
+    "title": "Super Admin — vue d’ensemble",
+    "path": "/platform"
+  }
+]

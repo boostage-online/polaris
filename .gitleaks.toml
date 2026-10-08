@@ -1,0 +1,20 @@
+# Configuration gitleaks (job CI `security`). Règles par défaut + liste blanche des valeurs de démonstration
+# connues : elles sont publiques, documentées et refusées en production par la validation de l'environnement.
+title = "Polaris"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Valeurs de démonstration et fichiers d'exemple (jamais utilisés en production)"
+paths = ['''^\.env\.example$''', '''^docs/.*\.md$''', '''^load/README\.md$''']
+
+[[allowlists]]
+description = "Secret TOTP et mot de passe de la seed de démonstration, clés sandbox fictives des tests"
+regexes = [
+  '''GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ''',
+  '''Polaris-demo-2026''',
+  '''dev-master-key-change-me''',
+  '''dev-receipt-secret-change-me''',
+  '''sk_(?:live|sandbox)_(?:abcdef|demo_1234)''',
+]

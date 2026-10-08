@@ -1,0 +1,241 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  # Sur main et les tags (pas de PR), les extraits d'échec vont dans l'issue de journal CI (#9).
+  PR_NUMBER: ${{ github.event.pull_request.number || 9 }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  quality:
+    name: Lint, types, frontières, migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Installer (génère et commite le lockfile s'il manque)
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            .github/scripts/run-step.sh "pnpm install" pnpm install --frozen-lockfile
+          else
+            .github/scripts/run-step.sh "pnpm install (lockfile initial)" pnpm install --no-frozen-lockfile
+            if [ -n "$PR_NUMBER" ]; then
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git add pnpm-lock.yaml
+              git commit -m "chore(ci): pnpm-lock.yaml généré par la CI [skip ci]" || true
+              git push || echo "::warning::lockfile non poussé (droits) — committer pnpm-lock.yaml manuellement"
+            fi
+          fi
+      - run: .github/scripts/run-step.sh "format:check" pnpm format:check
+        continue-on-error: true # TODO retirer après le premier `pnpm format` commité par l'équipe
+      - run: .github/scripts/run-step.sh "build contracts" pnpm build --filter=@polaris/contracts
+      - run: .github/scripts/run-step.sh "typecheck" pnpm typecheck
+      - run: .github/scripts/run-step.sh "lint" pnpm lint
+      - run: .github/scripts/run-step.sh "depcruise" pnpm depcruise
+      - run: .github/scripts/run-step.sh "check-migrations" pnpm --filter @polaris/api db:check-migrations
+
+  test:
+    name: Tests unitaires et d'intégration
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: polaris_owner
+          POSTGRES_PASSWORD: polaris
+          POSTGRES_DB: polaris_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U polaris_owner -d polaris_test"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL_TEST: postgres://polaris_owner:polaris@localhost:5432/polaris_test
+      DATABASE_URL_TEST_APP: postgres://polaris_app:polaris_app@localhost:5432/polaris_test
+      REDIS_URL: redis://localhost:6379
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: .github/scripts/run-step.sh "pnpm install" pnpm install --frozen-lockfile
+      - name: Rôles PostgreSQL (app sans BYPASSRLS, platform avec)
+        run: |
+          psql "$DATABASE_URL_TEST" -v ON_ERROR_STOP=1 \
+            -c "CREATE ROLE polaris_app LOGIN PASSWORD 'polaris_app' NOBYPASSRLS;" \
+            -c "CREATE ROLE polaris_platform LOGIN PASSWORD 'polaris_platform' BYPASSRLS;"
+      - run: .github/scripts/run-step.sh "build contracts" pnpm build --filter=@polaris/contracts
+      - name: Migrations up → down → up (expand/contract)
+        env:
+          MIGRATION_DATABASE_URL: ${{ env.DATABASE_URL_TEST }}
+        run: |
+          cd apps/api
+          ../../.github/scripts/run-step.sh "db:migrate" pnpm db:migrate
+          ../../.github/scripts/run-step.sh "db:rollback" pnpm db:rollback
+          ../../.github/scripts/run-step.sh "db:migrate (2)" pnpm db:migrate
+      - run: .github/scripts/run-step.sh "test unitaires" pnpm test
+      - run: .github/scripts/run-step.sh "test intégration" pnpm test:integration
+      - name: Exercice de restauration (sauvegarde → base jetable → invariants, RTO mesuré)
+        env:
+          PGPASSWORD: polaris
+        run: |
+          .github/scripts/run-step.sh "restore-drill" ops/db/restore-drill.sh "$DATABASE_URL_TEST" "postgres://polaris_owner:polaris@localhost:5432/polaris_restore" restore-report.md
+          cat restore-report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Contrat OpenAPI (routes documentées, SDK à jour)
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL_TEST_APP }}
+          DATABASE_URL_PLATFORM: ${{ env.DATABASE_URL_TEST }}
+        run: |
+          .github/scripts/run-step.sh "openapi:generate" pnpm --filter @polaris/api openapi:generate
+          .github/scripts/run-step.sh "sdk:generate" pnpm --filter @polaris/contracts sdk:generate
+          git diff --exit-code -- packages/contracts/src/sdk/schema.d.ts || echo "::warning::SDK régénéré : committer packages/contracts/src/sdk/schema.d.ts si la spec a changé"
+
+  security:
+    name: Sécurité (dépendances, secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Audit des dépendances (bloquant « critical » en production ; « high » signalé, à traiter sous 7 jours — Partie 14)
+        run: |
+          .github/scripts/run-step.sh "pnpm audit (production, critical)" pnpm audit --prod --audit-level=critical
+          pnpm audit --prod --audit-level=high > audit-high.txt 2>&1 \
+            || { echo "::warning::Vulnérabilités « high » dans les dépendances de production : voir le résumé du job (mise à jour à planifier)"; { echo '### pnpm audit --prod (high)'; echo '```'; tail -n 80 audit-high.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"; }
+      - name: Recherche de secrets dans l'historique (gitleaks)
+        run: |
+          .github/scripts/run-step.sh "gitleaks" docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect --source /repo --config /repo/.gitleaks.toml --redact --verbose --no-color --no-banner --exit-code 1
+
+  build:
+    name: Images Docker
+    runs-on: ubuntu-latest
+    needs: [quality, test, security]
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Image api
+        run: |
+          .github/scripts/run-step.sh "image api" docker buildx build --progress=plain --push \
+            -f infra/docker/api.Dockerfile \
+            -t ghcr.io/${{ github.repository }}/api:${{ github.sha }} \
+            -t ghcr.io/${{ github.repository }}/api:${{ github.ref_type == 'tag' && github.ref_name || 'main' }} \
+            --cache-from type=registry,ref=ghcr.io/${{ github.repository }}/api:buildcache \
+            --cache-to type=registry,ref=ghcr.io/${{ github.repository }}/api:buildcache,mode=max \
+            .
+      - name: Image worker
+        run: |
+          .github/scripts/run-step.sh "image worker" docker buildx build --progress=plain --push \
+            -f infra/docker/worker.Dockerfile \
+            -t ghcr.io/${{ github.repository }}/worker:${{ github.sha }} \
+            -t ghcr.io/${{ github.repository }}/worker:${{ github.ref_type == 'tag' && github.ref_name || 'main' }} \
+            --cache-from type=registry,ref=ghcr.io/${{ github.repository }}/worker:buildcache \
+            --cache-to type=registry,ref=ghcr.io/${{ github.repository }}/worker:buildcache,mode=max \
+            .
+
+      - name: Image web (API en même origine, NEXT_PUBLIC_API_URL vide — voir infra/vps/README.md)
+        run: |
+          .github/scripts/run-step.sh "image web" docker buildx build --progress=plain --push \
+            -f infra/docker/web.Dockerfile \
+            --build-arg NEXT_PUBLIC_API_URL= \
+            -t ghcr.io/${{ github.repository }}/web:${{ github.sha }} \
+            -t ghcr.io/${{ github.repository }}/web:${{ github.ref_type == 'tag' && github.ref_name || 'main' }} \
+            --cache-from type=registry,ref=ghcr.io/${{ github.repository }}/web:buildcache \
+            --cache-to type=registry,ref=ghcr.io/${{ github.repository }}/web:buildcache,mode=max \
+            .
+
+  deploy-vps:
+    name: Déploiement VPS (main)
+    runs-on: ubuntu-latest
+    needs: [build]
+    # Un seul serveur pour les pilotes : `main` y est déployé automatiquement une fois les images publiées.
+    # Variables du dépôt : VPS_HOST (IP ou nom), APP_DOMAIN, VPS_USER (défaut polaris) ; secret : VPS_SSH_KEY (clé privée ed25519).
+    if: github.ref == 'refs/heads/main' && vars.VPS_HOST != '' && vars.APP_DOMAIN != ''
+    environment:
+      name: vps
+      url: https://${{ vars.APP_DOMAIN }}
+    concurrency: { group: deploy-vps, cancel-in-progress: false }
+    steps:
+      - uses: actions/checkout@v5
+      - name: Clé SSH
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ vars.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+      - name: Synchroniser les fichiers de déploiement (compose, Caddyfile, scripts)
+        run: |
+          .github/scripts/run-step.sh "rsync infra/vps" rsync -az --delete --exclude '.env' --exclude 'README.md' \
+            -e "ssh -i ~/.ssh/id_ed25519" infra/vps/ "${{ vars.VPS_USER || 'polaris' }}@${{ vars.VPS_HOST }}:/opt/polaris/"
+      - name: Migration (expand) puis déploiement rolling, puis smoke
+        run: |
+          .github/scripts/run-step.sh "deploy.sh" ssh -i ~/.ssh/id_ed25519 "${{ vars.VPS_USER || 'polaris' }}@${{ vars.VPS_HOST }}" \
+            "bash /opt/polaris/deploy.sh ${{ github.sha }}"
+
+  deploy-production:
+    name: Déploiement production (tag)
+    runs-on: ubuntu-latest
+    needs: [build]
+    # Réservé au jour où une seconde machine séparera staging et production : un tag `v*` promeut l'image déjà
+    # validée (même SHA) sans la reconstruire. Tant qu'il n'y a qu'un VPS, `main` est la production des pilotes.
+    if: github.ref_type == 'tag'
+    environment: production
+    steps:
+      - name: Promotion de l'image déjà validée
+        run: |
+          echo "Promotion de ghcr.io/${{ github.repository }}/api:${{ github.sha }} — même image, aucune reconstruction."
+          echo "Voir docs/runbooks/deploy-vps.md ; fenêtre interdite 7h–9h heure locale."

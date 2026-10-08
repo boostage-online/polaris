@@ -1,0 +1,9 @@
+# Journal des exercices (restauration, provider hors ligne, fuite supposée, charge)
+
+| Date       | Exercice                   | Environnement        | Durée / résultat                                                      | Constats / actions                                                                                       | Par |
+| ---------- | -------------------------- | -------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | --- |
+| 2026-10-07 | Restauration (CI)          | CI (données de test) | Sauvegarde + restauration + invariants en quelques secondes ; 0 écart | Automatisé à chaque run (`ops/db/restore-drill.sh`) ; à rejouer sur un snapshot de staging mensuellement | CI  |
+| —          | Restauration J−1 (staging) | staging              | à faire                                                               | RTO cible < 2 h                                                                                          |     |
+| —          | Provider hors ligne 1 h    | staging              | à faire                                                               |                                                                                                          |     |
+| —          | Fuite supposée             | équipe               | à faire                                                               |                                                                                                          |     |
+| —          | Charge k6 nominal          | staging              | à faire                                                               | p95 < 400 ms                                                                                             |     |
