@@ -1,0 +1,3 @@
+# <filtre pnpm> <paquet>@<version> — lu par .github/workflows/deps-update.yml
+@polaris/web next@^15.5.28
+@polaris/web @next/eslint-plugin-next@^15.5.28
