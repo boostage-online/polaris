@@ -36,5 +36,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --quiet && { echo "rien à mettre à jour"; exit 0; }
-          git commit -qm "chore(deps): $(grep -v '^#' .github/deps-update.txt | tr '\n' ' ')(lockfile mis à jour par la CI)"
+          HUSKY=0 git commit --no-verify -qm "chore(deps): $(grep -v '^#' .github/deps-update.txt | tr '\n' ' ')(lockfile mis à jour par la CI)"
           git push -q origin "HEAD:${GITHUB_REF_NAME}"
