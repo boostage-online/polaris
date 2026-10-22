@@ -9,5 +9,7 @@ coverage/
 !.env.example
 *.tsbuildinfo
 openapi.json
+# Contrat publié pour les apps mobiles (copié depuis apps/api/openapi.json à chaque évolution de l'API)
+!docs/api/openapi.json
 /tmp/
 apps/api/.test-seed.json
