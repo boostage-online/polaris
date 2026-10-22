@@ -1,0 +1,40 @@
+name: Mise à jour de dépendance (sécurité)
+
+# Met à jour une dépendance et le lockfile dans GitHub Actions (l'environnement de développement n'a pas accès au
+# registre npm), puis pousse le commit sur la branche qui a déclenché le workflow. Le paquet et la version sont lus
+# dans .github/deps-update.txt (une ligne : `<filtre pnpm> <paquet>@<version>`, ex. `@polaris/web next@^15.5.28`).
+on:
+  push:
+    branches: ['deps/**']
+    paths: ['.github/deps-update.txt']
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    name: pnpm add + lockfile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Mettre à jour
+        run: |
+          while read -r filter spec; do
+            [ -z "$filter" ] && continue
+            case "$filter" in \#*) continue ;; esac
+            echo "→ pnpm --filter $filter add $spec"
+            pnpm --filter "$filter" add "$spec"
+          done < .github/deps-update.txt
+          pnpm install --lockfile-only
+      - name: Pousser le lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "rien à mettre à jour"; exit 0; }
+          HUSKY=0 git commit --no-verify -qm "chore(deps): $(grep -v '^#' .github/deps-update.txt | tr '\n' ' ')(lockfile mis à jour par la CI)"
+          git push -q origin "HEAD:${GITHUB_REF_NAME}"

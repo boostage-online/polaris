@@ -4,6 +4,7 @@ Plateforme SaaS multi-tenant d'**assiduité** et de **frais scolaires** pour les
 
 - Document directeur (architecture, roadmap, risques) : [Claude Docs](https://claude.ai/code/artifact/21da5528-b9d1-4354-a925-56e8fe542012)
 - Décisions figées : [`docs/adr/`](docs/adr/README.md) · Backlog : [`docs/backlog/`](docs/backlog/README.md) · Runbooks : [`docs/runbooks/`](docs/runbooks/README.md)
+- **Pour continuer le projet** (avec Claude Code ou une équipe) : [`CLAUDE.md`](CLAUDE.md) · plan : [`docs/roadmap/`](docs/roadmap/README.md) · design et maquettes : [`docs/design/`](docs/design/README.md) · API : [`docs/api/`](docs/api/README.md) · apps Flutter : [`docs/mobile/`](docs/mobile/README.md) · mode d'emploi : [`docs/claude-code/`](docs/claude-code/README.md)
 
 ## Démarrer en 15 minutes
 

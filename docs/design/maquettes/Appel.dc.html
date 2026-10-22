@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Enseignant — faire l'appel</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2350C8}a:hover{color:#14254A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F9; font-family: Inter, system-ui, sans-serif; color: #14254A; display: flex; flex-direction: column; overflow: hidden">
+  <header style="padding: 16px 20px; background: #14254A; color: #FFFFFF; display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <div>
+        <div style="font-family: Sora, sans-serif; font-weight: 600; font-size: 20px">Mathématiques — 6e A</div>
+        <div style="font-size: 14px; color: #DCE3F0">Mardi 3 nov. · 08:00–10:00 · Salle A1</div>
+      </div>
+      <span style="padding: 4px 10px; border-radius: 999px; background: #22396B; color: #F2A93B; font-size: 12px; font-weight: 700">Brouillon</span>
+    </div>
+    <div style="display: flex; gap: 8px; font-size: 13px; font-weight: 600">
+      <span style="padding: 4px 10px; border-radius: 999px; background: #E7F4EC; color: #1F7A4D">27 présents</span>
+      <span style="padding: 4px 10px; border-radius: 999px; background: #FDECEA; color: #B42318">2 absents</span>
+      <span style="padding: 4px 10px; border-radius: 999px; background: #FDF3E1; color: #A15C07">1 retard</span>
+    </div>
+  </header>
+
+  <p style="margin: 12px 20px 4px; font-size: 14px; color: #5B6472">Tout le monde est présent par défaut : touchez seulement les absents et les retards.</p>
+
+  <ul style="list-style: none; margin: 0; padding: 0 20px; flex: 1; display: flex; flex-direction: column; gap: 8px; overflow: hidden">
+    <li style="background: #FFFFFF; border: 1px solid #F3C9C4; border-radius: 14px; padding: 12px; display: flex; align-items: center; gap: 10px">
+      <div style="flex: 1; min-width: 0"><div style="font-weight: 600; font-size: 16px">ADJOVI Aïcha</div><div style="font-size: 13px; color: #B42318">Absente · le parent sera prévenu</div></div>
+      <div role="radiogroup" aria-label="Statut d'ADJOVI Aïcha" style="display: flex; gap: 6px">
+        <button type="button" role="radio" aria-checked="false" aria-label="Présent" style="width: 48px; height: 48px; border: 1px solid #C9CFD8; border-radius: 12px; background: #FFFFFF; color: #5B6472; font: 700 15px Inter, sans-serif">P</button>
+        <button type="button" role="radio" aria-checked="true" aria-label="Absent" style="width: 48px; height: 48px; border: 0; border-radius: 12px; background: #B42318; color: #FFFFFF; font: 700 15px Inter, sans-serif">A</button>
+        <button type="button" role="radio" aria-checked="false" aria-label="Retard" style="width: 48px; height: 48px; border: 1px solid #C9CFD8; border-radius: 12px; background: #FFFFFF; color: #5B6472; font: 700 15px Inter, sans-serif">R</button>
+      </div>
+    </li>
+    <li style="background: #FFFFFF; border: 1px solid #F1D9AE; border-radius: 14px; padding: 12px; display: flex; align-items: center; gap: 10px">
+      <div style="flex: 1; min-width: 0"><div style="font-weight: 600; font-size: 16px">AGBODJAN Koffi</div><div style="font-size: 13px; color: #A15C07">Retard · 10 min</div></div>
+      <div role="radiogroup" aria-label="Statut d'AGBODJAN Koffi" style="display: flex; gap: 6px">
+        <button type="button" role="radio" aria-checked="false" aria-label="Présent" style="width: 48px; height: 48px; border: 1px solid #C9CFD8; border-radius: 12px; background: #FFFFFF; color: #5B6472; font: 700 15px Inter, sans-serif">P</button>
+        <button type="button" role="radio" aria-checked="false" aria-label="Absent" style="width: 48px; height: 48px; border: 1px solid #C9CFD8; border-radius: 12px; background: #FFFFFF; color: #5B6472; font: 700 15px Inter, sans-serif">A</button>
+        <button type="button" role="radio" aria-checked="true" aria-label="Retard" style="width: 48px; height: 48px; border: 0; border-radius: 12px; background: #A15C07; color: #FFFFFF; font: 700 15px Inter, sans-serif">R</button>
+      </div>
+    </li>
+    <li style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 14px; padding: 12px; display: flex; align-items: center; gap: 10px">
+      <div style="flex: 1; min-width: 0"><div style="font-weight: 600; font-size: 16px">AHOUANDJINOU Rita</div><div style="font-size: 13px; color: #1F7A4D">Présente</div></div>
+      <div role="radiogroup" aria-label="Statut d'AHOUANDJINOU Rita" style="display: flex; gap: 6px">
+        <button type="button" role="radio" aria-checked="true" aria-label="Présent" style="width: 48px; height: 48px; border: 0; border-radius: 12px; background: #1F7A4D; color: #FFFFFF; font: 700 15px Inter, sans-serif">P</button>
+        <button type="button" role="radio" aria-checked="false" aria-label="Absent" style="width: 48px; height: 48px; border: 1px solid #C9CFD8; border-radius: 12px; background: #FFFFFF; color: #5B6472; font: 700 15px Inter, sans-serif">A</button>
+        <button type="button" role="radio" aria-checked="false" aria-label="Retard" style="width: 48px; height: 48px; border: 1px solid #C9CFD8; border-radius: 12px; background: #FFFFFF; color: #5B6472; font: 700 15px Inter, sans-serif">R</button>
+      </div>
+    </li>
+    <li style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 14px; padding: 12px; display: flex; align-items: center; gap: 10px">
+      <div style="flex: 1; min-width: 0"><div style="font-weight: 600; font-size: 16px">AKPLOGAN Fidèle</div><div style="font-size: 13px; color: #1F7A4D">Présent</div></div>
+      <div role="radiogroup" aria-label="Statut d'AKPLOGAN Fidèle" style="display: flex; gap: 6px">
+        <button type="button" role="radio" aria-checked="true" aria-label="Présent" style="width: 48px; height: 48px; border: 0; border-radius: 12px; background: #1F7A4D; color: #FFFFFF; font: 700 15px Inter, sans-serif">P</button>
+        <button type="button" role="radio" aria-checked="false" aria-label="Absent" style="width: 48px; height: 48px; border: 1px solid #C9CFD8; border-radius: 12px; background: #FFFFFF; color: #5B6472; font: 700 15px Inter, sans-serif">A</button>
+        <button type="button" role="radio" aria-checked="false" aria-label="Retard" style="width: 48px; height: 48px; border: 1px solid #C9CFD8; border-radius: 12px; background: #FFFFFF; color: #5B6472; font: 700 15px Inter, sans-serif">R</button>
+      </div>
+    </li>
+    <li style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 14px; padding: 12px; display: flex; align-items: center; gap: 10px">
+      <div style="flex: 1; min-width: 0"><div style="font-weight: 600; font-size: 16px">AZON Mariam</div><div style="font-size: 13px; color: #1F7A4D">Présente</div></div>
+      <div role="radiogroup" aria-label="Statut d'AZON Mariam" style="display: flex; gap: 6px">
+        <button type="button" role="radio" aria-checked="true" aria-label="Présent" style="width: 48px; height: 48px; border: 0; border-radius: 12px; background: #1F7A4D; color: #FFFFFF; font: 700 15px Inter, sans-serif">P</button>
+        <button type="button" role="radio" aria-checked="false" aria-label="Absent" style="width: 48px; height: 48px; border: 1px solid #C9CFD8; border-radius: 12px; background: #FFFFFF; color: #5B6472; font: 700 15px Inter, sans-serif">A</button>
+        <button type="button" role="radio" aria-checked="false" aria-label="Retard" style="width: 48px; height: 48px; border: 1px solid #C9CFD8; border-radius: 12px; background: #FFFFFF; color: #5B6472; font: 700 15px Inter, sans-serif">R</button>
+      </div>
+    </li>
+  </ul>
+
+  <footer style="padding: 12px 20px 20px; background: #FFFFFF; border-top: 1px solid #E3E6EB; display: flex; flex-direction: column; gap: 8px">
+    <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #5B6472"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F7A4D" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Enregistré sur le téléphone · envoi automatique au retour du réseau</div>
+    <button type="button" style="height: 52px; border: 0; border-radius: 12px; background: #F2A93B; color: #14254A; font: 600 16px Inter, sans-serif">Envoyer l'appel (30 élèves)</button>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Polaris — système de design</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2350C8}a:hover{color:#14254A}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1180px; box-sizing: border-box; padding: 64px 72px; background: #F6F7F9; font-family: Inter, system-ui, sans-serif; color: #14254A; display: flex; flex-direction: column; gap: 40px">
+  <header style="display: flex; justify-content: space-between; align-items: flex-end">
+    <div style="display: flex; align-items: center; gap: 16px">
+      <svg width="48" height="48" viewBox="0 0 48 48" role="img" aria-label="Logo Polaris"><rect width="48" height="48" rx="12" fill="#14254A"></rect><path d="M24 9l3.6 11.4L39 24l-11.4 3.6L24 39l-3.6-11.4L9 24l11.4-3.6z" fill="#F2A93B"></path></svg>
+      <div>
+        <div style="font-family: Sora, sans-serif; font-weight: 700; font-size: 40px; letter-spacing: -0.02em">Polaris</div>
+        <div style="font-size: 16px; color: #5B6472">Assiduité et frais scolaires — système de design v1</div>
+      </div>
+    </div>
+    <div style="font-size: 14px; color: #5B6472; max-width: 420px; text-align: right">Calme et lisible : bleu nuit pour la confiance, safran (l'étoile) pour l'action et les repères. Jetons dans <span style="font-family: ui-monospace, monospace">docs/design/tokens.css</span></div>
+  </header>
+
+  <section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px">
+    <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 20px">
+      <h2 style="margin: 0; font-family: Sora, sans-serif; font-size: 20px; font-weight: 600">Couleurs</h2>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 12px; background: #14254A"></div><div style="font-size: 13px; font-weight: 600">Nuit — 900</div><div style="font-size: 12px; color: #5B6472">#14254A · texte, en-têtes</div></div>
+        <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 12px; background: #2350C8"></div><div style="font-size: 13px; font-weight: 600">Bleu — 600</div><div style="font-size: 12px; color: #5B6472">#2350C8 · boutons, liens</div></div>
+        <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 12px; background: #F2A93B"></div><div style="font-size: 13px; font-weight: 600">Safran — 400</div><div style="font-size: 12px; color: #5B6472">#F2A93B · repère, étoile</div></div>
+        <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 12px; background: #F6F7F9; border: 1px solid #E3E6EB"></div><div style="font-size: 13px; font-weight: 600">Fond — 50</div><div style="font-size: 12px; color: #5B6472">#F6F7F9 · fond d'écran</div></div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+        <div style="display: flex; align-items: center; gap: 10px"><span style="width: 28px; height: 28px; border-radius: 8px; background: #1F7A4D"></span><div style="font-size: 13px"><b>Présent</b><br><span style="color: #5B6472">#1F7A4D</span></div></div>
+        <div style="display: flex; align-items: center; gap: 10px"><span style="width: 28px; height: 28px; border-radius: 8px; background: #B42318"></span><div style="font-size: 13px"><b>Absent</b><br><span style="color: #5B6472">#B42318</span></div></div>
+        <div style="display: flex; align-items: center; gap: 10px"><span style="width: 28px; height: 28px; border-radius: 8px; background: #A15C07"></span><div style="font-size: 13px"><b>Retard</b><br><span style="color: #5B6472">#A15C07</span></div></div>
+        <div style="display: flex; align-items: center; gap: 10px"><span style="width: 28px; height: 28px; border-radius: 8px; background: #5B6472"></span><div style="font-size: 13px"><b>Texte 2</b><br><span style="color: #5B6472">#5B6472</span></div></div>
+      </div>
+      <p style="margin: 0; font-size: 13px; color: #5B6472">Les statuts se distinguent aussi par leur libellé et leur icône, jamais par la couleur seule. Tous les couples texte/fond passent 4,5:1.</p>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-family: Sora, sans-serif; font-size: 20px; font-weight: 600">Typographie</h2>
+      <div style="font-family: Sora, sans-serif; font-weight: 700; font-size: 36px; letter-spacing: -0.02em">Titre d'écran — Sora 36</div>
+      <div style="font-family: Sora, sans-serif; font-weight: 600; font-size: 22px">Titre de carte — Sora 22</div>
+      <div style="font-size: 16px; line-height: 1.5">Texte courant — Inter 16 / 1,5. Les parents lisent sur des téléphones d'entrée de gamme : 16 px minimum sur mobile.</div>
+      <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6472">Libellé de section — Inter 13</div>
+      <div style="font-family: Sora, sans-serif; font-weight: 600; font-size: 32px; font-variant-numeric: tabular-nums">1 250 000 FCFA</div>
+      <div style="font-size: 13px; color: #5B6472">Montants : chiffres tabulaires, espace fine entre milliers, « FCFA » après le nombre. Dates : jj/mm/aaaa ; heures : 08:00.</div>
+    </div>
+  </section>
+
+  <section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px">
+    <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 16px">
+      <h2 style="margin: 0; font-family: Sora, sans-serif; font-size: 20px; font-weight: 600">Boutons</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px">
+        <button type="button" style="height: 44px; padding: 0 20px; border: 0; border-radius: 10px; background: #2350C8; color: #FFFFFF; font: 600 15px Inter, sans-serif">Enregistrer</button>
+        <button type="button" style="height: 44px; padding: 0 20px; border: 1px solid #C9CFD8; border-radius: 10px; background: #FFFFFF; color: #14254A; font: 600 15px Inter, sans-serif">Annuler</button>
+        <button type="button" style="height: 44px; padding: 0 20px; border: 0; border-radius: 10px; background: #B42318; color: #FFFFFF; font: 600 15px Inter, sans-serif">Annuler le paiement</button>
+        <button type="button" style="height: 44px; padding: 0 20px; border: 0; border-radius: 10px; background: #F2A93B; color: #14254A; font: 600 15px Inter, sans-serif">Payer en ligne</button>
+      </div>
+      <p style="margin: 0; font-size: 13px; color: #5B6472">Hauteur 44 px (48 px sur mobile), une seule action principale par écran. Le safran est réservé au paiement et à l'appel.</p>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-family: Sora, sans-serif; font-size: 20px; font-weight: 600">Statuts</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #E7F4EC; color: #1F7A4D; font-size: 13px; font-weight: 600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Présent</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #FDECEA; color: #B42318; font-size: 13px; font-weight: 600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>Absent</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #FDF3E1; color: #A15C07; font-size: 13px; font-weight: 600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>Retard 10 min</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #EAF0FD; color: #2350C8; font-size: 13px; font-weight: 600">Excusé</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #EEF0F3; color: #3D4654; font-size: 13px; font-weight: 600">En attente</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #E7F4EC; color: #1F7A4D; font-size: 13px; font-weight: 600">Payé</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #FDECEA; color: #B42318; font-size: 13px; font-weight: 600">En retard</span>
+      </div>
+      <p style="margin: 0; font-size: 13px; color: #5B6472">Pastille = fond clair + texte foncé de la même famille + icône.</p>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-family: Sora, sans-serif; font-size: 20px; font-weight: 600">Champ et indicateur</h2>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500">Téléphone du parent
+        <input value="+229 97 00 00 00" style="height: 44px; padding: 0 14px; border: 1px solid #C9CFD8; border-radius: 10px; font: 16px Inter, sans-serif; color: #14254A">
+      </label>
+      <div style="border: 1px solid #E3E6EB; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 6px">
+        <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6472">Taux de présence (30 j)</div>
+        <div style="display: flex; align-items: baseline; gap: 10px"><span style="font-family: Sora, sans-serif; font-weight: 600; font-size: 30px">94,2 %</span><span style="font-size: 13px; font-weight: 600; color: #1F7A4D">+1,8 pt</span></div>
+        <div style="height: 6px; border-radius: 999px; background: #EEF0F3"><div style="width: 94%; height: 6px; border-radius: 999px; background: #1F7A4D"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; font-size: 14px; color: #3D4654">
+    <div><b style="color: #14254A">Espacement</b><br>Grille de 4 px ; 8 · 12 · 16 · 24 · 32 · 48.</div>
+    <div><b style="color: #14254A">Rayons</b><br>10 px contrôles, 16 px cartes, pastilles arrondies.</div>
+    <div><b style="color: #14254A">Mobile d'abord</b><br>Une colonne sous 640 px, aucun défilement horizontal, cibles de 48 px.</div>
+    <div><b style="color: #14254A">Langue</b><br>Français, vouvoiement, phrases courtes ; jamais « Erreur 500 ».</div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
