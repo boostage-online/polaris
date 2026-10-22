@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Parent — suivi et frais</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2350C8}a:hover{color:#14254A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F9; font-family: Inter, system-ui, sans-serif; color: #14254A; display: flex; flex-direction: column; overflow: hidden">
+  <header style="padding: 12px 12px 12px 8px; background: #FFFFFF; border-bottom: 1px solid #E3E6EB; display: flex; align-items: center; gap: 4px">
+    <a href="ParentAccueil.dc.html" aria-label="Retour" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #14254A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+    <div>
+      <div style="font-family: Sora, sans-serif; font-weight: 600; font-size: 18px">Aïcha Adjovi</div>
+      <div style="font-size: 13px; color: #5B6472">6e A · Lycée Béhanzin</div>
+    </div>
+  </header>
+
+  <div role="tablist" aria-label="Rubriques" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 16px 20px 0; padding: 4px; border-radius: 12px; background: #E9ECF1">
+    <button type="button" role="tab" aria-selected="false" style="height: 44px; border: 0; border-radius: 9px; background: transparent; color: #3D4654; font: 600 15px Inter, sans-serif">Présences</button>
+    <button type="button" role="tab" aria-selected="true" style="height: 44px; border: 0; border-radius: 9px; background: #FFFFFF; color: #14254A; font: 600 15px Inter, sans-serif">Frais</button>
+  </div>
+
+  <main style="flex: 1; padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 14px">
+    <section style="background: #14254A; color: #FFFFFF; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <div style="font-size: 13px; color: #DCE3F0">Reste à payer · année 2026-2027</div>
+      <div style="font: 700 34px Sora, sans-serif; letter-spacing: -0.02em; font-variant-numeric: tabular-nums">90 000 FCFA</div>
+      <div style="height: 8px; border-radius: 999px; background: #22396B"><div style="width: 40%; height: 8px; border-radius: 999px; background: #F2A93B"></div></div>
+      <div style="display: flex; justify-content: space-between; font-size: 13px; color: #DCE3F0"><span>Payé 60 000</span><span>Total 150 000</span></div>
+      <a href="#" style="height: 52px; border-radius: 12px; background: #F2A93B; color: #14254A; text-decoration: none; font: 600 16px Inter, sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"></rect><path d="M11 18h2"></path></svg>Payer par Mobile Money</a>
+    </section>
+
+    <section style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 4px">
+      <h2 style="margin: 0 0 6px; font-family: Sora, sans-serif; font-size: 16px; font-weight: 600">Échéancier</h2>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #EEF0F3">
+        <div style="flex: 1"><div style="font-weight: 600; font-size: 15px">Tranche 1</div><div style="font-size: 13px; color: #5B6472">01/10/2026 · 50 000 FCFA</div></div>
+        <span style="padding: 3px 10px; border-radius: 999px; background: #E7F4EC; color: #1F7A4D; font-size: 13px; font-weight: 600">Payé</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #EEF0F3">
+        <div style="flex: 1"><div style="font-weight: 600; font-size: 15px">Tranche 2</div><div style="font-size: 13px; color: #5B6472">10/01/2027 · reste 40 000 FCFA</div></div>
+        <span style="padding: 3px 10px; border-radius: 999px; background: #FDF3E1; color: #A15C07; font-size: 13px; font-weight: 600">Partiel</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0">
+        <div style="flex: 1"><div style="font-weight: 600; font-size: 15px">Tranche 3</div><div style="font-size: 13px; color: #5B6472">01/04/2027 · 50 000 FCFA</div></div>
+        <span style="padding: 3px 10px; border-radius: 999px; background: #EEF0F3; color: #3D4654; font-size: 13px; font-weight: 600">À venir</span>
+      </div>
+    </section>
+
+    <section style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+      <h2 style="margin: 0; font-family: Sora, sans-serif; font-size: 16px; font-weight: 600">Derniers reçus</h2>
+      <a href="#" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit">
+        <div aria-hidden="true" style="width: 40px; height: 40px; border-radius: 10px; background: #EAF0FD; color: #2350C8; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"></path><path d="M9 13h6M9 17h6"></path></svg></div>
+        <div style="flex: 1"><div style="font-weight: 600; font-size: 15px">60 000 FCFA · espèces</div><div style="font-size: 13px; color: #5B6472">02/10/2026 · reçu n° 000001</div></div>
+        <span style="font-size: 14px; font-weight: 600; color: #2350C8">PDF</span>
+      </a>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

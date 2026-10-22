@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Tableau de bord de direction</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2350C8}a:hover{color:#14254A}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #F6F7F9; font-family: Inter, system-ui, sans-serif; color: #14254A; display: flex; flex-wrap: wrap">
+  <nav aria-label="Menu principal" style="flex: 1 1 248px; max-width: 100%; box-sizing: border-box; background: #14254A; color: #DCE3F0; padding: 24px 16px; display: flex; flex-direction: column; gap: 4px">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 0 8px 20px">
+      <svg width="32" height="32" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="12" fill="#22396B"></rect><path d="M24 9l3.6 11.4L39 24l-11.4 3.6L24 39l-3.6-11.4L9 24l11.4-3.6z" fill="#F2A93B"></path></svg>
+      <div><div style="font-family: Sora, sans-serif; font-weight: 700; font-size: 18px; color: #FFFFFF">Polaris</div><div style="font-size: 12px; color: #AFBBD1">Lycée Béhanzin · Porto-Novo</div></div>
+    </div>
+    <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #AFBBD1; padding: 12px 8px 4px">Pilotage</div>
+    <a href="#" style="display: block; padding: 10px 12px; border-radius: 8px; background: #22396B; color: #FFFFFF; text-decoration: none; font-weight: 600">Direction</a>
+    <a href="#" style="display: block; padding: 10px 12px; border-radius: 8px; color: #DCE3F0; text-decoration: none">Pédagogie</a>
+    <a href="#" style="display: block; padding: 10px 12px; border-radius: 8px; color: #DCE3F0; text-decoration: none">Rapports</a>
+    <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #AFBBD1; padding: 16px 8px 4px">Assiduité</div>
+    <a href="#" style="display: block; padding: 10px 12px; border-radius: 8px; color: #DCE3F0; text-decoration: none">Feuilles d'appel</a>
+    <a href="#" style="display: block; padding: 10px 12px; border-radius: 8px; color: #DCE3F0; text-decoration: none">Justificatifs <span style="margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #F2A93B; color: #14254A; font-size: 12px; font-weight: 700">4</span></a>
+    <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #AFBBD1; padding: 16px 8px 4px">Finance</div>
+    <a href="#" style="display: block; padding: 10px 12px; border-radius: 8px; color: #DCE3F0; text-decoration: none">Journal de caisse</a>
+    <a href="#" style="display: block; padding: 10px 12px; border-radius: 8px; color: #DCE3F0; text-decoration: none">Impayés et rappels</a>
+    <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #AFBBD1; padding: 16px 8px 4px">Scolarité</div>
+    <a href="#" style="display: block; padding: 10px 12px; border-radius: 8px; color: #DCE3F0; text-decoration: none">Élèves</a>
+    <a href="#" style="display: block; padding: 10px 12px; border-radius: 8px; color: #DCE3F0; text-decoration: none">Tuteurs</a>
+  </nav>
+
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px clamp(16px, 3vw, 40px); display: flex; flex-direction: column; gap: 24px">
+    <header style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+      <div>
+        <h1 style="margin: 0; font-family: Sora, sans-serif; font-weight: 700; font-size: 30px; letter-spacing: -0.02em">Bonjour, Madame la Directrice</h1>
+        <p style="margin: 6px 0 0; color: #5B6472">Mardi 3 novembre · données mises à jour il y a 4 minutes</p>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px">
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #3D4654">Période
+          <select style="height: 40px; padding: 0 12px; border: 1px solid #C9CFD8; border-radius: 10px; background: #FFFFFF; font: 14px Inter, sans-serif; color: #14254A"><option>30 derniers jours</option><option>Ce trimestre</option></select>
+        </label>
+        <button type="button" style="height: 40px; padding: 0 16px; border: 1px solid #C9CFD8; border-radius: 10px; background: #FFFFFF; color: #14254A; font: 600 14px Inter, sans-serif">Exporter (CSV)</button>
+      </div>
+    </header>
+
+    <section aria-label="Indicateurs clés" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px">
+      <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 6px">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6472">Présence (30 j)</div>
+        <div style="display: flex; align-items: baseline; gap: 8px"><span style="font-family: Sora, sans-serif; font-weight: 600; font-size: 30px">94,2 %</span><span style="font-size: 13px; font-weight: 600; color: #1F7A4D">+1,8 pt</span></div>
+        <div style="font-size: 13px; color: #5B6472">1 284 élèves actifs</div>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 6px">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6472">Recouvrement (année)</div>
+        <div style="display: flex; align-items: baseline; gap: 8px"><span style="font-family: Sora, sans-serif; font-weight: 600; font-size: 30px">71 %</span><span style="font-size: 13px; font-weight: 600; color: #1F7A4D">+6 pt</span></div>
+        <div style="font-size: 13px; color: #5B6472">137,5 M encaissés sur 193,6 M FCFA</div>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 6px">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6472">Parents activés</div>
+        <div style="display: flex; align-items: baseline; gap: 8px"><span style="font-family: Sora, sans-serif; font-weight: 600; font-size: 30px">78 %</span><span style="font-size: 13px; font-weight: 600; color: #1F7A4D">objectif 70 %</span></div>
+        <div style="font-size: 13px; color: #5B6472">1 562 sur 2 003 tuteurs</div>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 6px">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6472">Appels non faits (7 j)</div>
+        <div style="display: flex; align-items: baseline; gap: 8px"><span style="font-family: Sora, sans-serif; font-weight: 600; font-size: 30px; color: #A15C07">12</span><span style="font-size: 13px; color: #5B6472">sur 418 séances</span></div>
+        <a href="#" style="font-size: 13px; font-weight: 600">Voir les enseignants concernés</a>
+      </div>
+    </section>
+
+    <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px">
+      <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; justify-content: space-between; align-items: center"><h2 style="margin: 0; font-family: Sora, sans-serif; font-size: 18px; font-weight: 600">Présence par semaine</h2><span style="font-size: 13px; color: #5B6472">8 semaines</span></div>
+        <div role="img" aria-label="Taux de présence hebdomadaire, de 91 à 95 pour cent" style="height: 160px; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px; align-items: end">
+          <div style="height: 72%; border-radius: 6px 6px 0 0; background: #C9D6F5"></div>
+          <div style="height: 76%; border-radius: 6px 6px 0 0; background: #C9D6F5"></div>
+          <div style="height: 74%; border-radius: 6px 6px 0 0; background: #C9D6F5"></div>
+          <div style="height: 80%; border-radius: 6px 6px 0 0; background: #C9D6F5"></div>
+          <div style="height: 78%; border-radius: 6px 6px 0 0; background: #C9D6F5"></div>
+          <div style="height: 84%; border-radius: 6px 6px 0 0; background: #C9D6F5"></div>
+          <div style="height: 86%; border-radius: 6px 6px 0 0; background: #C9D6F5"></div>
+          <div style="height: 90%; border-radius: 6px 6px 0 0; background: #2350C8"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #5B6472"><span>14 sept.</span><span>Cette semaine : 95,1 %</span></div>
+      </div>
+
+      <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; justify-content: space-between; align-items: center"><h2 style="margin: 0; font-family: Sora, sans-serif; font-size: 18px; font-weight: 600">Encaissements</h2><a href="#" style="font-size: 13px; font-weight: 600">Détail finance</a></div>
+        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px">
+          <div style="display: flex; justify-content: space-between"><span>Caisse (espèces, chèques)</span><b style="font-variant-numeric: tabular-nums">18 450 000 FCFA</b></div>
+          <div style="height: 8px; border-radius: 999px; background: #EEF0F3"><div style="width: 62%; height: 8px; border-radius: 999px; background: #14254A"></div></div>
+          <div style="display: flex; justify-content: space-between"><span>Paiement en ligne (Mobile Money)</span><b style="font-variant-numeric: tabular-nums">11 320 000 FCFA</b></div>
+          <div style="height: 8px; border-radius: 999px; background: #EEF0F3"><div style="width: 38%; height: 8px; border-radius: 999px; background: #F2A93B"></div></div>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 24px; padding-top: 6px; border-top: 1px solid #EEF0F3; font-size: 13px; color: #3D4654">
+          <div><div style="color: #5B6472">Reste à recouvrer</div><b style="font-size: 16px; color: #14254A">56 100 000 FCFA</b></div>
+          <div><div style="color: #5B6472">Dont en retard</div><b style="font-size: 16px; color: #B42318">9 800 000 FCFA</b></div>
+        </div>
+      </div>
+    </section>
+
+    <section style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px"><h2 style="margin: 0; font-family: Sora, sans-serif; font-size: 18px; font-weight: 600">Classes à surveiller (30 jours)</h2><a href="#" style="font-size: 13px; font-weight: 600">Tableau pédagogique</a></div>
+      <div style="overflow-x: auto">
+        <table style="width: 100%; min-width: 560px; border-collapse: collapse; font-size: 14px">
+          <thead><tr style="text-align: left; color: #5B6472; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em"><th style="padding: 8px 12px; font-weight: 600">Classe</th><th style="padding: 8px 12px; font-weight: 600">Présence</th><th style="padding: 8px 12px; font-weight: 600">Absences non justifiées</th><th style="padding: 8px 12px; font-weight: 600">Élèves à risque</th></tr></thead>
+          <tbody>
+            <tr style="border-top: 1px solid #EEF0F3"><td style="padding: 12px; font-weight: 600">Tle D2</td><td style="padding: 12px"><span style="padding: 3px 9px; border-radius: 999px; background: #FDECEA; color: #B42318; font-weight: 600">84,6 %</span></td><td style="padding: 12px">37</td><td style="padding: 12px">5</td></tr>
+            <tr style="border-top: 1px solid #EEF0F3"><td style="padding: 12px; font-weight: 600">1re C</td><td style="padding: 12px"><span style="padding: 3px 9px; border-radius: 999px; background: #FDF3E1; color: #A15C07; font-weight: 600">88,9 %</span></td><td style="padding: 12px">21</td><td style="padding: 12px">3</td></tr>
+            <tr style="border-top: 1px solid #EEF0F3"><td style="padding: 12px; font-weight: 600">3e B</td><td style="padding: 12px"><span style="padding: 3px 9px; border-radius: 999px; background: #FDF3E1; color: #A15C07; font-weight: 600">90,3 %</span></td><td style="padding: 12px">14</td><td style="padding: 12px">2</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

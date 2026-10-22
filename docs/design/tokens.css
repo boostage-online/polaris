@@ -1,0 +1,47 @@
+/*
+ * Polaris — jetons de design v1 (source de vérité ; docs/design/README.md).
+ * Web : importer ce fichier dans apps/web/src/app/globals.css et mapper Tailwind sur ces variables.
+ * Flutter : les mêmes valeurs sont dans tokens.json (→ lib/core/theme/tokens.dart).
+ */
+:root {
+  /* Couleurs de marque */
+  --color-ink-900: #14254a;      /* Nuit : texte principal, en-têtes, menu */
+  --color-ink-800: #22396b;      /* Nuit claire : survol du menu, fonds sur nuit */
+  --color-brand-600: #2350c8;    /* Bleu : boutons principaux, liens, focus */
+  --color-brand-50: #eaf0fd;
+  --color-accent-400: #f2a93b;   /* Safran : appel, paiement, repères (jamais pour du texte sur blanc) */
+  --color-accent-700: #8a5a00;   /* Safran foncé : texte sur fond clair */
+
+  /* Neutres */
+  --color-bg: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-border: #e3e6eb;
+  --color-border-strong: #c9cfd8;
+  --color-muted-bg: #eef0f3;
+  --color-text: #14254a;
+  --color-text-2: #3d4654;
+  --color-text-muted: #5b6472;   /* 6,1:1 sur blanc */
+
+  /* Statuts (texte / fond) — toujours accompagnés d'un libellé et d'une icône */
+  --color-present: #1f7a4d;   --color-present-bg: #e7f4ec;
+  --color-absent: #b42318;    --color-absent-bg: #fdecea;
+  --color-late: #a15c07;      --color-late-bg: #fdf3e1;
+  --color-excused: #2350c8;   --color-excused-bg: #eaf0fd;
+  --color-pending: #3d4654;   --color-pending-bg: #eef0f3;
+
+  /* Typographie */
+  --font-display: 'Sora', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --text-xs: 12px; --text-sm: 13px; --text-base: 15px; --text-md: 16px;
+  --text-lg: 18px; --text-xl: 22px; --text-2xl: 30px; --text-3xl: 36px;
+
+  /* Espacement (grille de 4 px), rayons, ombres */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-12: 48px;
+  --radius-control: 10px; --radius-card: 16px; --radius-pill: 999px;
+  --shadow-overlay: 0 12px 32px rgb(20 37 74 / 0.16);
+
+  /* Interaction */
+  --control-height: 44px;          /* 48px sous 640px */
+  --focus-ring: 0 0 0 3px rgb(35 80 200 / 0.35);
+}
