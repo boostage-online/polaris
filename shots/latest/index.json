@@ -27,7 +27,7 @@
   {
     "name": "06-fiche-eleve",
     "title": "Fiche élève",
-    "path": "/students/a39f444e-adda-4f0f-86fe-2d76eb07ff48"
+    "path": "/students/1a80029d-d4e5-42ea-962a-2abe0e9049e3"
   },
   {
     "name": "07-structure",
@@ -37,7 +37,7 @@
   {
     "name": "08-feuille-appel-admin",
     "title": "Feuille d’appel (vue établissement)",
-    "path": "/attendance/sessions/35217628-192f-4724-b012-9fdc766a9764"
+    "path": "/attendance/sessions/f9471ddb-5369-486d-8ca9-5d88524b9f17"
   },
   {
     "name": "09-feuilles-appel",
@@ -102,7 +102,7 @@
   {
     "name": "21-enseignant-mobile-appel",
     "title": "Enseignant (téléphone) — faire l’appel",
-    "path": "/attendance/sessions/35217628-192f-4724-b012-9fdc766a9764"
+    "path": "/attendance/sessions/f9471ddb-5369-486d-8ca9-5d88524b9f17"
   },
   {
     "name": "22-parent-mobile-enfants",
@@ -112,7 +112,7 @@
   {
     "name": "23-parent-mobile-enfant",
     "title": "Parent (téléphone) — suivi d’un enfant",
-    "path": "/children/a39f444e-adda-4f0f-86fe-2d76eb07ff48"
+    "path": "/children/1a80029d-d4e5-42ea-962a-2abe0e9049e3"
   },
   {
     "name": "24-parent-mobile-notifications",
