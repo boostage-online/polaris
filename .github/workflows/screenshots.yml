@@ -67,6 +67,10 @@ jobs:
         run: |
           .github/scripts/run-step.sh "screenshots - build api" pnpm --filter @polaris/api build
           NODE_ENV=production .github/scripts/run-step.sh "screenshots - build web" pnpm --filter @polaris/web build
+      - name: Contrat OpenAPI (publié avec les captures)
+        run: |
+          .github/scripts/run-step.sh "screenshots - openapi" pnpm --filter @polaris/api openapi:generate
+          mkdir -p /tmp/shots && cp apps/api/openapi.json /tmp/shots/openapi.json
       - name: Démarrer l'API, le worker et le web
         run: |
           (cd apps/api && nohup node dist/main.js > /tmp/api.log 2>&1 &)
